@@ -27,6 +27,10 @@ class HomeScreenProvider extends ChangeNotifier {
   HomescreenModel? homeScreenModel;
   List? slider;
   List? advertisement;
+  List<HomeProduct> randomProducts = [];
+  List<HomeBrand> brands = [];
+  List<HomeProduct> moreProducts = [];
+  bool loadingMoreProducts = false;
 
   int current = 0;
   int slidercurrent = 0;
@@ -47,6 +51,9 @@ class HomeScreenProvider extends ChangeNotifier {
       if (homeScreenModel != null && homeScreenModel!.code == 100) {
         slider = homeScreenModel?.data?.slider;
         advertisement = homeScreenModel?.data?.advertisement;
+        randomProducts = List<HomeProduct>.from(homeScreenModel?.data?.randomProducts ?? []);
+        brands = List<HomeBrand>.from(homeScreenModel?.data?.brands ?? []);
+        moreProducts = List<HomeProduct>.from(homeScreenModel?.data?.moreProducts ?? []);
         username = await SharedPref.getUserName();
         userEmail = await SharedPref.getUserEmailId();
 
@@ -61,6 +68,35 @@ class HomeScreenProvider extends ChangeNotifier {
       log("homescreen error: ${e.toString()}");
     }
     notifyListeners();
+  }
+
+  Future<void> loadMoreProducts(BuildContext context) async {
+    if (loadingMoreProducts) return;
+    try {
+      loadingMoreProducts = true;
+      notifyListeners();
+
+      List<int> existingIds = [
+        ...randomProducts.map((p) => p.id ?? 0),
+        ...moreProducts.map((p) => p.id ?? 0)
+      ];
+
+      List<HomeProduct>? newProducts =
+          await CreatorApiServices.getRandomProducts(
+        context,
+        limit: 6,
+        excludeIds: existingIds,
+      );
+
+      if (newProducts != null && newProducts.isNotEmpty) {
+        moreProducts.addAll(newProducts);
+      }
+    } catch (e) {
+      log("loadMoreProducts error: ${e.toString()}");
+    } finally {
+      loadingMoreProducts = false;
+      notifyListeners();
+    }
   }
 
   Future<void> refreshHomeScreen(BuildContext context) async {

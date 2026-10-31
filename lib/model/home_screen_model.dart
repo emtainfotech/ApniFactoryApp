@@ -30,19 +30,54 @@ class Data {
   List<Maincategory>? maincategory;
   List<String>? advertisement;
   int? notification;
+  List<HomeProduct>? randomProducts;
+  List<HomeBrand>? brands;
+  List<HomeProduct>? moreProducts;
 
-  Data({this.slider, this.maincategory, this.advertisement, this.notification});
+  Data(
+      {this.slider,
+      this.maincategory,
+      this.advertisement,
+      this.notification,
+      this.randomProducts,
+      this.brands,
+      this.moreProducts});
 
   Data.fromJson(Map<String, dynamic> json) {
-    slider = json['slider'].cast<String>();
+    if (json['slider'] != null) {
+      slider = json['slider'].cast<String>();
+    }
     if (json['maincategory'] != null) {
       maincategory = <Maincategory>[];
       json['maincategory'].forEach((v) {
         maincategory!.add(new Maincategory.fromJson(v));
       });
     }
-    advertisement = json['advertisement'].cast<String>();
+    if (json['advertisement'] != null) {
+      advertisement = json['advertisement'].cast<String>();
+    }
     notification = json['notification'];
+
+    if (json['random_products'] != null) {
+      randomProducts = <HomeProduct>[];
+      json['random_products'].forEach((v) {
+        randomProducts!.add(new HomeProduct.fromJson(v));
+      });
+    }
+
+    if (json['brands'] != null) {
+      brands = <HomeBrand>[];
+      json['brands'].forEach((v) {
+        brands!.add(new HomeBrand.fromJson(v));
+      });
+    }
+
+    if (json['more_products'] != null) {
+      moreProducts = <HomeProduct>[];
+      json['more_products'].forEach((v) {
+        moreProducts!.add(new HomeProduct.fromJson(v));
+      });
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -53,6 +88,105 @@ class Data {
     }
     data['advertisement'] = this.advertisement;
     data['notification'] = this.notification;
+    if (this.randomProducts != null) {
+      data['random_products'] =
+          this.randomProducts!.map((v) => v.toJson()).toList();
+    }
+    if (this.brands != null) {
+      data['brands'] = this.brands!.map((v) => v.toJson()).toList();
+    }
+    if (this.moreProducts != null) {
+      data['more_products'] =
+          this.moreProducts!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class HomeProduct {
+  int? id;
+  String? name;
+  String? image;
+  int? categoryId;
+  String? categoryName;
+  int? brandId;
+  String? brandName;
+  num? price;
+  num? oldprice;
+  String? colorId;
+
+  HomeProduct({
+    this.id,
+    this.name,
+    this.image,
+    this.categoryId,
+    this.categoryName,
+    this.brandId,
+    this.brandName,
+    this.price,
+    this.oldprice,
+    this.colorId,
+  });
+
+  HomeProduct.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    image = json['image'];
+    categoryId = json['category_id'];
+    categoryName = json['category_name'];
+    brandId = json['brand_id'];
+    brandName = json['brand_name'];
+    price = json['price'];
+    oldprice = json['oldprice'];
+    colorId = json['color_id']?.toString() ?? '0';
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['image'] = image;
+    data['category_id'] = categoryId;
+    data['category_name'] = categoryName;
+    data['brand_id'] = brandId;
+    data['brand_name'] = brandName;
+    data['price'] = price;
+    data['oldprice'] = oldprice;
+    data['color_id'] = colorId;
+    return data;
+  }
+}
+
+class HomeBrand {
+  int? id;
+  String? name;
+  String? image;
+  int? companyId;
+  int? categoryId;
+
+  HomeBrand({
+    this.id,
+    this.name,
+    this.image,
+    this.companyId,
+    this.categoryId,
+  });
+
+  HomeBrand.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    image = json['image'];
+    companyId = json['company_id'];
+    categoryId = json['category_id'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['image'] = image;
+    data['company_id'] = companyId;
+    data['category_id'] = categoryId;
     return data;
   }
 }

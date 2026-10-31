@@ -325,6 +325,32 @@ class CreatorApiServices {
     }
   }
 
+  static Future<List<HomeProduct>?> getRandomProducts(
+    BuildContext context, {
+    int limit = 10,
+    List<int>? excludeIds,
+  }) async {
+    Dio dio = Dio();
+    try {
+      String url = "${ApiEndPoint.randomProductsApi}?limit=$limit";
+      if (excludeIds != null && excludeIds.isNotEmpty) {
+        url += "&exclude=${excludeIds.join(',')}";
+      }
+      Response response = await dio.get(url);
+      var data = json.decode(response.data);
+      if (response.statusCode == 200 && data['data'] != null) {
+        List<HomeProduct> products = [];
+        data['data'].forEach((v) {
+          products.add(HomeProduct.fromJson(v));
+        });
+        return products;
+      }
+      return null;
+    } on DioException catch (error) {
+      return await HandleDio.handleDioError(error: error, context: context);
+    }
+  }
+
   static Future<SearchModel?> searchDetails(
     BuildContext context, {
     required String word,

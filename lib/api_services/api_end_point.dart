@@ -9,6 +9,7 @@ class ApiEndPoint {
   static const String verifyOtpApi = "${baseUrl}verifyotp";
   static const String resetPasswordApi = "${baseUrl}resetpassword";
   static const String homeScreenApi = "${baseUrl}homescreen";
+  static const String randomProductsApi = "${baseUrl}randomproducts";
   static const String searchApi ="${baseUrl}search";
   static const String categoryScreenApi = "${baseUrl}categoryscreen?";
   static const String companyScreenApi = "${baseUrl}companyscreen?";
