@@ -557,30 +557,82 @@ class CartScreenProvider extends ChangeNotifier {
 
   bool loadingUserCart = true;
   UserCartModel? userCartModel;
+  final Set<String> updatingAttributeIds = {};
+
+  bool isAttributeUpdating(String id) => updatingAttributeIds.contains(id);
+
+  void recalculateLocalTotals() {
+    if (userCartModel == null) return;
+    num newNet = 0;
+    int totalCount = 0;
+    for (var catLists in userCartModel!.data.values) {
+      for (var group in catLists) {
+        for (var prod in group) {
+          for (var a in prod.attributeData) {
+            final int q = a.qty ?? 1;
+            totalCount += q;
+            final num u = (a.unitprice != null && a.unitprice! > 0)
+                ? a.unitprice!
+                : (a.prprice ?? 0);
+            a.totalPrice = u * q;
+            newNet += a.totalPrice!;
+          }
+        }
+      }
+    }
+    userCartModel!.netamount = newNet;
+    userCartModel!.counter = totalCount;
+    if (userCartModel!.igst != 0) {
+      userCartModel!.igst = (newNet * 0.18);
+      userCartModel!.grandTotal = newNet + userCartModel!.igst;
+    } else {
+      userCartModel!.cgst = (newNet * 0.09);
+      userCartModel!.sgst = (newNet * 0.09);
+      userCartModel!.grandTotal = newNet + userCartModel!.cgst + userCartModel!.sgst;
+    }
+  }
+
+  void _applyLocalAttributeQty(String cartAttributeId, int newQty) {
+    if (userCartModel == null) return;
+    for (var catLists in userCartModel!.data.values) {
+      for (var group in catLists) {
+        for (var prod in group) {
+          for (var attr in prod.attributeData) {
+            if (attr.attributeid.toString() == cartAttributeId) {
+              attr.qty = newQty;
+              final num u = (attr.unitprice != null && attr.unitprice! > 0)
+                  ? attr.unitprice!
+                  : (attr.prprice ?? 0);
+              attr.totalPrice = u * newQty;
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
 
   Future<void> userCart({
     required BuildContext context,
+    bool isSilent = false,
   }) async {
     try {
-      loadingUserCart = true;
-      notifyListeners();
-
-      userCartModel = await CreatorApiServices.userCartDetails(context);
-      notifyListeners();
-
-      if (userCartModel != null && userCartModel!.code == 100) {
-        loadingUserCart = false;
-
-        notifyListeners();
-      } else {
+      if (!isSilent) {
         loadingUserCart = true;
-
         notifyListeners();
+      }
+
+      final freshModel = await CreatorApiServices.userCartDetails(context);
+
+      if (freshModel != null && freshModel.code == 100) {
+        userCartModel = freshModel;
       }
     } catch (e) {
       log("user cart error: ${e.toString()}");
+    } finally {
+      loadingUserCart = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   bool loadingDeleteCart = false;
@@ -596,10 +648,9 @@ class CartScreenProvider extends ChangeNotifier {
 
       DeleteCartModel? deleteCartModel =
           await CreatorApiServices.deleteCartDetails(context, cartid: cartid);
-      notifyListeners();
 
       if (deleteCartModel != null && deleteCartModel.code == 100) {
-        userCart(context: context);
+        await userCart(context: context, isSilent: true);
         loadingDeleteCart = false;
 
         Utils.commonSnackBar(globalcontext,
@@ -607,13 +658,14 @@ class CartScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingDeleteCart = true;
+        loadingDeleteCart = false;
         notifyListeners();
       }
     } catch (e) {
       log("delete cart error: ${e.toString()}");
+      loadingDeleteCart = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   bool loadingDeleteCartAttribute = false;
@@ -624,17 +676,16 @@ class CartScreenProvider extends ChangeNotifier {
       required double height,
       required String cartattributeid}) async {
     try {
-      loadingDeleteCartAttribute = true;
+      updatingAttributeIds.add(cartattributeid);
       notifyListeners();
 
       DeleteCartAttributeModel? deleteCartAttributeModel =
           await CreatorApiServices.deleteCartAttributeDetails(context,
               cartattributeid: cartattributeid);
-      notifyListeners();
 
       if (deleteCartAttributeModel != null &&
           deleteCartAttributeModel.code == 100) {
-        userCart(context: context);
+        await userCart(context: context, isSilent: true);
         loadingDeleteCartAttribute = false;
 
         Utils.commonSnackBar(globalcontext,
@@ -642,13 +693,17 @@ class CartScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingDeleteCartAttribute = true;
+        loadingDeleteCartAttribute = false;
         notifyListeners();
       }
     } catch (e) {
       log("delete cart attribute error: ${e.toString()}");
+      loadingDeleteCartAttribute = false;
+      notifyListeners();
+    } finally {
+      updatingAttributeIds.remove(cartattributeid);
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   bool loadingEmptyCart = false;
@@ -722,70 +777,99 @@ class CartScreenProvider extends ChangeNotifier {
   // }
 
   bool loadingIncreaseCartQuantity = false;
+
   Future<void> increaseCartQuantity(
       {required BuildContext context,
       required double height,
       required String cartid,
       required String qty}) async {
-    try {
-      int finalqty = int.parse(qty);
-      int lastqty = ++finalqty;
-      loadingIncreaseCartQuantity = true;
-      notifyListeners();
+    final int currentQty = int.tryParse(qty) ?? 1;
+    final int targetQty = currentQty + 1;
 
+    // 1. Optimistic Local Update (0ms latency, zero reload)
+    updatingAttributeIds.add(cartid);
+    _applyLocalAttributeQty(cartid, targetQty);
+    recalculateLocalTotals();
+    notifyListeners();
+
+    try {
       IncreaseCartQtyModel? increaseCartQtyModel =
           await CreatorApiServices.increaseCartQuantityDetails(context,
-              cartattributeid: cartid, qty: lastqty.toString());
-      notifyListeners();
+              cartattributeid: cartid, qty: targetQty.toString());
 
       if (increaseCartQtyModel != null && increaseCartQtyModel.code == 100) {
-        await userCart(context: context);
-
-        notifyListeners();
-        loadingIncreaseCartQuantity = false;
-
-        notifyListeners();
+        // Silently sync authoritative server figures
+        await userCart(context: context, isSilent: true);
       } else {
-        loadingIncreaseCartQuantity = true;
-        notifyListeners();
+        // Revert on failure
+        _applyLocalAttributeQty(cartid, currentQty);
+        recalculateLocalTotals();
+        if (context.mounted) {
+          Utils.commonSnackBar(context,
+              height: height,
+              message: increaseCartQtyModel?.msg ?? "Could not update quantity");
+        }
       }
     } catch (e) {
       log("increase cart quantity error: ${e.toString()}");
+      _applyLocalAttributeQty(cartid, currentQty);
+      recalculateLocalTotals();
+    } finally {
+      updatingAttributeIds.remove(cartid);
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> decreaseCartQuantity(
       {required BuildContext context,
       required double height,
       required String cartid,
-      required String qty}) async {
-    try {
-      int finalqty = int.parse(qty);
-      int lastqty = --finalqty;
-      loadingIncreaseCartQuantity = true;
-      notifyListeners();
+      required String qty,
+      BuildContext? globalcontext}) async {
+    final int currentQty = int.tryParse(qty) ?? 1;
+    if (currentQty <= 1) {
+      // Remove item if quantity goes below 1
+      await deleteCartAttribute(
+        context: context,
+        globalcontext: globalcontext ?? context,
+        height: height,
+        cartattributeid: cartid,
+      );
+      return;
+    }
 
+    final int targetQty = currentQty - 1;
+
+    // 1. Optimistic Local Update (0ms latency, zero reload)
+    updatingAttributeIds.add(cartid);
+    _applyLocalAttributeQty(cartid, targetQty);
+    recalculateLocalTotals();
+    notifyListeners();
+
+    try {
       IncreaseCartQtyModel? increaseCartQtyModel =
           await CreatorApiServices.increaseCartQuantityDetails(context,
-              cartattributeid: cartid, qty: lastqty.toString());
-      notifyListeners();
+              cartattributeid: cartid, qty: targetQty.toString());
 
       if (increaseCartQtyModel != null && increaseCartQtyModel.code == 100) {
-        await userCart(context: context);
-
-        notifyListeners();
-        loadingIncreaseCartQuantity = false;
-
-        notifyListeners();
+        await userCart(context: context, isSilent: true);
       } else {
-        loadingIncreaseCartQuantity = true;
-        notifyListeners();
+        _applyLocalAttributeQty(cartid, currentQty);
+        recalculateLocalTotals();
+        if (context.mounted) {
+          Utils.commonSnackBar(context,
+              height: height,
+              message: increaseCartQtyModel?.msg ?? "Could not update quantity");
+        }
       }
     } catch (e) {
-      log("increase cart quantity error: ${e.toString()}");
+      log("decrease cart quantity error: ${e.toString()}");
+      _applyLocalAttributeQty(cartid, currentQty);
+      recalculateLocalTotals();
+    } finally {
+      updatingAttributeIds.remove(cartid);
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   String selectedPayment = "PayU Money";

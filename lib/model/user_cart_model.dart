@@ -2,14 +2,14 @@ class UserCartModel {
   final bool status;
   final int code;
   final String msg;
-  final num? grandTotal; 
-  final num? netamount; 
-  final int counter;
-  final num cgst;
-  final num sgst;
-  final num igst;
-  final num? couponbyadmin;
-  final String combinecoupon;
+  num? grandTotal; 
+  num? netamount; 
+  int counter;
+  num cgst;
+  num sgst;
+  num igst;
+  num? couponbyadmin;
+  String combinecoupon;
 
   final Map<String, List<List<ProductCategory>>> data;
 
@@ -125,12 +125,12 @@ class ProductCategory {
 class AttributeData {
   final String boxPacking;
   final String color;
-  final num? totalPrice;
-  final int? qty;
+  num? totalPrice;
+  int? qty;
   final int? attributeid;
   final int? prprice;
   final int? boxpcs;
-  final num? unitprice;
+  num? unitprice;
   final int? productattributeid;
   final num? couponamount;
 
