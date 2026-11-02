@@ -29,11 +29,19 @@ class HomeScreenProvider extends ChangeNotifier {
   List? advertisement;
   List<HomeProduct> randomProducts = [];
   List<HomeBrand> brands = [];
+  List<HomeCompany> companies = [];
+  List<HomeSubcategory> subcategories = [];
   List<CategoryCarousel> categoryCarousels = [];
   List<HomeProduct> moreProducts = [];
   bool loadingMoreProducts = false;
   bool hasMoreProducts = true;
   int moreProductsPage = 1;
+  int selectedMainCategoryId = 0; // 0 for "All"
+
+  void selectCategory(int id) {
+    selectedMainCategoryId = id;
+    notifyListeners();
+  }
 
   int current = 0;
   int slidercurrent = 0;
@@ -56,6 +64,8 @@ class HomeScreenProvider extends ChangeNotifier {
         advertisement = homeScreenModel?.data?.advertisement;
         randomProducts = List<HomeProduct>.from(homeScreenModel?.data?.randomProducts ?? []);
         brands = List<HomeBrand>.from(homeScreenModel?.data?.brands ?? []);
+        companies = List<HomeCompany>.from(homeScreenModel?.data?.companies ?? []);
+        subcategories = List<HomeSubcategory>.from(homeScreenModel?.data?.subcategories ?? []);
         categoryCarousels = List<CategoryCarousel>.from(homeScreenModel?.data?.categoryCarousels ?? []);
         moreProducts = List<HomeProduct>.from(homeScreenModel?.data?.moreProducts ?? []);
         moreProductsPage = 1;

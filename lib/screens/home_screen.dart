@@ -11,6 +11,7 @@ import 'package:apni_factory/screens/company_page_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
 import 'package:apni_factory/screens/notification_screen.dart';
 import 'package:apni_factory/screens/brand_page_screen.dart';
+import 'package:apni_factory/screens/product_category_page_screen.dart';
 import 'package:apni_factory/model/home_screen_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -34,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int _heroSliderIndex = 0;
   int _adSlider1Index = 0;
   int _adSlider2Index = 0;
+
+  bool _isStickyCategoryVisible = false;
+  final Set<int> _addedProductIds = {};
 
   int _hintIndex = 0;
   Timer? _hintTimer;
@@ -74,8 +78,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _onScroll() {
     if (_scrollController.hasClients) {
-      final maxScroll = _scrollController.position.maxScrollExtent;
       final currentScroll = _scrollController.position.pixels;
+      final shouldShowSticky = currentScroll > 520;
+      if (_isStickyCategoryVisible != shouldShowSticky) {
+        setState(() {
+          _isStickyCategoryVisible = shouldShowSticky;
+        });
+      }
+
+      final maxScroll = _scrollController.position.maxScrollExtent;
       if (maxScroll - currentScroll <= 350) {
         if (!_homeProvider.loadingMoreProducts && _homeProvider.hasMoreProducts) {
           _homeProvider.loadMoreProducts(context);
@@ -175,6 +186,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   shelfIndex: 1,
                                 ),
                               _buildWeDealIntoSection(context, provider, height, width),
+                              if (provider.selectedMainCategoryId != 0)
+                                _buildCategoryFilteredSection(context, provider, height, width),
                               if (provider.categoryCarousels.length > 2)
                                 _buildCategoryCarousel(
                                   context: context,
@@ -224,6 +237,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ],
                         ),
                       ),
+                      if (_isStickyCategoryVisible && provider.searchModel == null)
+                        _buildStickyCategoryBar(context, provider, width),
                       if (provider.searchModel == null)
                         GlobalCartContainer(width: width, height: height),
                     ],
@@ -887,40 +902,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ? (((oldPrice - currentPrice) / oldPrice) * 100).round()
         : 0;
 
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DescriptionPageScreen(
-              productId: product.id ?? 0,
-              colorId: product.colorId ?? "0",
-            ),
+    return Container(
+      width: isGrid ? null : 155,
+      margin: isGrid ? EdgeInsets.zero : const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: AppColors.whiteColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xffEFEFEF)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blackColor.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
-        );
-      },
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: isGrid ? null : 155,
-        margin: isGrid ? EdgeInsets.zero : const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: AppColors.whiteColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xffEFEFEF)),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.blackColor.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Image Area
-            Expanded(
-              flex: 5,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Image Area (Clickable to open Description)
+          Expanded(
+            flex: 5,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DescriptionPageScreen(
+                      productId: product.id ?? 0,
+                      colorId: product.colorId ?? "0",
+                    ),
+                  ),
+                );
+              },
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
               child: Stack(
                 children: [
                   Container(
@@ -969,19 +984,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ],
               ),
             ),
-            // Product Details Area
-            Expanded(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
+          ),
+          // Product Details Area
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Title Area (Clickable to open Description)
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DescriptionPageScreen(
+                            productId: product.id ?? 0,
+                            colorId: product.colorId ?? "0",
+                          ),
+                        ),
+                      );
+                    },
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (product.brandName != null && product.brandName!.isNotEmpty)
+                        if (product.brandName != null && product.brandName!.isNotEmpty) ...[
                           Text(
                             product.brandName!.toUpperCase(),
                             style: GoogleFonts.poppins(
@@ -993,69 +1022,148 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        const SizedBox(height: 1),
+                          const SizedBox(height: 1),
+                        ],
                         Text(
                           product.name ?? "",
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: AppColors.secondaryColor,
-                            height: 1.2,
+                            height: 1.15,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (hasDiscount)
-                              Text(
-                                "₹${oldPrice.toStringAsFixed(0)}",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 9,
-                                  decoration: TextDecoration.lineThrough,
-                                  color: AppColors.lightText,
-                                ),
-                              ),
+                  ),
+                  const SizedBox(height: 3),
+                  const Spacer(),
+                  // Price and ADD Button Row (Completely decoupled from Description navigation)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (hasDiscount)
                             Text(
-                              "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
+                              "₹${oldPrice.toStringAsFixed(0)}",
                               style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.secondaryColor,
+                                fontSize: 9,
+                                decoration: TextDecoration.lineThrough,
+                                color: AppColors.lightText,
                               ),
                             ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: AppColors.primaryColor.withOpacity(0.4),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            "ADD",
+                          Text(
+                            "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
                             style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.secondaryColor,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      _buildQuickAddButton(context, product),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Quick Animated Add To Cart Button (No Screen Redirect)
+  Widget _buildQuickAddButton(BuildContext context, HomeProduct product) {
+    final pId = product.id ?? 0;
+    final bool isAdded = _addedProductIds.contains(pId);
+
+    return InkWell(
+      onTap: () async {
+        if (isAdded) return;
+        setState(() => _addedProductIds.add(pId));
+        final cartProv = Provider.of<CartScreenProvider>(context, listen: false);
+        await cartProv.quickAddToCart(
+          context: context,
+          productId: pId.toString(),
+          brandId: product.brandId?.toString() ?? "0",
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFF16A34A),
+              duration: const Duration(milliseconds: 1400),
+              margin: const EdgeInsets.only(bottom: 70, left: 16, right: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "${product.name ?? 'Item'} added to wholesale cart!",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+            ),
+          );
+          Future.delayed(const Duration(milliseconds: 1600), () {
+            if (mounted) {
+              setState(() => _addedProductIds.remove(pId));
+            }
+          });
+        }
+      },
+      borderRadius: BorderRadius.circular(6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+        decoration: BoxDecoration(
+          color: isAdded ? const Color(0xFF16A34A) : AppColors.primaryColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isAdded ? const Color(0xFF16A34A) : AppColors.primaryColor.withOpacity(0.4),
+            width: 1,
+          ),
+          boxShadow: isAdded
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF16A34A).withOpacity(0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isAdded) ...[
+              const Icon(Icons.check_rounded, color: Colors.white, size: 12),
+              const SizedBox(width: 3),
+            ],
+            Text(
+              isAdded ? "ADDED" : "ADD",
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: isAdded ? Colors.white : AppColors.primaryColor,
               ),
             ),
           ],
@@ -1064,46 +1172,31 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // 7. "We Deal Into" Category Grid (Warm Styled Card)
+  // 7. "We Deal Into" Section (Redesigned like Popular Paint Brands circular avatars)
   Widget _buildWeDealIntoSection(
       BuildContext context, HomeScreenProvider provider, double height, double width) {
     final categories = provider.homeScreenModel?.data?.maincategory ?? [];
     if (categories.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFFBF5), Color(0xFFFFF3E8)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFE0C2), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFEA580C).withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    final selectedId = provider.selectedMainCategoryId;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
                     Container(
-                      height: 15,
+                      height: 14,
                       width: 3.5,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEA580C),
+                        color: AppColors.primaryColor,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -1138,110 +1231,542 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           ),
           const SizedBox(height: 12),
-          GridView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: categories.length,
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 2.2,
+          SizedBox(
+            height: 105,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: categories.length + 1, // +1 for "All Categories"
+              itemBuilder: (context, index) {
+                final bool isAll = index == 0;
+                final cat = isAll ? null : categories[index - 1];
+                final catId = isAll ? 0 : (cat?.id ?? 0);
+                final bool isSelected = selectedId == catId;
+
+                return InkWell(
+                  onTap: () {
+                    provider.selectCategory(catId);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 85,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: Column(
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          height: 64,
+                          width: 64,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isSelected ? const Color(0xFFFFF3ED) : AppColors.whiteColor,
+                            border: Border.all(
+                              color: isSelected ? AppColors.primaryColor : const Color(0xffE5E7EB),
+                              width: isSelected ? 2.5 : 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isSelected
+                                    ? AppColors.primaryColor.withOpacity(0.25)
+                                    : AppColors.blackColor.withOpacity(0.05),
+                                blurRadius: isSelected ? 10 : 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: isAll
+                                ? Center(
+                                    child: Icon(
+                                      Icons.grid_view_rounded,
+                                      size: 28,
+                                      color: isSelected ? AppColors.primaryColor : AppColors.secondaryColor,
+                                    ),
+                                  )
+                                : (cat?.image != null && cat!.image!.isNotEmpty)
+                                    ? Image.network(
+                                        "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
+                                        fit: BoxFit.cover,
+                                        cacheWidth: 150,
+                                        cacheHeight: 150,
+                                        errorBuilder: (context, error, stackTrace) => Center(
+                                          child: Text(
+                                            (cat.name?.isNotEmpty ?? false)
+                                                ? cat.name![0].toUpperCase()
+                                                : "C",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Center(
+                                        child: Text(
+                                          (cat?.name?.isNotEmpty ?? false)
+                                              ? cat!.name![0].toUpperCase()
+                                              : "C",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primaryColor,
+                                          ),
+                                        ),
+                                      ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          isAll ? "All Items" : (cat?.name ?? ""),
+                          style: GoogleFonts.poppins(
+                            fontSize: 10.5,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? AppColors.primaryColor : AppColors.secondaryColor,
+                          ),
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-            itemBuilder: (context, index) {
-              final cat = categories[index];
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CategoryScreen(mid: cat.id ?? 0),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Sticky Category Bar (Fixed at top when user scrolls)
+  Widget _buildStickyCategoryBar(
+      BuildContext context, HomeScreenProvider provider, double width) {
+    final categories = provider.homeScreenModel?.data?.maincategory ?? [];
+    if (categories.isEmpty) return const SizedBox.shrink();
+
+    final selectedId = provider.selectedMainCategoryId;
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return Positioned(
+      top: topPadding + 52,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: AppColors.whiteColor.withOpacity(0.96),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.blackColor.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+          border: const Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
+        ),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          itemCount: categories.length + 1,
+          itemBuilder: (context, index) {
+            final bool isAll = index == 0;
+            final cat = isAll ? null : categories[index - 1];
+            final catId = isAll ? 0 : (cat?.id ?? 0);
+            final bool isSelected = selectedId == catId;
+
+            return InkWell(
+              onTap: () {
+                provider.selectCategory(catId);
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryColor : const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primaryColor : const Color(0xFFE5E7EB),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!isAll && cat?.image != null && cat!.image!.isNotEmpty) ...[
+                      CircleAvatar(
+                        radius: 11,
+                        backgroundColor: Colors.transparent,
+                        backgroundImage: NetworkImage(
+                          "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Text(
+                      isAll ? "All" : (cat?.name ?? ""),
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        color: isSelected ? AppColors.whiteColor : AppColors.secondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Dynamic Swiggy-Style Category Section with Subcategories & Brand Sliders in between
+  Widget _buildCategoryFilteredSection(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    final selectedId = provider.selectedMainCategoryId;
+    final allProducts = [...provider.randomProducts, ...provider.moreProducts];
+    final allSubcategories = provider.subcategories;
+    final allBrands = provider.brands;
+    final allCompanies = provider.companies;
+
+    // Filter products matching this category
+    final filteredProducts = allProducts.where((p) {
+      if (p.categoryId == selectedId) return true;
+      return false;
+    }).toList();
+
+    // If no explicit matches by categoryId, show related products
+    final productsToShow = filteredProducts.isNotEmpty ? filteredProducts : allProducts.take(12).toList();
+
+    // Filter related subcategories
+    final subcategoriesToShow = allSubcategories.where((s) {
+      if (s.maincategoryId == selectedId) return true;
+      return true; // fallback to active subcategories
+    }).take(10).toList();
+
+    final brandsToShow = allBrands.take(8).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Title
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Category Products",
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.secondaryColor,
+                ),
+              ),
+              InkWell(
+                onTap: () => provider.selectCategory(0),
+                child: Text(
+                  "Show All",
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // First 2 products
+          if (productsToShow.isNotEmpty)
+            GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: productsToShow.length > 2 ? 2 : productsToShow.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.72,
+              ),
+              itemBuilder: (context, idx) {
+                return _buildBlinkitProductCard(context, productsToShow[idx], isGrid: true);
+              },
+            ),
+
+          // IN-BETWEEN SLIDER 1: Subcategories Horizontal Slider
+          if (subcategoriesToShow.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.tune_rounded, size: 16, color: AppColors.primaryColor),
+                const SizedBox(width: 6),
+                Text(
+                  "Explore Sub-Categories",
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.secondaryColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 95,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: subcategoriesToShow.length,
+                itemBuilder: (context, index) {
+                  final sub = subcategoriesToShow[index];
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProductCategoryPageScreen(
+                            bid: 0,
+                            cid: sub.id ?? 0,
+                          ),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 110,
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.whiteColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            height: 44,
+                            width: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7ED),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: (sub.image != null && sub.image!.isNotEmpty)
+                                  ? Image.network(
+                                      "${AppAssetImage.imageBaseUrl}storage/app/public/${sub.image}",
+                                      fit: BoxFit.cover,
+                                      cacheWidth: 100,
+                                      errorBuilder: (context, error, stackTrace) => const Icon(
+                                        Icons.category_outlined,
+                                        color: AppColors.primaryColor,
+                                        size: 22,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.category_outlined,
+                                      color: AppColors.primaryColor,
+                                      size: 22,
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            sub.name ?? "",
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.secondaryColor,
+                            ),
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.whiteColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFFE0C2), width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.blackColor.withOpacity(0.04),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        height: 44,
-                        width: 44,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF7ED),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: cat.image != null && cat.image!.isNotEmpty
-                              ? Image.network(
-                                  "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
-                                  fit: BoxFit.contain,
-                                  cacheWidth: 160,
-                                  errorBuilder: (context, error, stackTrace) => Image.asset(
-                                    AppAssetImage.logo,
-                                    fit: BoxFit.contain,
-                                  ),
-                                )
-                              : Image.asset(
-                                  AppAssetImage.logo,
-                                  fit: BoxFit.contain,
-                                ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              cat.name ?? "",
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.secondaryColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              cat.title ?? "Explore >",
-                              style: GoogleFonts.poppins(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.lightText,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: Color(0xFFEA580C),
-                      ),
-                    ],
-                  ),
+              ),
+            ),
+          ],
+
+          // Next 2 products (items 2 to 4)
+          if (productsToShow.length > 2) ...[
+            const SizedBox(height: 16),
+            GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: productsToShow.length > 4 ? 2 : (productsToShow.length - 2),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.72,
+              ),
+              itemBuilder: (context, idx) {
+                return _buildBlinkitProductCard(context, productsToShow[idx + 2], isGrid: true);
+              },
+            ),
+          ],
+
+          // IN-BETWEEN SLIDER 2: Brands & Verified Factory Companies with Warm Background
+          if (brandsToShow.isNotEmpty || allCompanies.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFFBF5), Color(0xFFFFF3E8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              );
-            },
-          ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFFE0C2), width: 1.2),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.verified_rounded, size: 16, color: Color(0xFFEA580C)),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Verified Factory Direct",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF9A3412),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEA580C),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          "B2B BULK",
+                          style: GoogleFonts.poppins(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Companies horizontal list
+                  if (allCompanies.isNotEmpty)
+                    SizedBox(
+                      height: 78,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: allCompanies.length,
+                        itemBuilder: (context, index) {
+                          final comp = allCompanies[index];
+                          return Container(
+                            width: 170,
+                            margin: const EdgeInsets.only(right: 10),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFFED7AA)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  height: 40,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF7ED),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.factory_outlined,
+                                    color: Color(0xFFEA580C),
+                                    size: 22,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        comp.name ?? "Factory Direct",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.secondaryColor,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        comp.city != null ? "${comp.city}, ${comp.state ?? ''}" : "Verified Seller",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 9,
+                                          color: AppColors.lightText,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+
+          // Remaining products (items 4+)
+          if (productsToShow.length > 4) ...[
+            const SizedBox(height: 16),
+            GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: productsToShow.length - 4,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.72,
+              ),
+              itemBuilder: (context, idx) {
+                return _buildBlinkitProductCard(context, productsToShow[idx + 4], isGrid: true);
+              },
+            ),
+          ],
         ],
       ),
     );

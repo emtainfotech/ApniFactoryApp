@@ -612,6 +612,53 @@ class CartScreenProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> quickAddToCart({
+    required BuildContext context,
+    required String productId,
+    required String brandId,
+    String? attributeId,
+  }) async {
+    try {
+      List attrs = [];
+      if (attributeId != null && attributeId.isNotEmpty && attributeId != "0") {
+        attrs = [
+          {"id": attributeId, "qty": "1"}
+        ];
+      } else {
+        final prodDetail = await CreatorApiServices.producDetailsDetails(
+          context,
+          productid: productId,
+          colorid: "0",
+        );
+        if (prodDetail != null &&
+            prodDetail.data?.attributes != null &&
+            prodDetail.data!.attributes!.isNotEmpty) {
+          final firstAttr = prodDetail.data!.attributes!.first;
+          attrs = [
+            {"id": firstAttr.attributeid.toString(), "qty": "1"}
+          ];
+        }
+      }
+
+      if (attrs.isEmpty) return false;
+
+      final res = await CreatorApiServices.addToCartDetails(
+        context,
+        productid: productId,
+        brandid: (brandId.isNotEmpty && brandId != "0") ? brandId : "1",
+        attributes: attrs,
+      );
+
+      if (res != null && res.code == 100) {
+        await userCart(context: context, isSilent: true);
+        return true;
+      }
+    } catch (e) {
+      log("quickAddToCart error: $e");
+    }
+    return false;
+  }
+
   Future<void> userCart({
     required BuildContext context,
     bool isSilent = false,

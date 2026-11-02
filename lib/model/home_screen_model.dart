@@ -34,6 +34,8 @@ class Data {
   List<HomeBrand>? brands;
   List<CategoryCarousel>? categoryCarousels;
   List<HomeProduct>? moreProducts;
+  List<HomeCompany>? companies;
+  List<HomeSubcategory>? subcategories;
 
   Data(
       {this.slider,
@@ -43,7 +45,9 @@ class Data {
       this.randomProducts,
       this.brands,
       this.categoryCarousels,
-      this.moreProducts});
+      this.moreProducts,
+      this.companies,
+      this.subcategories});
 
   Data.fromJson(Map<String, dynamic> json) {
     if (json['slider'] != null) {
@@ -71,6 +75,20 @@ class Data {
       brands = <HomeBrand>[];
       json['brands'].forEach((v) {
         brands!.add(new HomeBrand.fromJson(v));
+      });
+    }
+
+    if (json['companies'] != null) {
+      companies = <HomeCompany>[];
+      json['companies'].forEach((v) {
+        companies!.add(HomeCompany.fromJson(v));
+      });
+    }
+
+    if (json['subcategories'] != null) {
+      subcategories = <HomeSubcategory>[];
+      json['subcategories'].forEach((v) {
+        subcategories!.add(HomeSubcategory.fromJson(v));
       });
     }
 
@@ -278,5 +296,58 @@ class Maincategory {
     data['updated_at'] = this.updatedAt;
     data['sequence'] = this.sequence;
     return data;
+  }
+}
+
+class HomeCompany {
+  int? id;
+  String? name;
+  String? photo;
+  String? city;
+  String? state;
+
+  HomeCompany({this.id, this.name, this.photo, this.city, this.state});
+
+  HomeCompany.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    photo = json['photo'];
+    city = json['city'];
+    state = json['state'];
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'photo': photo,
+      'city': city,
+      'state': state,
+    };
+  }
+}
+
+class HomeSubcategory {
+  int? id;
+  String? name;
+  String? image;
+  int? maincategoryId;
+
+  HomeSubcategory({this.id, this.name, this.image, this.maincategoryId});
+
+  HomeSubcategory.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    image = json['image'];
+    maincategoryId = json['maincategory_id'];
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'image': image,
+      'maincategory_id': maincategoryId,
+    };
   }
 }
