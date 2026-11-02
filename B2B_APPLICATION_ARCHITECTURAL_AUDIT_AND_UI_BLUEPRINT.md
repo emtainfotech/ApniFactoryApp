@@ -375,3 +375,4 @@ For orders exceeding ₹7,000:
 - [x] Swiggy / Zomato interaction patterns defined (Sticky sliver headers, optimistic steppers, floating cart, shimmers).
 - [x] B2B Wholesale specifications designed (₹7,000+ MOV bar, Box multipliers, Bulk matrix selector, GST/ITC, Transport/LR tracking, Credit terms).
 - [x] 4-phase step-by-step refactoring blueprint established.
+
