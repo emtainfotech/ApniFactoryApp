@@ -56,20 +56,18 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
       curve: Curves.easeOutCubic,
     ));
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Provider.of<ProductDetailProvider>(context, listen: false).productDetail(
+    _animController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ProductDetailProvider>(context, listen: false).productDetail(
         context: context,
         productid: widget.productId.toString(),
         colorid: widget.colorId.toString(),
       );
 
-      await Provider.of<CartScreenProvider>(context, listen: false).userCart(
+      Provider.of<CartScreenProvider>(context, listen: false).userCart(
         context: context,
       );
-
-      if (mounted) {
-        _animController.forward();
-      }
     });
   }
 
@@ -521,8 +519,11 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Brand pill
-          Row(
+          // Brand pill & Shade pill with Wrap to prevent overflow
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -541,7 +542,6 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
               if (currentAttr?.color != null && currentAttr!.color!.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -589,55 +589,60 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
-                          style: GoogleFonts.poppins(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF92400E),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          "/ Pcs",
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFFB45309),
-                          ),
-                        ),
-                        if (hasDiscount) ...[
-                          const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
                           Text(
-                            "₹${oldPrice?.toStringAsFixed(0)}",
+                            "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
                             style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              decoration: TextDecoration.lineThrough,
-                              color: const Color(0xFF9CA3AF),
-                              fontWeight: FontWeight.w500,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF92400E),
                             ),
                           ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "/ Pcs",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFB45309),
+                            ),
+                          ),
+                          if (hasDiscount) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              "₹${oldPrice?.toStringAsFixed(0)}",
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                decoration: TextDecoration.lineThrough,
+                                color: const Color(0xFF9CA3AF),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "+ GST extra as applicable • Bulk Factory Rates",
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF78350F),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        "+ GST extra as applicable • Bulk Factory Rates",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF78350F),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 if (hasDiscount)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

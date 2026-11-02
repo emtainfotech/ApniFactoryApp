@@ -51,18 +51,16 @@ class _CategoryScreenState extends State<CategoryScreen>
       curve: Curves.easeOutCubic,
     ));
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Provider.of<CategoryScreenProvider>(context, listen: false).categoryScreen(
+    _animController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<CategoryScreenProvider>(context, listen: false).categoryScreen(
         context: context,
         mid: widget.mid,
       );
-      await Provider.of<CartScreenProvider>(context, listen: false).userCart(
+      Provider.of<CartScreenProvider>(context, listen: false).userCart(
         context: context,
       );
-
-      if (mounted) {
-        _animController.forward();
-      }
     });
   }
 
