@@ -32,6 +32,7 @@ class Data {
   int? notification;
   List<HomeProduct>? randomProducts;
   List<HomeBrand>? brands;
+  List<CategoryCarousel>? categoryCarousels;
   List<HomeProduct>? moreProducts;
 
   Data(
@@ -41,6 +42,7 @@ class Data {
       this.notification,
       this.randomProducts,
       this.brands,
+      this.categoryCarousels,
       this.moreProducts});
 
   Data.fromJson(Map<String, dynamic> json) {
@@ -72,6 +74,13 @@ class Data {
       });
     }
 
+    if (json['category_carousels'] != null) {
+      categoryCarousels = <CategoryCarousel>[];
+      json['category_carousels'].forEach((v) {
+        categoryCarousels!.add(CategoryCarousel.fromJson(v));
+      });
+    }
+
     if (json['more_products'] != null) {
       moreProducts = <HomeProduct>[];
       json['more_products'].forEach((v) {
@@ -95,9 +104,45 @@ class Data {
     if (this.brands != null) {
       data['brands'] = this.brands!.map((v) => v.toJson()).toList();
     }
+    if (this.categoryCarousels != null) {
+      data['category_carousels'] =
+          this.categoryCarousels!.map((v) => v.toJson()).toList();
+    }
     if (this.moreProducts != null) {
       data['more_products'] =
           this.moreProducts!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class CategoryCarousel {
+  String? title;
+  String? subtitle;
+  String? badge;
+  List<HomeProduct>? products;
+
+  CategoryCarousel({this.title, this.subtitle, this.badge, this.products});
+
+  CategoryCarousel.fromJson(Map<String, dynamic> json) {
+    title = json['title'];
+    subtitle = json['subtitle'];
+    badge = json['badge'];
+    if (json['products'] != null) {
+      products = <HomeProduct>[];
+      json['products'].forEach((v) {
+        products!.add(HomeProduct.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['title'] = title;
+    data['subtitle'] = subtitle;
+    data['badge'] = badge;
+    if (products != null) {
+      data['products'] = products!.map((v) => v.toJson()).toList();
     }
     return data;
   }

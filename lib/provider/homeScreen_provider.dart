@@ -29,8 +29,11 @@ class HomeScreenProvider extends ChangeNotifier {
   List? advertisement;
   List<HomeProduct> randomProducts = [];
   List<HomeBrand> brands = [];
+  List<CategoryCarousel> categoryCarousels = [];
   List<HomeProduct> moreProducts = [];
   bool loadingMoreProducts = false;
+  bool hasMoreProducts = true;
+  int moreProductsPage = 1;
 
   int current = 0;
   int slidercurrent = 0;
@@ -53,43 +56,53 @@ class HomeScreenProvider extends ChangeNotifier {
         advertisement = homeScreenModel?.data?.advertisement;
         randomProducts = List<HomeProduct>.from(homeScreenModel?.data?.randomProducts ?? []);
         brands = List<HomeBrand>.from(homeScreenModel?.data?.brands ?? []);
+        categoryCarousels = List<CategoryCarousel>.from(homeScreenModel?.data?.categoryCarousels ?? []);
         moreProducts = List<HomeProduct>.from(homeScreenModel?.data?.moreProducts ?? []);
+        moreProductsPage = 1;
+        hasMoreProducts = true;
         username = await SharedPref.getUserName();
         userEmail = await SharedPref.getUserEmailId();
-
-        loadingHomeScreen = false;
-
-        notifyListeners();
-      } else {
-        loadingHomeScreen = true;
-        notifyListeners();
       }
     } catch (e) {
       log("homescreen error: ${e.toString()}");
+    } finally {
+      loadingHomeScreen = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> loadMoreProducts(BuildContext context) async {
-    if (loadingMoreProducts) return;
+    if (loadingMoreProducts || !hasMoreProducts) return;
     try {
       loadingMoreProducts = true;
       notifyListeners();
 
       List<int> existingIds = [
         ...randomProducts.map((p) => p.id ?? 0),
-        ...moreProducts.map((p) => p.id ?? 0)
+        ...moreProducts.map((p) => p.id ?? 0),
+        for (var c in categoryCarousels)
+          ...(c.products ?? []).map((p) => p.id ?? 0),
       ];
 
-      List<HomeProduct>? newProducts =
-          await CreatorApiServices.getRandomProducts(
+      int nextPage = moreProductsPage + 1;
+      Map<String, dynamic>? result =
+          await CreatorApiServices.getRandomProductsPaginated(
         context,
-        limit: 6,
+        page: nextPage,
+        limit: 8,
         excludeIds: existingIds,
       );
 
-      if (newProducts != null && newProducts.isNotEmpty) {
-        moreProducts.addAll(newProducts);
+      if (result != null) {
+        List<HomeProduct> newProducts = result['products'] ?? [];
+        bool more = result['has_more'] ?? false;
+        if (newProducts.isNotEmpty) {
+          moreProducts.addAll(newProducts);
+          moreProductsPage = nextPage;
+        }
+        hasMoreProducts = more && newProducts.isNotEmpty;
+      } else {
+        hasMoreProducts = false;
       }
     } catch (e) {
       log("loadMoreProducts error: ${e.toString()}");

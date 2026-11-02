@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:apni_factory/api_services/notification_services.dart';
 import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/provider/homeScreen_provider.dart';
@@ -5,7 +6,6 @@ import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/textstyle.dart';
 import 'package:apni_factory/res/widgets/global_cart_container.dart';
 import 'package:apni_factory/res/widgets/personal_add_address_widget.dart';
-import 'package:apni_factory/res/widgets/search_widget.dart';
 import 'package:apni_factory/screens/category_screen.dart';
 import 'package:apni_factory/screens/company_page_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
@@ -17,7 +17,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../res/asset_image.dart';
-import '../utils.dart'; 
+import '../utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,29 +26,64 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   NotificationServices notificationServices = NotificationServices();
+  late HomeScreenProvider _homeProvider;
+  final ScrollController _scrollController = ScrollController();
+
+  int _heroSliderIndex = 0;
+  int _adSlider1Index = 0;
+  int _adSlider2Index = 0;
+
+  int _hintIndex = 0;
+  Timer? _hintTimer;
+  final List<String> _searchHints = [
+    "Search 'Wall Primer'...",
+    "Search 'PU Clear Coat'...",
+    "Search 'Luxury Silk Emulsion'...",
+    "Search 'Synthetic Enamel'...",
+    "Search 'Floor Epoxy Coating'...",
+    "Search 'Distemper & Base'...",
+  ];
 
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await Provider.of<HomeScreenProvider>(context, listen: false)
-          .homeScreen(context: context);
-      await Provider.of<HomeScreenProvider>(context, listen: false)
-          .getAddressList(context: context);
-      await Provider.of<CartScreenProvider>(context, listen: false)
-          .userCart(context: context);
-      await Provider.of<HomeScreenProvider>(context, listen: false)
-          .stateDropDown(context: context);
-      await Provider.of<HomeScreenProvider>(context, listen: false)
-          .adminAppPages(context: context);
+    super.initState();
+
+    _hintTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (mounted) {
+        setState(() {
+          _hintIndex = (_hintIndex + 1) % _searchHints.length;
+        });
+      }
     });
 
-    // TODO: implement initState
-    super.initState();
+    _scrollController.addListener(_onScroll);
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      final homeProv = Provider.of<HomeScreenProvider>(context, listen: false);
+      final cartProv = Provider.of<CartScreenProvider>(context, listen: false);
+
+      homeProv.homeScreen(context: context);
+      homeProv.getAddressList(context: context);
+      cartProv.userCart(context: context);
+      homeProv.stateDropDown(context: context);
+      homeProv.adminAppPages(context: context);
+    });
   }
 
-  late HomeScreenProvider _homeProvider;
+  void _onScroll() {
+    if (_scrollController.hasClients) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+      if (maxScroll - currentScroll <= 350) {
+        if (!_homeProvider.loadingMoreProducts && _homeProvider.hasMoreProducts) {
+          _homeProvider.loadMoreProducts(context);
+        }
+      }
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -56,950 +91,646 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _hintTimer?.cancel();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // CartScreenProvider cartprovider =
-    //     Provider.of<CartScreenProvider>(context, listen: false);
-    double height = MediaQuery.of(context).size.height;
-    double width = MediaQuery.of(context).size.width;
+    final double height = MediaQuery.of(context).size.height;
+    final double width = MediaQuery.of(context).size.width;
+
     return Consumer<HomeScreenProvider>(
       builder: (context, provider, child) {
         return WillPopScope(
           onWillPop: () async {
-            _homeProvider.clearSearch(); // ✅ SAFE
+            provider.clearSearch();
             return true;
           },
           child: Scaffold(
-              key: provider.key,
-              drawer: Utils.drawer(
-                  height: height,
-                  width: width,
-                  context: context,
-                  provider: provider),
-              body: provider.loadingHomeScreen ||
-                      Provider.of<CartScreenProvider>(context)
-                          .loadingUserCart ||
-                      provider.loadingGetAddressList ||
-                      provider.loadingAddAddress ||
-                      provider.loadingGetAddressDetail ||
-                      provider.loadingUpdateAddress ||
-                      provider.loadingDeleteAddress ||
-                      provider.loadingStateDropDown ||
-                      provider.loadingCityDropDown ||
-                      provider.loadingPincodeDropDown ||
-                      provider.loadingAdminAppPages
-                  ? Center(
-                      child: CircularProgressIndicator(),
-                    )
-                  : Stack(
-                      children: [
-                        SizedBox(
-                          height: height,
-                          width: width,
-                          child: ListView(
-                            children: [
-                              AppBar(
-                                automaticallyImplyLeading: false,
-                                leading: InkWell(
-                                  onTap: () {
-                                    provider.key.currentState!.openDrawer();
-                                  },
-                                  child: Icon(
-                                    Icons.menu,
-                                    color: AppColors.lightText,
-                                  ),
+            key: provider.key,
+            backgroundColor: const Color(0xffF8F9FA),
+            drawer: Utils.drawer(
+              height: height,
+              width: width,
+              context: context,
+              provider: provider,
+            ),
+            body: provider.loadingHomeScreen && provider.homeScreenModel == null
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryColor,
+                    ),
+                  )
+                : Stack(
+                    children: [
+                      RefreshIndicator(
+                        color: AppColors.primaryColor,
+                        onRefresh: () => provider.refreshHomeScreen(context),
+                        child: ListView(
+                          controller: _scrollController,
+                          padding: EdgeInsets.zero,
+                          children: [
+                            _buildTopHeader(context, provider, height, width),
+                            _buildModernSearchBar(context, provider, height, width),
+                            if (provider.searchModel != null)
+                              _buildSearchResults(context, provider, height, width)
+                            else ...[
+                              _buildHeroBannerSlider(context, provider, height, width),
+                              const SizedBox(height: 12),
+                              if (provider.categoryCarousels.isNotEmpty)
+                                _buildCategoryCarousel(
+                                  context: context,
+                                  carousel: provider.categoryCarousels[0],
+                                  height: height,
+                                  width: width,
                                 ),
-                                backgroundColor: Colors.transparent,
-                                centerTitle: true,
-                                title: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.location_on_outlined,
-                                          color: AppColors.secondaryColor,
-                                          size: height / 35,
-                                        ),
-                                        SizedBox(
-                                          width: width / 100,
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            provider.selectedAddressText ??
-                                                "Select Address",
-                                            overflow: TextOverflow.ellipsis,
-                                            style: AppTextStyle.poppinsBold13(
-                                                context: context,
-                                                color: AppColors.secondaryColor,
-                                                fontWeight: FontWeight.w500),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: width / 100,
-                                        ),
-                                        InkWell(
-                                          onTap: () {
-                                            final personalAddresses = provider
-                                                    .getAddressListModel?.data
-                                                    ?.where((e) =>
-                                                        e.type == "personal")
-                                                    .toList() ??
-                                                [];
-
-                                            final personalAddress =
-                                                personalAddresses.isNotEmpty
-                                                    ? personalAddresses.first
-                                                    : null;
-                                            showModalBottomSheet(
-                                              context: context,
-                                              builder: (context) {
-                                                return Container(
-                                                  width: width,
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Container(
-                                                          width: width,
-                                                          height: height / 10,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .only(
-                                                                    topLeft: Radius.circular(
-                                                                        height /
-                                                                            60),
-                                                                    topRight: Radius.circular(
-                                                                        height /
-                                                                            60),
-                                                                  ),
-                                                                  color: AppColors
-                                                                      .stroke),
-                                                          child: Padding(
-                                                            padding: EdgeInsets
-                                                                .symmetric(
-                                                                    horizontal:
-                                                                        width /
-                                                                            29),
-                                                            child: Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                Text(
-                                                                  "Choose your Communication Address",
-                                                                  style: AppTextStyle.poppinsRegular16(
-                                                                      context:
-                                                                          context,
-                                                                      color: AppColors
-                                                                          .secondaryColor,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          )),
-                                                      Expanded(
-                                                        child: ListView(
-                                                          children: [
-                                                            SizedBox(
-                                                              height:
-                                                                  height / 30,
-                                                            ),
-                                                            if (personalAddress ==
-                                                                null)
-                                                              Padding(
-                                                                padding: EdgeInsets
-                                                                    .symmetric(
-                                                                        horizontal:
-                                                                            width /
-                                                                                29),
-                                                                child: InkWell(
-                                                                  onTap: () {
-                                                                    showModalBottomSheet(
-                                                                      context:
-                                                                          context,
-                                                                      builder:
-                                                                          (context) {
-                                                                        return PersonalAddAddressWidget(
-                                                                            provider:
-                                                                                provider);
-                                                                      },
-                                                                    );
-                                                                  },
-                                                                  child: Row(
-                                                                    children: [
-                                                                      Icon(
-                                                                        Icons
-                                                                            .add_circle_outline,
-                                                                        color: AppColors
-                                                                            .primaryColor,
-                                                                      ),
-                                                                      SizedBox(
-                                                                        width: width /
-                                                                            40,
-                                                                      ),
-                                                                      Text(
-                                                                        "Add New Communication Address",
-                                                                        style: AppTextStyle.poppinsRegular16(
-                                                                            context:
-                                                                                context,
-                                                                            color:
-                                                                                AppColors.primaryColor,
-                                                                            fontWeight: FontWeight.w600),
-                                                                      )
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            SizedBox(
-                                                              height:
-                                                                  height / 30,
-                                                            ),
-                                                            personalAddress ==
-                                                                    null
-                                                                ? SizedBox
-                                                                    .shrink()
-                                                                : ListTile(
-                                                                    leading:
-                                                                        Icon(
-                                                                      Icons
-                                                                          .location_on,
-                                                                      color: AppColors
-                                                                          .primaryColor,
-                                                                    ),
-                                                                    title: Text(
-                                                                      personalAddress
-                                                                              .identityname ??
-                                                                          "",
-                                                                      style: AppTextStyle
-                                                                          .poppinsBold17(
-                                                                        context:
-                                                                            context,
-                                                                        color: AppColors
-                                                                            .blackColor,
-                                                                        fontWeight:
-                                                                            FontWeight.w500,
-                                                                      ),
-                                                                    ),
-                                                                    subtitle:
-                                                                        Column(
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment
-                                                                              .start,
-                                                                      children: [
-                                                                        Text(personalAddress.name ??
-                                                                            ""),
-                                                                        Text(
-                                                                          "${personalAddress.landmark1 ?? ""}, "
-                                                                          "${personalAddress.landmark2 ?? ""}, "
-                                                                          "${personalAddress.city ?? ""}, "
-                                                                          "${personalAddress.state ?? ""}, "
-                                                                          "${personalAddress.pincode ?? ""}",
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                    trailing:
-                                                                        IconButton(
-                                                                      icon: Icon(
-                                                                          Icons
-                                                                              .edit),
-                                                                      onPressed:
-                                                                          () async {
-                                                                        await provider
-                                                                            .getIdAddress(
-                                                                          context:
-                                                                              context,
-                                                                          addressId: personalAddress
-                                                                              .id
-                                                                              .toString(),
-                                                                        );
-                                                                      },
-                                                                    ),
-                                                                    onTap: () {
-                                                                      provider
-                                                                          .selectAddress(
-                                                                        personalAddress
-                                                                            .id
-                                                                            .toString(),
-                                                                        context:
-                                                                            context,
-                                                                        height:
-                                                                            height,
-                                                                        addressId: personalAddress
-                                                                            .id
-                                                                            .toString(),
-                                                                        addressText:
-                                                                            "${personalAddress.landmark1 ?? ""}, "
-                                                                            "${personalAddress.landmark2 ?? ""}, "
-                                                                            "${personalAddress.city ?? ""}, "
-                                                                            "${personalAddress.state ?? ""}, "
-                                                                            "${personalAddress.pincode ?? ""}",
-                                                                      );
-                                                                    },
-                                                                  )
-                                                          ],
-                                                        ),
-                                                      )
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            );
-                                          },
-                                          child: Icon(
-                                            Icons.keyboard_arrow_down_rounded,
-                                            color: AppColors.secondaryColor,
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                    // Text(
-                                    //   "171,Shree Ram Path, Raghunath Puri, Jhotwara",
-                                    //   style: AppTextStyle.poppinsMedium15(
-                                    //       context: context,
-                                    //       color: AppColors.secondaryColor),
-                                    // ),
-                                  ],
+                              _buildAdSlider(
+                                context: context,
+                                items: provider.advertisement ?? [],
+                                currentIndex: _adSlider1Index,
+                                onPageChanged: (idx) => setState(() => _adSlider1Index = idx),
+                                height: height,
+                                width: width,
+                                title: "Bulk Factory Deals",
+                              ),
+                              if (provider.categoryCarousels.length > 1)
+                                _buildCategoryCarousel(
+                                  context: context,
+                                  carousel: provider.categoryCarousels[1],
+                                  height: height,
+                                  width: width,
                                 ),
-                                actions: [
-                                  Stack(
-                                    children: [
-                                      IconButton(
-                                          onPressed: () {
-                                            Navigator.push(context,
-                                                MaterialPageRoute(
-                                              builder: (context) {
-                                                return NotificationScreen();
-                                              },
-                                            ));
-                                          },
-                                          icon: Icon(
-                                            Icons.notifications,
-                                            color: AppColors.lightText,
-                                          )),
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                            left: height / 60,
-                                            top: height / 130),
-                                        child: Text(
-                                          provider.homeScreenModel?.data
-                                                  ?.notification
-                                                  .toString() ??
-                                              "",
-                                          style: AppTextStyle.poppinsBold12(
-                                              context: context,
-                                              color: AppColors.primaryColor),
-                                        ),
-                                      )
-                                    ],
-                                  )
-                                ],
-                              ),
-                              SizedBox(
-                                height: height / 23.5,
-                              ),
-                              SearchWidget(
-                                provider: provider,
-                              ),
-                              SizedBox(
-                                height: height / 42.1,
-                              ),
-                              provider.searchModel == null
-                                  ? Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        CarouselSlider(
-                                            items: provider.slider!.map((item) {
-                                              return Center(
-                                                child: Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                      horizontal: height / 50),
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            height / 66.6),
-                                                    child: Container(
-                                                      height: height / 5,
-                                                      width: width,
-                                                      child: Image.network(
-                                                        "${AppAssetImage.imageBaseUrl}storage/app/public/${(item ?? "")}",
-                                                        fit: BoxFit.fill,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            }).toList(),
-                                            carouselController:
-                                                provider.carousalController,
-                                            options: CarouselOptions(
-                                              onPageChanged: (index, reason) {
-                                                setState(() {
-                                                  provider.slidercurrent =
-                                                      index;
-                                                });
-                                              },
-                                              viewportFraction: 1,
-                                              height: 150,
-                                              autoPlay: true,
-                                              enlargeCenterPage: false,
-                                              // aspectRatio: 1,
-                                            )),
-                                        SizedBox(
-                                          height: height / 29,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: provider.slider!
-                                              .asMap()
-                                              .entries
-                                              .map((entry) {
-                                            return GestureDetector(
-                                                onTap: () => provider
-                                                    .carousalController
-                                                    .animateToPage(entry.key),
-                                                child: Container(
-                                                  width:
-                                                      provider.slidercurrent ==
-                                                              entry.key
-                                                          ? 12
-                                                          : 10,
-                                                  height: provider.current ==
-                                                          entry.key
-                                                      ? 12
-                                                      : 10,
-                                                  margin: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 3.0),
-                                                  decoration: BoxDecoration(
-                                                      border: provider
-                                                                  .slidercurrent ==
-                                                              entry.key
-                                                          ? Border.all(
-                                                              color: AppColors
-                                                                  .whiteColor)
-                                                          : Border.all(
-                                                              color: AppColors
-                                                                  .primaryColor),
-                                                      shape: BoxShape.circle,
-                                                      color: provider
-                                                                  .slidercurrent ==
-                                                              entry.key
-                                                          ? AppColors
-                                                              .primaryColor
-                                                          : AppColors
-                                                              .whiteColor),
-                                                ));
-                                          }).toList(),
-                                        ),
-                                        SizedBox(
-                                          height: height / 42.1,
-                                        ),
-                                        CarouselSlider(
-                                            items: provider.advertisement!
-                                                .map((item) {
-                                              return Center(
-                                                child: Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                      horizontal: height / 50),
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            height / 66.6),
-                                                    child: Container(
-                                                      height: height / 5,
-                                                      width: width,
-                                                      child: Image.network(
-                                                        "${AppAssetImage.imageBaseUrl}storage/app/public/${(item ?? "")}",
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            }).toList(),
-                                            carouselController:
-                                                provider.carousalController,
-                                            options: CarouselOptions(
-                                              onPageChanged: (index, reason) {
-                                                setState(() {
-                                                  provider.current = index;
-                                                });
-                                              },
-                                              autoPlayInterval:
-                                                  Duration(seconds: 3),
-
-                                              viewportFraction: 1,
-                                              height: 150,
-                                              autoPlay: true,
-                                              enlargeCenterPage: false,
-                                              // aspectRatio: 1,
-                                            )),
-                                        SizedBox(
-                                          height: height / 29,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: provider.advertisement!
-                                              .asMap()
-                                              .entries
-                                              .map((entry) {
-                                            return GestureDetector(
-                                                onTap: () => provider
-                                                    .carousalController
-                                                    .animateToPage(entry.key),
-                                                child: Container(
-                                                  width: provider.current ==
-                                                          entry.key
-                                                      ? 12
-                                                      : 10,
-                                                  height: provider.current ==
-                                                          entry.key
-                                                      ? 12
-                                                      : 10,
-                                                  margin: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 3.0),
-                                                  decoration: BoxDecoration(
-                                                      border: provider
-                                                                  .current ==
-                                                              entry.key
-                                                          ? Border.all(
-                                                              color: AppColors
-                                                                  .whiteColor)
-                                                          : Border.all(
-                                                              color: AppColors
-                                                                  .primaryColor),
-                                                      shape: BoxShape.circle,
-                                                      color: provider.current ==
-                                                              entry.key
-                                                          ? AppColors
-                                                              .primaryColor
-                                                          : AppColors
-                                                              .whiteColor),
-                                                ));
-                                          }).toList(),
-                                        ),
-                                        SizedBox(
-                                          height: height / 42.1,
-                                        ),
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: width / 16.2),
-                                          child: Text(
-                                            "We deal into",
-                                            style: AppTextStyle.poppinsBold13(
-                                                context: context,
-                                                fontWeight: FontWeight.w600,
-                                                color:
-                                                    AppColors.secondaryColor),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: height / 42.1,
-                                        ),
-                                        GridView.builder(
-                                          physics:
-                                              NeverScrollableScrollPhysics(),
-                                          padding: EdgeInsets.only(
-                                              left: height / 50),
-                                          itemCount: provider.homeScreenModel
-                                              ?.data?.maincategory?.length,
-                                          shrinkWrap: true,
-                                          gridDelegate:
-                                              SliverGridDelegateWithFixedCrossAxisCount(
-                                                  crossAxisCount: 2),
-                                          itemBuilder: (context, index) {
-                                            return InkWell(
-                                              onTap: () {
-                                                Navigator.push(context,
-                                                    MaterialPageRoute(
-                                                  builder: (context) {
-                                                    return CategoryScreen(
-                                                      mid: provider
-                                                              .homeScreenModel
-                                                              ?.data
-                                                              ?.maincategory?[
-                                                                  index]
-                                                              .id ??
-                                                          0,
-                                                    );
-                                                  },
-                                                ));
-                                              },
-                                              child: Padding(
-                                                padding: EdgeInsets.only(
-                                                    right: height / 50,
-                                                    bottom: height / 50),
-                                                child: Container(
-                                                  height: height / 2.33,
-                                                  width: width / 2,
-                                                  decoration: BoxDecoration(
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                            blurRadius: 32,
-                                                            color: AppColors
-                                                                .blackColor
-                                                                .withOpacity(
-                                                                    0.1))
-                                                      ],
-                                                      border: Border.all(
-                                                          color: AppColors
-                                                              .primaryColor),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              height / 66.6),
-                                                      color:
-                                                          AppColors.whiteColor),
-                                                  child: Stack(
-                                                    children: [
-                                                      Align(
-                                                          alignment: Alignment
-                                                              .bottomLeft,
-                                                          child: Image.asset(
-                                                            AppAssetImage
-                                                                .gridImage,
-                                                            color: AppColors
-                                                                .primaryColor,
-                                                          )),
-                                                      Padding(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                                left: width /
-                                                                    25.7,
-                                                                top: width /
-                                                                    25.7),
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            // Text(
-                                                            //   "Upto 48% off",
-                                                            //   style:
-                                                            //       AppTextStyle.poppinsSemibold10(
-                                                            //           context: context,
-                                                            //           color:
-                                                            //               AppColors.primaryColor),
-                                                            // ),
-                                                            SizedBox(
-                                                              height: height /
-                                                                  133.3,
-                                                            ),
-                                                            Text(
-                                                              provider
-                                                                      .homeScreenModel
-                                                                      ?.data
-                                                                      ?.maincategory?[
-                                                                          index]
-                                                                      .name ??
-                                                                  "",
-                                                              style: AppTextStyle.poppinsBold12(
-                                                                  context:
-                                                                      context,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700,
-                                                                  color: AppColors
-                                                                      .secondaryColor),
-                                                            ),
-                                                            Text(
-                                                              provider
-                                                                      .homeScreenModel
-                                                                      ?.data
-                                                                      ?.maincategory?[
-                                                                          index]
-                                                                      .title ??
-                                                                  "",
-                                                              style: AppTextStyle.poppinsSemibold10(
-                                                                  context:
-                                                                      context,
-                                                                  color: AppColors
-                                                                      .lightText,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w400),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      Align(
-                                                        alignment: Alignment
-                                                            .bottomRight,
-                                                        child: Padding(
-                                                            padding:
-                                                                EdgeInsets.only(
-                                                                    right:
-                                                                        width /
-                                                                            25.7,
-                                                                    bottom:
-                                                                        width /
-                                                                            25.7),
-                                                            child: Container(
-                                                              height:
-                                                                  height / 15,
-                                                              width:
-                                                                  height / 15,
-                                                              decoration: BoxDecoration(
-                                                                  shape: BoxShape
-                                                                      .circle,
-                                                                  image: DecorationImage(
-                                                                      image: NetworkImage(
-                                                                          "${AppAssetImage.imageBaseUrl}storage/app/public/${(provider.homeScreenModel?.data?.maincategory?[index].image ?? "")}"),
-                                                                      fit: BoxFit
-                                                                          .fill)),
-                                                            )),
-                                                      )
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                        SizedBox(
-                                          height: height / 42.1,
-                                        ),
-                                        _buildTrendingProductsSection(
-                                            context, provider, height, width),
-                                        _buildPopularBrandsSection(
-                                            context, provider, height, width),
-                                        _buildMoreProductsSection(
-                                            context, provider, height, width),
-                                        SizedBox(
-                                          height: height / 7,
-                                        )
-                                      ],
-                                    )
-                                  : provider.loadingSearch
-                                      ? Padding(
-                                          padding: EdgeInsets.only(top: 20),
-                                          child: Center(
-                                              child:
-                                                  CircularProgressIndicator()),
-                                        )
-                                      : ListView.builder(
-                                          shrinkWrap: true,
-                                          physics:
-                                              NeverScrollableScrollPhysics(),
-                                          itemCount: provider
-                                              .searchModel?.data?.length,
-                                          itemBuilder: (context, index) {
-                                            return Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: width / 16.2,
-                                                  vertical: height / 60),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  if (provider
-                                                          .searchModel
-                                                          ?.data?[index]
-                                                          .screen ==
-                                                      "category") {
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(
-                                                      builder: (context) {
-                                                        return CategoryScreen(
-                                                            mid: provider
-                                                                    .searchModel
-                                                                    ?.data?[
-                                                                        index]
-                                                                    .relatedid ??
-                                                                0);
-                                                      },
-                                                    ));
-                                                  } else if (provider
-                                                          .searchModel
-                                                          ?.data?[index]
-                                                          .screen ==
-                                                      "company") {
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(
-                                                      builder: (context) {
-                                                        return CompanyPageScreen(
-                                                            cid: provider
-                                                                    .searchModel
-                                                                    ?.data?[
-                                                                        index]
-                                                                    .relatedid ??
-                                                                0);
-                                                      },
-                                                    ));
-                                                  } else if (provider
-                                                          .searchModel
-                                                          ?.data?[index]
-                                                          .screen ==
-                                                      "product") {
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(
-                                                      builder: (context) {
-                                                        return DescriptionPageScreen(
-                                                            productId: provider
-                                                                    .searchModel
-                                                                    ?.data?[
-                                                                        index]
-                                                                    .id ??
-                                                                0,
-                                                            colorId: provider
-                                                                    .searchModel
-                                                                    ?.data?[
-                                                                        index]
-                                                                    .relatedid
-                                                                    .toString() ??
-                                                                "");
-                                                      },
-                                                    ));
-                                                  } else {
-                                                    Utils.commonSnackBar(
-                                                        context,
-                                                        height: height,
-                                                        message:
-                                                            "Search categroy, company and product");
-                                                  }
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      height: height / 20,
-                                                      width: height / 20,
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                                    height /
-                                                                        60),
-                                                        image: DecorationImage(
-                                                          image: NetworkImage(
-                                                              "${AppAssetImage.imageBaseUrl}storage/app/public/${(provider.searchModel?.data?[index].image ?? "")}"),
-                                                          fit: BoxFit.cover,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    SizedBox(
-                                                      width: width / 20,
-                                                    ),
-                                                    Text(
-                                                        provider
-                                                                .searchModel
-                                                                ?.data?[index]
-                                                                .name ??
-                                                            "",
-                                                        style: AppTextStyle
-                                                            .poppinsMedium15(
-                                                                context:
-                                                                    context,
-                                                                color: AppColors
-                                                                    .secondaryColor)),
-                                                  ],
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        )
+                              _buildWeDealIntoSection(context, provider, height, width),
+                              if (provider.categoryCarousels.length > 2)
+                                _buildCategoryCarousel(
+                                  context: context,
+                                  carousel: provider.categoryCarousels[2],
+                                  height: height,
+                                  width: width,
+                                ),
+                              if ((provider.advertisement?.length ?? 0) > 1)
+                                _buildAdSlider(
+                                  context: context,
+                                  items: (provider.advertisement ?? []).reversed.toList(),
+                                  currentIndex: _adSlider2Index,
+                                  onPageChanged: (idx) => setState(() => _adSlider2Index = idx),
+                                  height: height,
+                                  width: width,
+                                  title: "Commercial Specials",
+                                ),
+                              if (provider.categoryCarousels.length > 3)
+                                _buildCategoryCarousel(
+                                  context: context,
+                                  carousel: provider.categoryCarousels[3],
+                                  height: height,
+                                  width: width,
+                                ),
+                              if (provider.categoryCarousels.length > 4)
+                                _buildCategoryCarousel(
+                                  context: context,
+                                  carousel: provider.categoryCarousels[4],
+                                  height: height,
+                                  width: width,
+                                ),
+                              _buildPopularBrandsSection(context, provider, height, width),
+                              _buildExploreAllProductsGrid(context, provider, height, width),
+                              SizedBox(height: height / 8),
                             ],
-                          ),
+                          ],
                         ),
-                        provider.searchModel == null
-                            ? GlobalCartContainer(width: width, height: height)
-                            : SizedBox.shrink()
-                      ],
-                    )),
+                      ),
+                      if (provider.searchModel == null)
+                        GlobalCartContainer(width: width, height: height),
+                    ],
+                  ),
+          ),
         );
       },
     );
   }
 
-  Widget _buildTrendingProductsSection(
-      BuildContext context,
-      HomeScreenProvider provider,
-      double height,
-      double width) {
-    if (provider.randomProducts.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: width / 16.2),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+  // 1. Top Location & Notification Header
+  Widget _buildTopHeader(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 6,
+        left: 14,
+        right: 14,
+        bottom: 6,
+      ),
+      color: AppColors.whiteColor,
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () => provider.key.currentState!.openDrawer(),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xffF1F3F5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.menu_rounded,
+                color: AppColors.secondaryColor,
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: InkWell(
+              onTap: () => _openAddressSelector(context, provider, height, width),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome,
-                      color: AppColors.primaryColor,
-                      size: 18,
-                    ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        color: AppColors.primaryColor,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Delivering to Factory/Site",
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryColor,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.primaryColor,
+                        size: 18,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
                   Text(
-                    "Trending Products",
-                    style: AppTextStyle.poppinsBold13(
-                      context: context,
-                      fontWeight: FontWeight.w700,
+                    provider.selectedAddressText ?? "Tap to select delivery location",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.secondaryColor,
                     ),
                   ),
                 ],
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            ),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xffF1F3F5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(
+                    Icons.notifications_outlined,
+                    color: AppColors.secondaryColor,
+                    size: 22,
+                  ),
+                  if ((provider.homeScreenModel?.data?.notification ?? 0) > 0)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        child: Text(
+                          "${provider.homeScreenModel?.data?.notification}",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            color: AppColors.whiteColor,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 2. Modern Blinkit-Style Floating Search Bar
+  Widget _buildModernSearchBar(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    return Container(
+      color: AppColors.whiteColor,
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: const Color(0xffF5F6F8),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xffE5E7EB)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.blackColor.withOpacity(0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Icon(
+                Icons.search_rounded,
+                color: AppColors.primaryColor,
+                size: 22,
+              ),
+            ),
+            Expanded(
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  if (provider.searchController.text.isEmpty)
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.3),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child: Text(
+                        _searchHints[_hintIndex],
+                        key: ValueKey<String>(_searchHints[_hintIndex]),
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.lightText,
+                        ),
+                      ),
+                    ),
+                  TextField(
+                    controller: provider.searchController,
+                    onChanged: (val) => provider.onSearchChanged(val, height, context),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.secondaryColor,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (provider.searchController.text.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.lightText),
+                onPressed: () {
+                  provider.searchController.clear();
+                  provider.clearSearch();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 3. Blinkit / Swiggy Hero Banner Slider
+  Widget _buildHeroBannerSlider(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    final banners = provider.slider ?? [];
+    if (banners.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        CarouselSlider(
+          items: banners.map((item) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.blackColor.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  "Random Pick",
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.whiteColor,
+                child: Image.network(
+                  "${AppAssetImage.imageBaseUrl}storage/app/public/$item",
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  cacheWidth: 650,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: const Color(0xffEEEEEE),
+                    child: const Center(
+                      child: Icon(Icons.image_outlined, size: 40, color: AppColors.greyColor),
+                    ),
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 250,
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: width / 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: provider.randomProducts.length,
-            itemBuilder: (context, index) {
-              final product = provider.randomProducts[index];
-              return _buildProductCard(context, product, width, height);
+            );
+          }).toList(),
+          options: CarouselOptions(
+            height: 145,
+            viewportFraction: 0.90,
+            enlargeCenterPage: true,
+            enlargeFactor: 0.16,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 4),
+            autoPlayAnimationDuration: const Duration(milliseconds: 700),
+            onPageChanged: (index, reason) {
+              setState(() {
+                _heroSliderIndex = index;
+              });
             },
           ),
         ),
-        SizedBox(height: height / 42.1),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: banners.asMap().entries.map((entry) {
+            final bool isActive = _heroSliderIndex == entry.key;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              width: isActive ? 22 : 6,
+              height: 6,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(3),
+                color: isActive ? AppColors.primaryColor : const Color(0xffD1D5DB),
+              ),
+            );
+          }).toList(),
+        ),
       ],
     );
   }
 
-  Widget _buildProductCard(
-      BuildContext context, HomeProduct product, double width, double height,
+  // 4. Interleaved Mid-Page Advertisement Slider (Blinkit style)
+  Widget _buildAdSlider({
+    required BuildContext context,
+    required List items,
+    required int currentIndex,
+    required Function(int) onPageChanged,
+    required double height,
+    required double width,
+    required String title,
+  }) {
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.campaign_outlined,
+                    color: AppColors.primaryColor,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.secondaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          CarouselSlider(
+            items: items.map((item) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.blackColor.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Image.network(
+                    "${AppAssetImage.imageBaseUrl}storage/app/public/$item",
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    cacheWidth: 650,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: const Color(0xffEEEEEE),
+                      child: const Center(
+                        child: Icon(Icons.broken_image_outlined, color: AppColors.greyColor),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+            options: CarouselOptions(
+              height: 125,
+              viewportFraction: 0.90,
+              enlargeCenterPage: true,
+              enlargeFactor: 0.14,
+              autoPlay: true,
+              autoPlayInterval: const Duration(seconds: 5),
+              onPageChanged: (index, reason) => onPageChanged(index),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: items.asMap().entries.map((entry) {
+              final bool isActive = currentIndex == entry.key;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: isActive ? 18 : 5,
+                height: 5,
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(3),
+                  color: isActive ? AppColors.primaryColor : const Color(0xffD1D5DB),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 5. Categorized Product Carousel (Blinkit style horizontal shelf)
+  Widget _buildCategoryCarousel({
+    required BuildContext context,
+    required CategoryCarousel carousel,
+    required double height,
+    required double width,
+  }) {
+    final products = carousel.products ?? [];
+    if (products.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            height: 14,
+                            width: 3.5,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              carousel.title ?? "Featured Category",
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.secondaryColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (carousel.subtitle != null && carousel.subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 11),
+                          child: Text(
+                            carousel.subtitle!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.lightText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (carousel.badge != null && carousel.badge!.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.primaryColor.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Text(
+                      carousel.badge!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 245,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                return _buildBlinkitProductCard(context, products[index], isGrid: false);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 6. Modern Blinkit / Swiggy Product Card
+  Widget _buildBlinkitProductCard(BuildContext context, HomeProduct product,
       {bool isGrid = false}) {
+    final num? oldPrice = product.oldprice;
+    final num? currentPrice = product.price;
+    final bool hasDiscount = (oldPrice != null && currentPrice != null && oldPrice > currentPrice);
+    final int discountPercent = hasDiscount
+        ? (((oldPrice - currentPrice) / oldPrice) * 100).round()
+        : 0;
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -1014,23 +745,24 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        width: isGrid ? null : 160,
+        width: isGrid ? null : 155,
         margin: isGrid ? EdgeInsets.zero : const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           color: AppColors.whiteColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.stroke),
+          border: Border.all(color: const Color(0xffEFEFEF)),
           boxShadow: [
             BoxShadow(
-              blurRadius: 16,
-              color: AppColors.blackColor.withOpacity(0.05),
-              offset: const Offset(0, 4),
+              color: AppColors.blackColor.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Top Image Area
             Expanded(
               flex: 5,
               child: Stack(
@@ -1038,96 +770,97 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     width: double.infinity,
                     decoration: const BoxDecoration(
-                      color: Color(0xffF9F9F9),
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(14)),
+                      color: Color(0xffFAFAFA),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
                     ),
                     child: ClipRRect(
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(14)),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                       child: Image.network(
                         "${AppAssetImage.imageBaseUrl}storage/app/public/${product.image}",
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(
-                              Icons.inventory_2_outlined,
-                              size: 40,
-                              color: AppColors.greyColor.withOpacity(0.5),
-                            ),
-                          );
-                        },
+                        cacheWidth: 380,
+                        cacheHeight: 380,
+                        errorBuilder: (context, error, stackTrace) => const Center(
+                          child: Icon(
+                            Icons.format_paint_outlined,
+                            size: 36,
+                            color: AppColors.greyColor,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  if (product.categoryName != null &&
-                      product.categoryName!.isNotEmpty)
+                  if (hasDiscount && discountPercent > 0)
                     Positioned(
                       top: 6,
                       left: 6,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.blackColor.withOpacity(0.65),
+                          color: const Color(0xff16A34A),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          product.categoryName!,
+                          "$discountPercent% OFF",
                           style: GoogleFonts.poppins(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.whiteColor,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
                 ],
               ),
             ),
+            // Product Details Area
             Expanded(
               flex: 4,
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (product.brandName != null &&
-                        product.brandName!.isNotEmpty)
-                      Text(
-                        product.brandName!,
-                        style: GoogleFonts.poppins(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryColor,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (product.brandName != null && product.brandName!.isNotEmpty)
+                          Text(
+                            product.brandName!.toUpperCase(),
+                            style: GoogleFonts.poppins(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryColor,
+                              letterSpacing: 0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        const SizedBox(height: 1),
+                        Text(
+                          product.name ?? "",
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.secondaryColor,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    Text(
-                      product.name ?? "",
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.secondaryColor,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      ],
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if ((product.oldprice ?? 0) >
-                                (product.price ?? 0))
+                            if (hasDiscount)
                               Text(
-                                "₹${product.oldprice?.toStringAsFixed(0)}",
+                                "₹${oldPrice.toStringAsFixed(0)}",
                                 style: GoogleFonts.poppins(
                                   fontSize: 9,
                                   decoration: TextDecoration.lineThrough,
@@ -1135,25 +868,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             Text(
-                              "₹${product.price?.toStringAsFixed(0) ?? "0"}",
+                              "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.secondaryColor,
                               ),
                             ),
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryColor,
+                            color: AppColors.primaryColor.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: AppColors.primaryColor.withOpacity(0.4),
+                              width: 1,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            color: AppColors.whiteColor,
-                            size: 11,
+                          child: Text(
+                            "ADD",
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryColor,
+                            ),
                           ),
                         ),
                       ],
@@ -1168,100 +908,251 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPopularBrandsSection(
-      BuildContext context,
-      HomeScreenProvider provider,
-      double height,
-      double width) {
-    if (provider.brands.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: width / 16.2),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+  // 7. "We Deal Into" Category Grid
+  Widget _buildWeDealIntoSection(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    final categories = provider.homeScreenModel?.data?.maincategory ?? [];
+    if (categories.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  height: 14,
+                  width: 3.5,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.verified_outlined,
-                  color: AppColors.primaryColor,
-                  size: 18,
+                const SizedBox(width: 8),
+                Text(
+                  "We Deal Into",
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.secondaryColor,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "Popular Brands",
-                style: AppTextStyle.poppinsBold13(
-                  context: context,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.secondaryColor,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 110,
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: width / 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: provider.brands.length,
+          const SizedBox(height: 10),
+          GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            itemCount: categories.length,
+            shrinkWrap: true,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.2,
+            ),
             itemBuilder: (context, index) {
-              final brand = provider.brands[index];
+              final cat = categories[index];
               return InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => BrandPageScreen(
-                        cmpid: brand.companyId ?? 0,
-                        cid: brand.categoryId ?? 0,
-                      ),
+                      builder: (context) => CategoryScreen(mid: cat.id ?? 0),
                     ),
                   );
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  width: 90,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: Column(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.whiteColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xffECECEC)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.blackColor.withOpacity(0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
                     children: [
                       Container(
-                        height: 65,
-                        width: 65,
+                        height: 44,
+                        width: 44,
                         decoration: BoxDecoration(
+                          color: const Color(0xffF3F4F6),
                           shape: BoxShape.circle,
-                          color: AppColors.whiteColor,
-                          border: Border.all(
-                            color: AppColors.primaryColor.withOpacity(0.3),
-                            width: 1.5,
+                        ),
+                        child: ClipOval(
+                          child: Image.network(
+                            "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image ?? ""}",
+                            fit: BoxFit.cover,
+                            cacheWidth: 120,
+                            cacheHeight: 120,
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.category_outlined,
+                              size: 20,
+                              color: AppColors.primaryColor,
+                            ),
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 10,
-                              color: AppColors.blackColor.withOpacity(0.06),
-                              offset: const Offset(0, 3),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              cat.name ?? "",
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.secondaryColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              cat.title ?? "Explore Range",
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.lightText,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
-                        child: ClipOval(
-                          child: (brand.image != null &&
-                                  brand.image!.isNotEmpty &&
-                                  brand.image != "default.png")
-                              ? Image.network(
-                                  "${AppAssetImage.imageBaseUrl}storage/app/public/${brand.image}",
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) =>
-                                          Center(
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 12,
+                        color: AppColors.lightText,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 8. Popular Brands Section
+  Widget _buildPopularBrandsSection(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    final brands = provider.brands;
+    if (brands.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  height: 14,
+                  width: 3.5,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "Popular Paint Brands",
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.secondaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 105,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: brands.length,
+              itemBuilder: (context, index) {
+                final brand = brands[index];
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BrandPageScreen(
+                          cmpid: brand.companyId ?? 0,
+                          cid: brand.categoryId ?? 0,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 85,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 64,
+                          width: 64,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.whiteColor,
+                            border: Border.all(
+                              color: const Color(0xffE5E7EB),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.blackColor.withOpacity(0.05),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: (brand.image != null &&
+                                    brand.image!.isNotEmpty &&
+                                    brand.image != "default.png")
+                                ? Image.network(
+                                    "${AppAssetImage.imageBaseUrl}storage/app/public/${brand.image}",
+                                    fit: BoxFit.cover,
+                                    cacheWidth: 150,
+                                    cacheHeight: 150,
+                                    errorBuilder: (context, error, stackTrace) => Center(
+                                      child: Text(
+                                        (brand.name?.isNotEmpty ?? false)
+                                            ? brand.name![0].toUpperCase()
+                                            : "B",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
                                     child: Text(
                                       (brand.name?.isNotEmpty ?? false)
                                           ? brand.name![0].toUpperCase()
@@ -1273,177 +1164,393 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                   ),
-                                )
-                              : Center(
-                                  child: Text(
-                                    (brand.name?.isNotEmpty ?? false)
-                                        ? brand.name![0].toUpperCase()
-                                        : "B",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primaryColor,
-                                    ),
-                                  ),
-                                ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        brand.name ?? "",
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.secondaryColor,
+                        const SizedBox(height: 6),
+                        Text(
+                          brand.name ?? "",
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.secondaryColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
-        SizedBox(height: height / 42.1),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildMoreProductsSection(
-      BuildContext context,
-      HomeScreenProvider provider,
-      double height,
-      double width) {
-    if (provider.moreProducts.isEmpty) {
+  // 9. Infinite Scroll Grid ("Explore All Products" with scroll-based paginator)
+  Widget _buildExploreAllProductsGrid(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    final products = provider.moreProducts;
+    if (products.isEmpty && !provider.loadingMoreProducts) {
       return const SizedBox.shrink();
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: width / 16.2),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      height: 14,
+                      width: 3.5,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.grid_view_rounded,
-                      color: AppColors.primaryColor,
-                      size: 18,
+                    const SizedBox(width: 8),
+                    Text(
+                      "Explore All Products",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.secondaryColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Explore More Products",
-                    style: AppTextStyle.poppinsBold13(
-                      context: context,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.secondaryColor,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                "${provider.moreProducts.length} Items",
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.lightText,
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: width / 20),
-          shrinkWrap: true,
-          itemCount: provider.moreProducts.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.72,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemBuilder: (context, index) {
-            final product = provider.moreProducts[index];
-            return _buildProductCard(context, product, width, height,
-                isGrid: true);
-          },
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: width / 16.2),
-          child: InkWell(
-            onTap: provider.loadingMoreProducts
-                ? null
-                : () => provider.loadMoreProducts(context),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: AppColors.whiteColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.primaryColor,
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 10,
-                    color: AppColors.primaryColor.withOpacity(0.08),
-                    offset: const Offset(0, 3),
+                Text(
+                  "${products.length} Products",
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.lightText,
                   ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (provider.loadingMoreProducts)
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            shrinkWrap: true,
+            itemCount: products.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.72,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemBuilder: (context, index) {
+              return _buildBlinkitProductCard(context, products[index], isGrid: true);
+            },
+          ),
+          const SizedBox(height: 16),
+          // Scroll-based Paginator State Indicator
+          if (provider.loadingMoreProducts)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     const SizedBox(
-                      height: 18,
                       width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: AppColors.primaryColor,
                       ),
-                    )
-                  else ...[
-                    const Icon(
-                      Icons.add_circle_outline_rounded,
-                      color: AppColors.primaryColor,
-                      size: 20,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
-                      "Add More Products",
+                      "Loading more products...",
                       style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryColor,
+                        fontSize: 11,
+                        color: AppColors.lightText,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
-                ],
+                ),
+              ),
+            )
+          else if (!provider.hasMoreProducts && products.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xffEEEEEE),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline_rounded,
+                        size: 15,
+                        color: Color(0xff16A34A),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "You've viewed all available products",
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        SizedBox(height: height / 42.1),
-      ],
+        ],
+      ),
     );
   }
 
+  // 10. Search Results View (preserved from existing implementation)
+  Widget _buildSearchResults(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    if (provider.loadingSearch) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryColor),
+        ),
+      );
+    }
+
+    final results = provider.searchModel?.data ?? [];
+    if (results.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Text(
+            "No matching products or categories found",
+            style: GoogleFonts.poppins(fontSize: 13, color: AppColors.lightText),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final item = results[index];
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: width / 16.2, vertical: height / 60),
+          child: InkWell(
+            onTap: () {
+              if (item.screen == "category") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CategoryScreen(mid: item.relatedid ?? 0),
+                  ),
+                );
+              } else if (item.screen == "company") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CompanyPageScreen(cid: item.relatedid ?? 0),
+                  ),
+                );
+              } else if (item.screen == "product") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DescriptionPageScreen(
+                      productId: item.id ?? 0,
+                      colorId: item.relatedid?.toString() ?? "",
+                    ),
+                  ),
+                );
+              } else {
+                Utils.commonSnackBar(
+                  context,
+                  height: height,
+                  message: "Search category, company and product",
+                );
+              }
+            },
+            child: Row(
+              children: [
+                Container(
+                  height: height / 20,
+                  width: height / 20,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(height / 60),
+                    image: DecorationImage(
+                      image: NetworkImage(
+                        "${AppAssetImage.imageBaseUrl}storage/app/public/${item.image ?? ""}",
+                      ),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                SizedBox(width: width / 20),
+                Expanded(
+                  child: Text(
+                    item.name ?? "",
+                    style: AppTextStyle.poppinsMedium15(
+                      context: context,
+                      color: AppColors.secondaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 11. Address Bottom Sheet Modal (Preserved behavior)
+  void _openAddressSelector(
+      BuildContext context, HomeScreenProvider provider, double height, double width) {
+    final personalAddresses = provider.getAddressListModel?.data
+            ?.where((e) => e.type == "personal")
+            .toList() ??
+        [];
+    final personalAddress = personalAddresses.isNotEmpty ? personalAddresses.first : null;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SizedBox(
+          width: width,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: width,
+                height: height / 12,
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  color: AppColors.stroke,
+                ),
+                padding: EdgeInsets.symmetric(horizontal: width / 29),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Choose Communication Address",
+                    style: AppTextStyle.poppinsRegular16(
+                      context: context,
+                      color: AppColors.secondaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  children: [
+                    const SizedBox(height: 16),
+                    if (personalAddress == null)
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: width / 29),
+                        child: InkWell(
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              builder: (context) => PersonalAddAddressWidget(provider: provider),
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_circle_outline, color: AppColors.primaryColor),
+                              const SizedBox(width: 10),
+                              Text(
+                                "Add New Communication Address",
+                                style: AppTextStyle.poppinsRegular16(
+                                  context: context,
+                                  color: AppColors.primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (personalAddress != null)
+                      ListTile(
+                        leading: const Icon(Icons.location_on, color: AppColors.primaryColor),
+                        title: Text(
+                          personalAddress.identityname ?? "",
+                          style: AppTextStyle.poppinsBold17(
+                            context: context,
+                            color: AppColors.blackColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(personalAddress.name ?? ""),
+                            Text(
+                              "${personalAddress.landmark1 ?? ""}, "
+                              "${personalAddress.landmark2 ?? ""}, "
+                              "${personalAddress.city ?? ""}, "
+                              "${personalAddress.state ?? ""}, "
+                              "${personalAddress.pincode ?? ""}",
+                            ),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () async {
+                            await provider.getIdAddress(
+                              context: context,
+                              addressId: personalAddress.id.toString(),
+                            );
+                          },
+                        ),
+                        onTap: () {
+                          provider.selectAddress(
+                            personalAddress.id.toString(),
+                            context: context,
+                            height: height,
+                            addressId: personalAddress.id.toString(),
+                            addressText:
+                                "${personalAddress.landmark1 ?? ""}, "
+                                "${personalAddress.landmark2 ?? ""}, "
+                                "${personalAddress.city ?? ""}, "
+                                "${personalAddress.state ?? ""}, "
+                                "${personalAddress.pincode ?? ""}",
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

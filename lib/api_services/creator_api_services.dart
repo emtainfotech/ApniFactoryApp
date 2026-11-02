@@ -311,7 +311,9 @@ class CreatorApiServices {
 
       log("HomeScreen response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = (response.data is String)
+          ? json.decode(response.data)
+          : response.data;
 
       if (response.statusCode == 200) {
         HomescreenModel homeScreenModel = HomescreenModel.fromJson(data);
@@ -320,25 +322,29 @@ class CreatorApiServices {
       } else {
         return null;
       }
-    } on DioException catch (error) {
-      return await HandleDio.handleDioError(error: error, context: context);
+    } catch (error) {
+      log("homeScreenDetails error: $error");
+      return null;
     }
   }
 
   static Future<List<HomeProduct>?> getRandomProducts(
     BuildContext context, {
     int limit = 10,
+    int page = 1,
     List<int>? excludeIds,
   }) async {
     Dio dio = Dio();
     try {
-      String url = "${ApiEndPoint.randomProductsApi}?limit=$limit";
+      String url = "${ApiEndPoint.randomProductsApi}?limit=$limit&page=$page";
       if (excludeIds != null && excludeIds.isNotEmpty) {
         url += "&exclude=${excludeIds.join(',')}";
       }
       Response response = await dio.get(url);
-      var data = json.decode(response.data);
-      if (response.statusCode == 200 && data['data'] != null) {
+      var data = (response.data is String)
+          ? json.decode(response.data)
+          : response.data;
+      if (response.statusCode == 200 && data != null && data['data'] != null) {
         List<HomeProduct> products = [];
         data['data'].forEach((v) {
           products.add(HomeProduct.fromJson(v));
@@ -346,8 +352,44 @@ class CreatorApiServices {
         return products;
       }
       return null;
-    } on DioException catch (error) {
-      return await HandleDio.handleDioError(error: error, context: context);
+    } catch (error) {
+      log("getRandomProducts error: $error");
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getRandomProductsPaginated(
+    BuildContext context, {
+    int page = 1,
+    int limit = 8,
+    List<int>? excludeIds,
+  }) async {
+    Dio dio = Dio();
+    try {
+      String url = "${ApiEndPoint.randomProductsApi}?page=$page&limit=$limit";
+      if (excludeIds != null && excludeIds.isNotEmpty) {
+        url += "&exclude=${excludeIds.join(',')}";
+      }
+      Response response = await dio.get(url);
+      var data = (response.data is String)
+          ? json.decode(response.data)
+          : response.data;
+      if (response.statusCode == 200 && data != null && data['data'] != null) {
+        List<HomeProduct> products = [];
+        data['data'].forEach((v) {
+          products.add(HomeProduct.fromJson(v));
+        });
+        return {
+          'products': products,
+          'has_more': data['has_more'] ?? false,
+          'total': data['total'] ?? products.length,
+          'current_page': data['current_page'] ?? page,
+        };
+      }
+      return null;
+    } catch (error) {
+      log("getRandomProductsPaginated error: $error");
+      return null;
     }
   }
 
