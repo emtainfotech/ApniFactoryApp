@@ -1,19 +1,16 @@
 import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/provider/category_screen_provider.dart';
-import 'package:apni_factory/provider/homeScreen_provider.dart';
 import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/colors.dart';
-import 'package:apni_factory/res/textstyle.dart';
-import 'package:apni_factory/res/widgets/category_search_widget.dart';
 import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
 import 'package:apni_factory/res/widgets/global_cart_container.dart';
-import 'package:apni_factory/res/widgets/search_widget.dart';
 import 'package:apni_factory/screens/brand_page_screen.dart';
 import 'package:apni_factory/screens/company_page_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
 import 'package:apni_factory/utils.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -28,706 +25,840 @@ class CategoryScreen extends StatefulWidget {
   State<CategoryScreen> createState() => _CategoryScreenState();
 }
 
-class _CategoryScreenState extends State<CategoryScreen> {
+class _CategoryScreenState extends State<CategoryScreen>
+    with SingleTickerProviderStateMixin {
+  late CategoryScreenProvider _categoryProvider;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await Provider.of<CategoryScreenProvider>(context, listen: false)
-          .categoryScreen(
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Provider.of<CategoryScreenProvider>(context, listen: false).categoryScreen(
         context: context,
         mid: widget.mid,
       );
-      await Provider.of<CartScreenProvider>(context, listen: false)
-          .userCart(context: context);
-    });
-    // TODO: implement initState
-    super.initState();
-  }
+      await Provider.of<CartScreenProvider>(context, listen: false).userCart(
+        context: context,
+      );
 
-  late CategoryScreenProvider _categoryProvider;
+      if (mounted) {
+        _animController.forward();
+      }
+    });
+  }
 
   @override
   void didChangeDependencies() {
-    _categoryProvider =
-        Provider.of<CategoryScreenProvider>(context, listen: false);
-    // TODO: implement didChangeDependencies
+    _categoryProvider = Provider.of<CategoryScreenProvider>(context, listen: false);
     super.didChangeDependencies();
   }
 
   @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    double height = MediaQuery.of(context).size.height;
-    double width = MediaQuery.of(context).size.width;
+    final double height = MediaQuery.of(context).size.height;
+    final double width = MediaQuery.of(context).size.width;
+
     return WillPopScope(
       onWillPop: () async {
-        _categoryProvider.clearSearch(); // ✅ SAFE
+        _categoryProvider.clearSearch();
         return true;
       },
-      child: Scaffold(body: Consumer<CategoryScreenProvider>(
-        builder: (context, provider, child) {
-          return provider.loadingCategoryScreen
-              ? CircularProgressIndicatorWidget()
-              : Stack(
-                  children: [
-                    ListView(
-                      children: [
-                        provider.searchModel != null
-                            ? Container(
-                                height: height / 6, // or any minimal height
-                                width: width,
-                                color: Colors.pink[30], // ✅ white background
-                                child: Column(
-                                  children: [
-                                    SizedBox(height: height / 26.6),
-                                    CategorySearchWidget(
-                                      provider:
-                                          Provider.of<CategoryScreenProvider>(
-                                              context),
-                                    ),
-                                    SizedBox(height: height / 42.1),
-                                  ],
-                                ),
-                              )
-                            : Container(
-                                height: height / 2,
-                                width: width,
-                                child: Stack(
-                                  children: [
-                                    CarouselSlider(
-                                        items: provider.slider!.map((item) {
-                                          return Center(
-                                            child: Container(
-                                              // height: height ,
-                                              width: width,
-                                              height: height / 2.2,
-                                              child: Image.network(
-                                                "${AppAssetImage.imageBaseUrl}storage/app/public/${(item ?? "")}",
-                                                fit: BoxFit.fill,
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                        carouselController:
-                                            provider.carousalController,
-                                        options: CarouselOptions(
-                                          onPageChanged: (index, reason) {
-                                            setState(() {
-                                              provider.current = index;
-                                            });
-                                          },
-                                          viewportFraction: 1,
-                                          height: height / 2.2,
-                                          autoPlay: true,
-                                          enlargeCenterPage: false,
-                                          // aspectRatio: 1,
-                                        )),
-                                    SizedBox(
-                                      height: height / 29,
-                                    ),
-                                    Align(
-                                      alignment: Alignment.bottomCenter,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: provider.slider!
-                                            .asMap()
-                                            .entries
-                                            .map((entry) {
-                                          return GestureDetector(
-                                              onTap: () => provider
-                                                  .carousalController
-                                                  .animateToPage(entry.key),
-                                              child: Container(
-                                                width: provider.current ==
-                                                        entry.key
-                                                    ? 12
-                                                    : 10,
-                                                height: provider.current ==
-                                                        entry.key
-                                                    ? 12
-                                                    : 10,
-                                                margin:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 3.0),
-                                                decoration: BoxDecoration(
-                                                    border: provider.current ==
-                                                            entry.key
-                                                        ? Border.all(
-                                                            color: AppColors
-                                                                .whiteColor)
-                                                        : Border.all(
-                                                            color: AppColors
-                                                                .primaryColor),
-                                                    shape: BoxShape.circle,
-                                                    color: provider.current ==
-                                                            entry.key
-                                                        ? AppColors.primaryColor
-                                                        : AppColors.whiteColor),
-                                              ));
-                                        }).toList(),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: height / 42.1,
-                                    ),
-                                    // Image.network(
-                                    //    "${AppAssetImage.imageBaseUrl}storage/app/public/${(provider.categoryScreenModel?.data?.bannerimage?[0]??"")}",
+      child: Scaffold(
+        backgroundColor: const Color(0xffF8F9FA),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0.5,
+          leading: IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xffF1F3F5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.secondaryColor,
+                size: 20,
+              ),
+            ),
+            onPressed: () {
+              _categoryProvider.clearSearch();
+              Navigator.pop(context);
+            },
+          ),
+          title: Text(
+            "Explore Categories",
+            style: GoogleFonts.poppins(
+              color: AppColors.secondaryColor,
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        body: Consumer<CategoryScreenProvider>(
+          builder: (context, provider, child) {
+            if (provider.loadingCategoryScreen) {
+              return const CircularProgressIndicatorWidget();
+            }
 
-                                    //   fit: BoxFit.cover,
-                                    //   height: height / 2,
-                                    //   width: width,
-                                    // ),
-                                    Column(
-                                      children: [
-                                       
-                                        SizedBox(
-                                          height: height / 26.6,
-                                        ),
-                                        CategorySearchWidget(
-                                            provider: Provider.of<
-                                                    CategoryScreenProvider>(
-                                                context)),
-                                        SizedBox(
-                                          height: height / 42.1,
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              ),
-                        SizedBox(
-                          height: height / 29,
-                        ),
-                        provider.categoryScreenModel?.data?.advertisement ==
-                                    null ||
-                                provider.categoryScreenModel!.data!
-                                    .advertisement!.isEmpty
-                            ? SizedBox.shrink()
-                            : Provider.of<CategoryScreenProvider>(context,
-                                            listen: false)
-                                        .searchModel ==
-                                    null
-                                ? Column(
-                                    children: [
-                                      CarouselSlider(
-                                        
-                                          items: provider.advertisement!
-                                              .map((item) => Center(
-                                                    child: Padding(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              horizontal:
-                                                                  height / 50),
-                                                      child: ClipRRect(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                                    height /
-                                                                        66.6),
-                                                        child: Container(
-                                                          height: height / 5,
-                                                          width: width,
-                                                          child: Image.network(
-                                                            "${AppAssetImage.imageBaseUrl}storage/app/public/${(item ?? "")}",
-                                                            fit: BoxFit.fill,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ))
-                                              .toList(),
-                                          carouselController:
-                                              provider.carousalController,
-                                          options: CarouselOptions(
-                                            onPageChanged: (index, reason) {
-                                              setState(() {
-                                                provider.bannercurrent = index;
-                                              });
-                                            },
-                                           autoPlayInterval: Duration(seconds: 3),
-                                            viewportFraction: 1.0,
-                                            height: 150,
-                                            autoPlay: true,
-                                            enlargeCenterPage: false,
-                                            // aspectRatio: 1,
-                                          )),
-                                      SizedBox(
-                                        height: height / 29,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: provider.advertisement!
-                                            .asMap()
-                                            .entries
-                                            .map((entry) {
-                                          return GestureDetector(
-                                              onTap: () => provider
-                                                  .carousalController
-                                                  .animateToPage(entry.key),
-                                              child: Container(
-                                                width: provider.bannercurrent ==
-                                                        entry.key
-                                                    ? 12
-                                                    : 10,
-                                                height:
-                                                    provider.bannercurrent ==
-                                                            entry.key
-                                                        ? 12
-                                                        : 10,
-                                                margin:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 3.0),
-                                                decoration: BoxDecoration(
-                                                    border: provider
-                                                                .bannercurrent ==
-                                                            entry.key
-                                                        ? Border.all(
-                                                            color: AppColors
-                                                                .whiteColor)
-                                                        : Border.all(
-                                                            color: AppColors
-                                                                .primaryColor),
-                                                    shape: BoxShape.circle,
-                                                    color: provider
-                                                                .bannercurrent ==
-                                                            entry.key
-                                                        ? AppColors.primaryColor
-                                                        : AppColors.whiteColor),
-                                              ));
-                                        }).toList(),
-                                      ),
-                                      SizedBox(
-                                        height: height / 29,
-                                      ),
-                                      provider.categoryScreenModel?.data
-                                                      ?.category ==
-                                                  null ||
-                                              provider.categoryScreenModel!
-                                                  .data!.category!.isEmpty
-                                          ? Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: width / 16.2,vertical: width/16),
-                                              child: Text(
-                                                "There are no category to explore",
-                                                textAlign: TextAlign.center,
-                                                style:
-                                                    AppTextStyle.poppinsBold13(
-                                                        context: context,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: AppColors
-                                                            .primaryColor),
-                                              ),
-                                            )
-                                          : GridView.builder(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: height / 50),
-                                              physics:
-                                                  NeverScrollableScrollPhysics(),
-                                              itemCount: provider
-                                                  .categoryScreenModel
-                                                  ?.data
-                                                  ?.category
-                                                  ?.length,
-                                              shrinkWrap: true,
-                                              gridDelegate:
-                                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                                      crossAxisCount: 2,
-                                                      childAspectRatio: 1),
-                                              itemBuilder:
-                                                  (context, categoryindex) {
-                                                return Padding(
-                                                  padding: EdgeInsets.only(
-                                                    right: height / 150,
-                                                  ),
-                                                  child: Column(
-                                                    children: [
-                                                      InkWell(
-                                                        onTap: () {
-                                                          Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                            builder: (context) {
-                                                              return CompanyPageScreen(
-                                                                cid: provider
-                                                                        .categoryScreenModel
-                                                                        ?.data
-                                                                        ?.category?[
-                                                                            categoryindex]
-                                                                        .cid ??
-                                                                    0,
-                                                              );
-                                                            },
-                                                          ));
-                                                        },
-                                                        child: Card(
-                                                          child: Container(
-                                                            height: height / 9,
-                                                            width: width / 3,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                                    image: DecorationImage(
-                                                                        image: NetworkImage(
-                                                                            "${AppAssetImage.imageBaseUrl}storage/app/public/${(provider.categoryScreenModel?.data?.category?[categoryindex].image ?? "")}"),
-                                                                        fit: BoxFit
-                                                                            .fill),
-                                                                    boxShadow: [
-                                                                      BoxShadow(
-                                                                          blurRadius:
-                                                                              32,
-                                                                          color: AppColors
-                                                                              .blackColor
-                                                                              .withOpacity(0.1))
-                                                                    ],
-                                                                    // border: Border.all(color: AppColors.primaryColor),
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(height /
-                                                                            66.6),
-                                                                    color: AppColors
-                                                                        .whiteColor),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      SizedBox(
-                                                        height: height / 110,
-                                                      ),
-                                                      Expanded(
-                                                        child: Text(
-                                                          provider
-                                                                  .categoryScreenModel
-                                                                  ?.data
-                                                                  ?.category?[
-                                                                      categoryindex]
-                                                                  .name ??
-                                                              "",
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: AppTextStyle
-                                                              .poppinsBold12(
-                                                                  context:
-                                                                      context,
-                                                                  color: AppColors
-                                                                      .blackColor,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w600),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                      // SizedBox(
-                                      //   height: height / 25,
-                                      // ),
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: width / 16.2),
-                                        child: Text(
-                                          "Top Company to explore",
-                                          textAlign: TextAlign.left,
-                                          style: AppTextStyle.poppinsRegular14(
-                                              context: context,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.secondaryColor),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: height / 42.1,
-                                      ),
-                                      provider.categoryScreenModel?.data
-                                                      ?.company ==
-                                                  null ||
-                                              provider.categoryScreenModel!
-                                                  .data!.company!.isEmpty
-                                          ? Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: width / 16.2),
-                                              child: Text(
-                                                "There are no company to explore",
-                                                textAlign: TextAlign.center,
-                                                style:
-                                                    AppTextStyle.poppinsBold13(
-                                                        context: context,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: AppColors
-                                                            .primaryColor),
-                                              ),
-                                            )
-                                          : ListView.builder(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: width / 16.2),
-                                              shrinkWrap: true,
-                                              physics:
-                                                  NeverScrollableScrollPhysics(),
-                                              itemCount: provider
-                                                  .categoryScreenModel
-                                                  ?.data
-                                                  ?.company
-                                                  ?.length,
-                                              itemBuilder: (context, index) {
-                                                return Padding(
-                                                  padding: EdgeInsets.only(
-                                                      bottom: height / 20),
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      Navigator.push(context,
-                                                          MaterialPageRoute(
-                                                        builder: (context) {
-                                                          return BrandPageScreen(
-                                                            cmpid: provider
-                                                                    .categoryScreenModel
-                                                                    ?.data
-                                                                    ?.company?[
-                                                                        index]
-                                                                    .cmpid ??
-                                                                0,
-                                                            cid:
-                                                                0,
-                                                          );
-                                                        },
-                                                      ));
-                                                    },
-                                                    child: Row(
-                                                      children: [
-                                                        Container(
-                                                          height: height / 9,
-                                                          width: height / 7,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                  color: AppColors
-                                                                      .lightPink,
-                                                                  boxShadow: [
-                                                                    BoxShadow(
-                                                                        blurRadius:
-                                                                            32,
-                                                                        color: AppColors
-                                                                            .blackColor
-                                                                            .withOpacity(0.1))
-                                                                  ],
-                                                                  // border: Border.all(color: AppColors.primaryColor),
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                          height /
-                                                                              66.6),
-                                                                  image: provider
-                                                                              .categoryScreenModel
-                                                                              ?.data
-                                                                              ?.company?[
-                                                                                  index]
-                                                                              .image ==
-                                                                          null
-                                                                      ? DecorationImage(
-                                                                          image:
-                                                                              AssetImage(
-                                                                            "assets/images/paint-roller.png",
-                                                                          ),
-                                                                          fit: BoxFit
-                                                                              .fill)
-                                                                      : DecorationImage(
-                                                                          image: NetworkImage(
-                                                                              "${AppAssetImage.imageBaseUrl}storage/app/public/${(provider.categoryScreenModel?.data?.company?[index].image ?? "")}"),
-                                                                          fit: BoxFit
-                                                                              .fill)),
-                                                        ),
-                                                        SizedBox(
-                                                          width: width / 20,
-                                                        ),
-                                                        Column(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .start,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            SizedBox(
-                                                                height: height /
-                                                                    100),
-                                                            Text(
-                                                              provider
-                                                                      .categoryScreenModel
-                                                                      ?.data
-                                                                      ?.company?[
-                                                                          index]
-                                                                      .name ??
-                                                                  "",
-                                                              style: AppTextStyle.poppinsRegular14(
-                                                                  context:
-                                                                      context,
-                                                                  color: AppColors
-                                                                      .secondaryColor,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700),
-                                                            ),
-                                                            Text(
-                                                              "${provider.categoryScreenModel?.data?.company?[index].count.toString() ?? ""} Category",
-                                                              style: AppTextStyle.poppinsBold13(
-                                                                  context:
-                                                                      context,
-                                                                  color: AppColors
-                                                                      .secondaryColor,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w400),
-                                                            ),
-                                                            Text(
-                                                              provider
-                                                                      .categoryScreenModel
-                                                                      ?.data
-                                                                      ?.company?[
-                                                                          index]
-                                                                      .city ??
-                                                                  "",
-                                                              style: AppTextStyle.poppinsBold13(
-                                                                  context:
-                                                                      context,
-                                                                  color: AppColors
-                                                                      .secondaryColor,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w400),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                      SizedBox(
-                                        height: height / 7,
-                                      ),
-                                    ],
-                                  )
-                                : Provider.of<CategoryScreenProvider>(context)
-                                        .loadingSearch
-                                    ? Padding(
-                                        padding: EdgeInsets.only(top: 20),
-                                        child: Center(
-                                            child: CircularProgressIndicator()),
-                                      )
-                                    : ListView.builder(
-                                        shrinkWrap: true,
-                                        physics: NeverScrollableScrollPhysics(),
-                                        itemCount:
-                                            Provider.of<CategoryScreenProvider>(
-                                                    context)
-                                                .searchModel
-                                                ?.data
-                                                ?.length,
-                                        itemBuilder: (context, index) {
-                                          var searchModel = Provider.of<
-                                                      CategoryScreenProvider>(
-                                                  context)
-                                              .searchModel;
-                                          return Padding(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: width / 16.2,
-                                                vertical: height / 60),
-                                            child: InkWell(
-                                              onTap: () {
-                                                if (searchModel
-                                                        ?.data?[index].screen ==
-                                                    "category") {
-                                                  Navigator.push(context,
-                                                      MaterialPageRoute(
-                                                    builder: (context) {
-                                                      return CategoryScreen(
-                                                          mid: searchModel
-                                                                  ?.data?[index]
-                                                                  .relatedid ??
-                                                              0);
-                                                    },
-                                                  ));
-                                                } else if (searchModel
-                                                        ?.data?[index].screen ==
-                                                    "company") {
-                                                  Navigator.push(context,
-                                                      MaterialPageRoute(
-                                                    builder: (context) {
-                                                      return CompanyPageScreen(
-                                                          cid: searchModel
-                                                                  ?.data?[index]
-                                                                  .relatedid ??
-                                                              0);
-                                                    },
-                                                  ));
-                                                } else if (searchModel
-                                                        ?.data?[index].screen ==
-                                                    "product") {
-                                                  Navigator.push(context,
-                                                      MaterialPageRoute(
-                                                    builder: (context) {
-                                                      return DescriptionPageScreen(
-                                                          productId: searchModel
-                                                                  ?.data?[index]
-                                                                  .id ??
-                                                              0,
-                                                          colorId: searchModel
-                                                                  ?.data?[index]
-                                                                  .relatedid
-                                                                  .toString() ??
-                                                              "");
-                                                    },
-                                                  ));
-                                                } else {
-                                                  Utils.commonSnackBar(context,
-                                                      height: height,
-                                                      message:
-                                                          "Search categroy, company and product");
-                                                }
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Container(
-                                                    height: height / 20,
-                                                    width: height / 20,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              height / 60),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            "${AppAssetImage.imageBaseUrl}storage/app/public/${(searchModel?.data?[index].image ?? "")}"),
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    width: width / 20,
-                                                  ),
-                                                  Text(
-                                                      searchModel?.data?[index]
-                                                              .name ??
-                                                          "",
-                                                      style: AppTextStyle
-                                                          .poppinsMedium15(
-                                                              context: context,
-                                                              color: AppColors
-                                                                  .secondaryColor)),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      )
+            final data = provider.categoryScreenModel?.data;
+            final categories = data?.category ?? [];
+            final companies = data?.company ?? [];
+            final banners = (provider.slider != null && provider.slider!.isNotEmpty)
+                ? provider.slider!
+                : (provider.advertisement ?? []);
+
+            final bool isSearching = (provider.searchModel != null);
+
+            return Stack(
+              children: [
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: ListView(
+                      padding: const EdgeInsets.only(bottom: 120),
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        // 1. Search Bar
+                        _buildSearchBar(context, provider),
+
+                        if (isSearching)
+                          // Search Results List
+                          _buildSearchResults(context, provider, height, width)
+                        else ...[
+                          // 2. Promotional Banners Slider
+                          if (banners.isNotEmpty)
+                            _buildHeroBanner(context, provider, banners),
+
+                          // 3. Subcategories Grid Section ("We Deal Into" sub-items)
+                          _buildCategoriesSection(context, categories, height, width),
+
+                          // 4. Verified Companies / Manufacturers Section
+                          _buildCompaniesSection(context, companies, height, width),
+                        ],
                       ],
                     ),
-                    Provider.of<CategoryScreenProvider>(context, listen: false)
-                                .searchModel ==
-                            null
-                        ? GlobalCartContainer(width: width, height: height)
-                        : SizedBox.shrink()
-                  ],
-                );
-        },
-      )),
+                  ),
+                ),
+
+                // Floating Cart Container
+                if (!isSearching)
+                  GlobalCartContainer(width: width, height: height),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // 1. Modern Blinkit Search Bar
+  Widget _buildSearchBar(BuildContext context, CategoryScreenProvider provider) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
+      child: Container(
+        height: 46,
+        decoration: BoxDecoration(
+          color: const Color(0xffF5F6F8),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xffE5E7EB)),
+        ),
+        child: Row(
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Icon(
+                Icons.search_rounded,
+                color: AppColors.primaryColor,
+                size: 20,
+              ),
+            ),
+            Expanded(
+              child: TextField(
+                controller: provider.categorySearchController,
+                onChanged: (val) => provider.onSearchChanged(
+                  val,
+                  MediaQuery.of(context).size.height,
+                  context,
+                ),
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.secondaryColor,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Search categories, factories or products...",
+                  hintStyle: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.lightText,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ),
+            if (provider.categorySearchController.text.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.lightText),
+                onPressed: () {
+                  provider.categorySearchController.clear();
+                  provider.clearSearch();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 2. Hero Promotional Banner
+  Widget _buildHeroBanner(
+    BuildContext context,
+    CategoryScreenProvider provider,
+    List banners,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      child: Column(
+        children: [
+          CarouselSlider(
+            items: banners.map((item) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Image.network(
+                    "${AppAssetImage.imageBaseUrl}storage/app/public/$item",
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    cacheWidth: 650,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: const Color(0xffEEEEEE),
+                      child: const Center(
+                        child: Icon(Icons.image_outlined, color: AppColors.greyColor, size: 36),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+            carouselController: provider.carousalController,
+            options: CarouselOptions(
+              height: 135,
+              viewportFraction: 0.92,
+              enlargeCenterPage: true,
+              enlargeFactor: 0.12,
+              autoPlay: true,
+              autoPlayInterval: const Duration(seconds: 4),
+              onPageChanged: (index, reason) {
+                setState(() {
+                  provider.current = index;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: banners.asMap().entries.map((entry) {
+              final bool isActive = (provider.current == entry.key);
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: isActive ? 18 : 5,
+                height: 5,
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(3),
+                  color: isActive ? AppColors.primaryColor : const Color(0xffD1D5DB),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 3. Sub-Categories Section (Visual Card Grid)
+  Widget _buildCategoriesSection(
+    BuildContext context,
+    List categories,
+    double height,
+    double width,
+  ) {
+    if (categories.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Text(
+            "No categories available under this section",
+            style: GoogleFonts.poppins(color: AppColors.lightText),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xffECEEF1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    height: 15,
+                    width: 3.5,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Browse Formulations & Types",
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.secondaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Text(
+                  "${categories.length} Types",
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1D4ED8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 2-Column Category Grid
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: categories.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.88,
+            ),
+            itemBuilder: (context, index) {
+              final cat = categories[index];
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CompanyPageScreen(cid: cat.cid ?? 0),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xffFAFAFA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xffECEEF1)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Image Area
+                      Expanded(
+                        flex: 7,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                          child: Container(
+                            color: Colors.white,
+                            padding: const EdgeInsets.all(8),
+                            child: cat.image != null && cat.image!.isNotEmpty
+                                ? Image.network(
+                                    "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
+                                    fit: BoxFit.contain,
+                                    cacheWidth: 350,
+                                    errorBuilder: (context, error, stackTrace) => Image.asset(
+                                      AppAssetImage.logo,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  )
+                                : Image.asset(
+                                    AppAssetImage.logo,
+                                    fit: BoxFit.contain,
+                                  ),
+                          ),
+                        ),
+                      ),
+                      // Title & Action
+                      Expanded(
+                        flex: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                cat.name ?? "",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.secondaryColor,
+                                  height: 1.2,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Text(
+                                    "Explore Catalog",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 10,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 4. Verified Companies / Manufacturers Section
+  Widget _buildCompaniesSection(
+    BuildContext context,
+    List companies,
+    double height,
+    double width,
+  ) {
+    if (companies.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xffECEEF1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    height: 15,
+                    width: 3.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Verified Factory Partners",
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.secondaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFBBF7D0)),
+                ),
+                child: Text(
+                  "${companies.length} Partners",
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF15803D),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: companies.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final company = companies[index];
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BrandPageScreen(
+                        cmpid: company.cmpid ?? 0,
+                        cid: 0,
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xffFAFAFA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xffE5E7EB)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        height: 52,
+                        width: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xffE5E7EB)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: company.image != null && company.image!.isNotEmpty
+                              ? Image.network(
+                                  "${AppAssetImage.imageBaseUrl}storage/app/public/${company.image}",
+                                  fit: BoxFit.contain,
+                                  cacheWidth: 150,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                    Icons.factory_outlined,
+                                    color: AppColors.primaryColor,
+                                    size: 26,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.factory_outlined,
+                                  color: AppColors.primaryColor,
+                                  size: 26,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  "DIRECT FACTORY",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF16A34A),
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.check_circle_rounded, size: 11, color: Color(0xFF16A34A)),
+                              ],
+                            ),
+                            Text(
+                              company.name ?? "",
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.secondaryColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (company.city != null && company.city!.isNotEmpty)
+                              Text(
+                                "Site: ${company.city} • ${company.count ?? 0} Categories",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.lightText,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.primaryColor.withOpacity(0.4)),
+                        ),
+                        child: Text(
+                          "View >",
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 5. Search Results View
+  Widget _buildSearchResults(
+    BuildContext context,
+    CategoryScreenProvider provider,
+    double height,
+    double width,
+  ) {
+    if (provider.loadingSearch) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 40),
+        child: Center(child: CircularProgressIndicatorWidget()),
+      );
+    }
+
+    final results = provider.searchModel?.data ?? [];
+    if (results.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(30),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              const Icon(Icons.search_off_rounded, size: 48, color: AppColors.greyColor),
+              const SizedBox(height: 10),
+              Text(
+                "No matching results found",
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.secondaryColor,
+                ),
+              ),
+              Text(
+                "Try searching for paints, primers, or factory brands",
+                style: GoogleFonts.poppins(fontSize: 11, color: AppColors.lightText),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      itemCount: results.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final item = results[index];
+        return InkWell(
+          onTap: () {
+            if (item.screen == "category") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CategoryScreen(mid: item.relatedid ?? 0),
+                ),
+              );
+            } else if (item.screen == "company") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CompanyPageScreen(cid: item.relatedid ?? 0),
+                ),
+              );
+            } else if (item.screen == "product") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DescriptionPageScreen(
+                    productId: item.id ?? 0,
+                    colorId: item.relatedid?.toString() ?? "0",
+                  ),
+                ),
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xffE5E7EB)),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    height: 48,
+                    width: 48,
+                    color: const Color(0xffF3F4F6),
+                    child: item.image != null && item.image!.isNotEmpty
+                        ? Image.network(
+                            "${AppAssetImage.imageBaseUrl}storage/app/public/${item.image}",
+                            fit: BoxFit.cover,
+                            cacheWidth: 150,
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.category_outlined,
+                              color: AppColors.primaryColor,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.category_outlined,
+                            color: AppColors.primaryColor,
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.name ?? "",
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.secondaryColor,
+                        ),
+                      ),
+                      Text(
+                        item.screen?.toUpperCase() ?? "RESULT",
+                        style: GoogleFonts.poppins(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryColor,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: AppColors.lightText,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

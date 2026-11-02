@@ -147,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   carousel: provider.categoryCarousels[0],
                                   height: height,
                                   width: width,
+                                  shelfIndex: 0,
                                 ),
                               _buildAdSlider(
                                 context: context,
@@ -156,6 +157,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 height: height,
                                 width: width,
                                 title: "Bulk Factory Deals",
+                                backgroundGradient: const LinearGradient(
+                                  colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5), Color(0xFFFEE2E2)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderColor: const Color(0xFFFED7AA),
+                                accentColor: const Color(0xFFEA580C),
+                                badgeText: "FACTORY DIRECT • 20% OFF",
                               ),
                               if (provider.categoryCarousels.length > 1)
                                 _buildCategoryCarousel(
@@ -163,6 +172,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   carousel: provider.categoryCarousels[1],
                                   height: height,
                                   width: width,
+                                  shelfIndex: 1,
                                 ),
                               _buildWeDealIntoSection(context, provider, height, width),
                               if (provider.categoryCarousels.length > 2)
@@ -171,6 +181,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   carousel: provider.categoryCarousels[2],
                                   height: height,
                                   width: width,
+                                  shelfIndex: 2,
                                 ),
                               if ((provider.advertisement?.length ?? 0) > 1)
                                 _buildAdSlider(
@@ -181,6 +192,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   height: height,
                                   width: width,
                                   title: "Commercial Specials",
+                                  backgroundGradient: const LinearGradient(
+                                    colors: [Color(0xFFFEFCE8), Color(0xFFFEF9C3), Color(0xFFFEF08A)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderColor: const Color(0xFFFDE047),
+                                  accentColor: const Color(0xFFCA8A04),
+                                  badgeText: "CONTRACTOR BULK DEALS",
                                 ),
                               if (provider.categoryCarousels.length > 3)
                                 _buildCategoryCarousel(
@@ -188,6 +207,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   carousel: provider.categoryCarousels[3],
                                   height: height,
                                   width: width,
+                                  shelfIndex: 3,
                                 ),
                               if (provider.categoryCarousels.length > 4)
                                 _buildCategoryCarousel(
@@ -195,6 +215,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   carousel: provider.categoryCarousels[4],
                                   height: height,
                                   width: width,
+                                  shelfIndex: 4,
                                 ),
                               _buildPopularBrandsSection(context, provider, height, width),
                               _buildExploreAllProductsGrid(context, provider, height, width),
@@ -507,7 +528,72 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // 4. Interleaved Mid-Page Advertisement Slider (Blinkit style)
+  // Shelf warm themes:
+  // Each shelf gets a distinctive warm gradient background, warm border, and accent badge color
+  static const List<Map<String, dynamic>> _warmShelfThemes = [
+    // Shelf 0: Wall Primers & Undercoats -> Warm Saffron / Amber Cream
+    {
+      'gradient': LinearGradient(
+        colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+      'borderColor': Color(0xFFFDE68A),
+      'accentColor': Color(0xFFD97706),
+      'badgeBg': Color(0xFFFEF3C7),
+      'badgeText': Color(0xFFB45309),
+    },
+    // Shelf 1: Industrial & PU Protective Finishes -> Warm Coral / Terracotta Rose
+    {
+      'gradient': LinearGradient(
+        colors: [Color(0xFFFFF1F2), Color(0xFFFFE4E6)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+      'borderColor': Color(0xFFFECDD3),
+      'accentColor': Color(0xFFE11D48),
+      'badgeBg': Color(0xFFFFE4E6),
+      'badgeText': Color(0xFFBE123C),
+    },
+    // Shelf 2: High Gloss & Silk Emulsions -> Warm Peach / Apricot Silk
+    {
+      'gradient': LinearGradient(
+        colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+      'borderColor': Color(0xFFFED7AA),
+      'accentColor': Color(0xFFEA580C),
+      'badgeBg': Color(0xFFFFEDD5),
+      'badgeText': Color(0xFFC2410C),
+    },
+    // Shelf 3: Enamel & Automotive Coatings -> Warm Sunset Caramel
+    {
+      'gradient': LinearGradient(
+        colors: [Color(0xFFFEFCE8), Color(0xFFFEF08A)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+      'borderColor': Color(0xFFFDE047),
+      'accentColor': Color(0xFFCA8A04),
+      'badgeBg': Color(0xFFFEF08A),
+      'badgeText': Color(0xFF854D0E),
+    },
+    // Shelf 4: Formulation Bases & Distemper -> Warm Almond / Honey Glow
+    {
+      'gradient': LinearGradient(
+        colors: [Color(0xFFFAF5FF), Color(0xFFF3E8FF)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+      'borderColor': Color(0xFFE9D5FF),
+      'accentColor': Color(0xFF9333EA),
+      'badgeBg': Color(0xFFF3E8FF),
+      'badgeText': Color(0xFF7E22CE),
+    },
+  ];
+
+  // 4. Interleaved Mid-Page Advertisement Slider (Blinkit style with rich warm gradient card)
   Widget _buildAdSlider({
     required BuildContext context,
     required List items,
@@ -516,39 +602,87 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     required double height,
     required double width,
     required String title,
+    Gradient? backgroundGradient,
+    Color? borderColor,
+    Color? accentColor,
+    String? badgeText,
   }) {
     if (items.isEmpty) return const SizedBox.shrink();
 
-    return Padding(
+    final Gradient gradient = backgroundGradient ??
+        const LinearGradient(
+          colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5), Color(0xFFFEE2E2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+    final Color border = borderColor ?? const Color(0xFFFED7AA);
+    final Color accent = accentColor ?? const Color(0xFFEA580C);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.campaign_outlined,
-                    color: AppColors.primaryColor,
-                    size: 16,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: accent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.local_offer_rounded,
+                        color: accent,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.secondaryColor,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.secondaryColor,
+                if (badgeText != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      badgeText,
+                      style: GoogleFonts.poppins(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -562,7 +696,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.blackColor.withOpacity(0.06),
+                        color: AppColors.blackColor.withOpacity(0.08),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -605,7 +739,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 margin: const EdgeInsets.symmetric(horizontal: 2.5),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(3),
-                  color: isActive ? AppColors.primaryColor : const Color(0xffD1D5DB),
+                  color: isActive ? accent : accent.withOpacity(0.3),
                 ),
               );
             }).toList(),
@@ -615,23 +749,44 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // 5. Categorized Product Carousel (Blinkit style horizontal shelf)
+  // 5. Categorized Product Carousel (Blinkit style horizontal shelf with distinct warm theme)
   Widget _buildCategoryCarousel({
     required BuildContext context,
     required CategoryCarousel carousel,
     required double height,
     required double width,
+    int shelfIndex = 0,
   }) {
     final products = carousel.products ?? [];
     if (products.isEmpty) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    final theme = _warmShelfThemes[shelfIndex % _warmShelfThemes.length];
+    final Gradient bgGradient = theme['gradient'];
+    final Color borderColor = theme['borderColor'];
+    final Color accentColor = theme['accentColor'];
+    final Color badgeBg = theme['badgeBg'];
+    final Color badgeText = theme['badgeText'];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        gradient: bgGradient,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -642,10 +797,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       Row(
                         children: [
                           Container(
-                            height: 14,
+                            height: 15,
                             width: 3.5,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryColor,
+                              color: accentColor,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -671,9 +826,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           child: Text(
                             carousel.subtitle!,
                             style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.lightText,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w500,
+                              color: accentColor.withOpacity(0.9),
                             ),
                           ),
                         ),
@@ -683,31 +838,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
                 if (carousel.badge != null && carousel.badge!.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.08),
+                      color: badgeBg,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: AppColors.primaryColor.withOpacity(0.2),
+                        color: borderColor,
+                        width: 1,
                       ),
                     ),
                     child: Text(
                       carousel.badge!,
                       style: GoogleFonts.poppins(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryColor,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: badgeText,
                       ),
                     ),
                   ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           SizedBox(
             height: 245,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               itemCount: products.length,
@@ -908,45 +1064,83 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // 7. "We Deal Into" Category Grid
+  // 7. "We Deal Into" Category Grid (Warm Styled Card)
   Widget _buildWeDealIntoSection(
       BuildContext context, HomeScreenProvider provider, double height, double width) {
     final categories = provider.homeScreenModel?.data?.maincategory ?? [];
     if (categories.isEmpty) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFFBF5), Color(0xFFFFF3E8)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFE0C2), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFEA580C).withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  height: 14,
-                  width: 3.5,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      height: 15,
+                      width: 3.5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEA580C),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "We Deal Into",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.secondaryColor,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  "We Deal Into",
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.secondaryColor,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEDD5),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFED7AA)),
+                  ),
+                  child: Text(
+                    "Direct Factory Rates",
+                    style: GoogleFonts.poppins(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFC2410C),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           GridView.builder(
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             itemCount: categories.length,
             shrinkWrap: true,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -966,17 +1160,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                   );
                 },
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.whiteColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xffECECEC)),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFE0C2), width: 1),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.blackColor.withOpacity(0.03),
-                        blurRadius: 8,
+                        color: AppColors.blackColor.withOpacity(0.04),
+                        blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
                     ],
@@ -987,24 +1181,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         height: 44,
                         width: 44,
                         decoration: BoxDecoration(
-                          color: const Color(0xffF3F4F6),
-                          shape: BoxShape.circle,
+                          color: const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: ClipOval(
-                          child: Image.network(
-                            "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image ?? ""}",
-                            fit: BoxFit.cover,
-                            cacheWidth: 120,
-                            cacheHeight: 120,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.category_outlined,
-                              size: 20,
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: cat.image != null && cat.image!.isNotEmpty
+                              ? Image.network(
+                                  "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
+                                  fit: BoxFit.contain,
+                                  cacheWidth: 160,
+                                  errorBuilder: (context, error, stackTrace) => Image.asset(
+                                    AppAssetImage.logo,
+                                    fit: BoxFit.contain,
+                                  ),
+                                )
+                              : Image.asset(
+                                  AppAssetImage.logo,
+                                  fit: BoxFit.contain,
+                                ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1013,7 +1211,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             Text(
                               cat.name ?? "",
                               style: GoogleFonts.poppins(
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.secondaryColor,
                               ),
@@ -1021,10 +1219,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              cat.title ?? "Explore Range",
+                              cat.title ?? "Explore >",
                               style: GoogleFonts.poppins(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w400,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w500,
                                 color: AppColors.lightText,
                               ),
                               maxLines: 1,
@@ -1034,9 +1232,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
                       const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 12,
-                        color: AppColors.lightText,
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: Color(0xFFEA580C),
                       ),
                     ],
                   ),
