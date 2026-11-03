@@ -47,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   final Set<int> _addedProductIds = {};
   int _selectedTier1Tab = 0;
-  bool _showGoToTop = false;
+  final ValueNotifier<bool> _showGoToTopNotifier = ValueNotifier<bool>(false);
+  bool _isSwiggyCardView = true;
   bool _freeCashClaimed = false;
   String _activeQuickFilter = 'All';
 
@@ -124,10 +125,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (_scrollController.hasClients) {
       final currentScroll = _scrollController.position.pixels;
 
-      if (currentScroll < 250 && _showGoToTop) {
-        setState(() {
-          _showGoToTop = false;
-        });
+      if (currentScroll < 250 && _showGoToTopNotifier.value) {
+        _showGoToTopNotifier.value = false;
       }
 
       final maxScroll = _scrollController.position.maxScrollExtent;
@@ -150,6 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _hintTimer?.cancel();
     _heroBannerTimer?.cancel();
     _adSliderTimer?.cancel();
+    _showGoToTopNotifier.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -189,17 +189,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           if (_scrollController.hasClients) {
                             final currentScroll = _scrollController.position.pixels;
                             if (notification.direction == ScrollDirection.forward &&
-                                currentScroll > 400) {
-                              if (!_showGoToTop) {
-                                setState(() {
-                                  _showGoToTop = true;
-                                });
+                                currentScroll > 350) {
+                              if (!_showGoToTopNotifier.value) {
+                                _showGoToTopNotifier.value = true;
                               }
                             } else if (notification.direction == ScrollDirection.reverse) {
-                              if (_showGoToTop) {
-                                setState(() {
-                                  _showGoToTop = false;
-                                });
+                              if (_showGoToTopNotifier.value) {
+                                _showGoToTopNotifier.value = false;
                               }
                             }
                           }
@@ -322,87 +318,79 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      if (provider.selectedMainCategoryId != 0)
-                                        _buildCategoryFilteredSection(context, provider, height, width),
-                                      if (provider.categoryCarousels.isNotEmpty)
-                                        _buildCategoryCarousel(
-                                          context: context,
-                                          carousel: provider.categoryCarousels[0],
-                                          height: height,
-                                          width: width,
-                                          shelfIndex: 0,
-                                        ),
-                                      _buildAdSlider(
-                                        context: context,
-                                        controller: _adSlider1Controller,
-                                        items: provider.advertisement ?? [],
-                                        currentIndex: _adSlider1Index,
-                                        onPageChanged: (idx) => setState(() => _adSlider1Index = idx),
-                                        height: height,
-                                        width: width,
-                                        title: "Bulk Factory Deals",
-                                        backgroundGradient: const LinearGradient(
-                                          colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5), Color(0xFFFEE2E2)],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderColor: const Color(0xFFFED7AA),
-                                        accentColor: const Color(0xFFEA580C),
-                                        badgeText: "FACTORY DIRECT • 20% OFF",
-                                      ),
-                                      if (provider.categoryCarousels.length > 1)
-                                        _buildCategoryCarousel(
-                                          context: context,
-                                          carousel: provider.categoryCarousels[1],
-                                          height: height,
-                                          width: width,
-                                          shelfIndex: 1,
-                                        ),
-                                      if (provider.categoryCarousels.length > 2)
-                                        _buildCategoryCarousel(
-                                          context: context,
-                                          carousel: provider.categoryCarousels[2],
-                                          height: height,
-                                          width: width,
-                                          shelfIndex: 2,
-                                        ),
-                                      if ((provider.advertisement?.length ?? 0) > 1)
+                                      _buildCategoryFilteredSection(context, provider, height, width),
+                                      if (provider.selectedMainCategoryId == 0) ...[
+                                        if (provider.categoryCarousels.isNotEmpty)
+                                          _buildCategoryCarousel(
+                                            context: context,
+                                            carousel: provider.categoryCarousels[0],
+                                            height: height,
+                                            width: width,
+                                            shelfIndex: 0,
+                                          ),
                                         _buildAdSlider(
                                           context: context,
-                                          controller: _adSlider2Controller,
-                                          items: (provider.advertisement ?? []).reversed.toList(),
-                                          currentIndex: _adSlider2Index,
-                                          onPageChanged: (idx) => setState(() => _adSlider2Index = idx),
+                                          controller: _adSlider1Controller,
+                                          items: provider.advertisement ?? [],
+                                          currentIndex: _adSlider1Index,
+                                          onPageChanged: (idx) => setState(() => _adSlider1Index = idx),
                                           height: height,
                                           width: width,
-                                          title: "Commercial Specials",
+                                          title: "Bulk Factory Deals",
                                           backgroundGradient: const LinearGradient(
-                                            colors: [Color(0xFFFEFCE8), Color(0xFFFEF9C3), Color(0xFFFEF08A)],
+                                            colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5), Color(0xFFFEE2E2)],
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ),
-                                          borderColor: const Color(0xFFFDE047),
-                                          accentColor: const Color(0xFFCA8A04),
-                                          badgeText: "CONTRACTOR BULK DEALS",
+                                          borderColor: const Color(0xFFFED7AA),
+                                          accentColor: const Color(0xFFEA580C),
+                                          badgeText: "FACTORY DIRECT • 20% OFF",
                                         ),
-                                      if (provider.categoryCarousels.length > 3)
-                                        _buildCategoryCarousel(
-                                          context: context,
-                                          carousel: provider.categoryCarousels[3],
-                                          height: height,
-                                          width: width,
-                                          shelfIndex: 3,
-                                        ),
-                                      if (provider.categoryCarousels.length > 4)
-                                        _buildCategoryCarousel(
-                                          context: context,
-                                          carousel: provider.categoryCarousels[4],
-                                          height: height,
-                                          width: width,
-                                          shelfIndex: 4,
-                                        ),
-                                      _buildPopularBrandsSection(context, provider, height, width),
-                                      _buildExploreAllProductsGrid(context, provider, height, width),
+                                        if (provider.categoryCarousels.length > 1)
+                                          _buildCategoryCarousel(
+                                            context: context,
+                                            carousel: provider.categoryCarousels[1],
+                                            height: height,
+                                            width: width,
+                                            shelfIndex: 1,
+                                          ),
+                                        if (provider.categoryCarousels.length > 2)
+                                          _buildCategoryCarousel(
+                                            context: context,
+                                            carousel: provider.categoryCarousels[2],
+                                            height: height,
+                                            width: width,
+                                            shelfIndex: 2,
+                                          ),
+                                        if ((provider.advertisement?.length ?? 0) > 1)
+                                          _buildAdSlider(
+                                            context: context,
+                                            controller: _adSlider2Controller,
+                                            items: (provider.advertisement ?? []).reversed.toList(),
+                                            currentIndex: _adSlider2Index,
+                                            onPageChanged: (idx) => setState(() => _adSlider2Index = idx),
+                                            height: height,
+                                            width: width,
+                                            title: "Commercial Specials",
+                                            backgroundGradient: const LinearGradient(
+                                              colors: [Color(0xFFFEFCE8), Color(0xFFFEF9C3), Color(0xFFFEF08A)],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                            borderColor: const Color(0xFFFDE047),
+                                            accentColor: const Color(0xFFCA8A04),
+                                            badgeText: "CONTRACTOR BULK DEALS",
+                                          ),
+                                        if (provider.categoryCarousels.length > 3)
+                                          _buildCategoryCarousel(
+                                            context: context,
+                                            carousel: provider.categoryCarousels[3],
+                                            height: height,
+                                            width: width,
+                                            shelfIndex: 3,
+                                          ),
+                                        _buildPopularBrandsSection(context, provider, height, width),
+                                      ],
                                       const SizedBox(height: 160),
                                     ],
                                   ),
@@ -412,8 +400,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ),
                         ),
                       ),
-                      if (_showGoToTop)
-                        _buildGoToTopButton(),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _showGoToTopNotifier,
+                        builder: (context, show, child) {
+                          return show ? _buildGoToTopButton() : const SizedBox.shrink();
+                        },
+                      ),
                       if (provider.searchModel == null)
                         GlobalCartContainer(width: width, height: height),
                     ],
@@ -820,80 +812,83 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
           ),
-
-          const SizedBox(height: 10),
-
-          // 2. Swiggy-Style Quick Filter Chips Row (Filter, Sort By, 99 Store, Bolt 15 min)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                _buildQuickFilterChip(
-                  icon: Icons.tune_rounded,
-                  label: "Filter",
-                  hasDropdown: false,
-                  isSelected: _activeQuickFilter == 'Filter',
-                  onTap: () {
-                    setState(() {
-                      _activeQuickFilter = _activeQuickFilter == 'Filter' ? 'All' : 'Filter';
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
-                _buildQuickFilterChip(
-                  icon: null,
-                  label: "Sort By",
-                  hasDropdown: true,
-                  isSelected: _activeQuickFilter.startsWith('Sort:'),
-                  onTap: () {
-                    _showSortBottomSheet(context, provider);
-                  },
-                ),
-                const SizedBox(width: 8),
-                _buildQuickFilterChip(
-                  icon: Icons.storefront_rounded,
-                  label: "99 Store",
-                  hasDropdown: false,
-                  badge: "HOT",
-                  badgeColor: const Color(0xFFEA580C),
-                  isSelected: _activeQuickFilter == '99 Store',
-                  onTap: () {
-                    setState(() {
-                      _activeQuickFilter = _activeQuickFilter == '99 Store' ? 'All' : '99 Store';
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
-                _buildQuickFilterChip(
-                  icon: Icons.bolt_rounded,
-                  iconColor: const Color(0xFFEA580C),
-                  label: "Bolt 15 min",
-                  hasDropdown: false,
-                  isSelected: _activeQuickFilter == 'Bolt',
-                  onTap: () {
-                    setState(() {
-                      _activeQuickFilter = _activeQuickFilter == 'Bolt' ? 'All' : 'Bolt';
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
-                _buildQuickFilterChip(
-                  icon: Icons.verified_rounded,
-                  iconColor: const Color(0xFF16A34A),
-                  label: "Factory Direct",
-                  hasDropdown: false,
-                  isSelected: _activeQuickFilter == 'Factory Direct',
-                  onTap: () {
-                    setState(() {
-                      _activeQuickFilter = _activeQuickFilter == 'Factory Direct' ? 'All' : 'Factory Direct';
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
         ],
+      ),
+    );
+  }
+
+  // 2c. Swiggy-Style Quick Filter Chips Row (Filter, Sort By, 99 Store, Bolt 15 min, Factory Direct)
+  Widget _buildQuickFilterChipsRow(BuildContext context, HomeScreenProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            _buildQuickFilterChip(
+              icon: Icons.tune_rounded,
+              label: "Filter",
+              hasDropdown: false,
+              isSelected: _activeQuickFilter == 'Filter',
+              onTap: () {
+                setState(() {
+                  _activeQuickFilter = _activeQuickFilter == 'Filter' ? 'All' : 'Filter';
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+            _buildQuickFilterChip(
+              icon: null,
+              label: "Sort By",
+              hasDropdown: true,
+              isSelected: _activeQuickFilter.startsWith('Sort:'),
+              onTap: () {
+                _showSortBottomSheet(context, provider);
+              },
+            ),
+            const SizedBox(width: 8),
+            _buildQuickFilterChip(
+              icon: Icons.storefront_rounded,
+              label: "99 Store",
+              hasDropdown: false,
+              badge: "HOT",
+              badgeColor: const Color(0xFFEA580C),
+              isSelected: _activeQuickFilter == '99 Store',
+              onTap: () {
+                setState(() {
+                  _activeQuickFilter = _activeQuickFilter == '99 Store' ? 'All' : '99 Store';
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+            _buildQuickFilterChip(
+              icon: Icons.bolt_rounded,
+              iconColor: const Color(0xFFEA580C),
+              label: "Bolt 15 min",
+              hasDropdown: false,
+              isSelected: _activeQuickFilter == 'Bolt',
+              onTap: () {
+                setState(() {
+                  _activeQuickFilter = _activeQuickFilter == 'Bolt' ? 'All' : 'Bolt';
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+            _buildQuickFilterChip(
+              icon: Icons.verified_rounded,
+              iconColor: const Color(0xFF16A34A),
+              label: "Factory Direct",
+              hasDropdown: false,
+              isSelected: _activeQuickFilter == 'Factory Direct',
+              onTap: () {
+                setState(() {
+                  _activeQuickFilter = _activeQuickFilter == 'Factory Direct' ? 'All' : 'Factory Direct';
+                });
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1738,7 +1733,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // Quick Animated Add To Cart Button (No Screen Redirect)
+  // Quick Animated Add To Cart Button (No Screen Redirect, Swiggy Crisp Style)
   Widget _buildQuickAddButton(BuildContext context, HomeProduct product) {
     final pId = product.id ?? 0;
     final bool isAdded = _addedProductIds.contains(pId);
@@ -1746,6 +1741,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return InkWell(
       onTap: () async {
         if (isAdded) return;
+        HapticFeedback.mediumImpact();
         setState(() => _addedProductIds.add(pId));
         final cartProv = Provider.of<CartScreenProvider>(context, listen: false);
         await cartProv.quickAddToCart(
@@ -1790,40 +1786,444 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           });
         }
       },
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(8),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5.5),
         decoration: BoxDecoration(
-          color: isAdded ? const Color(0xFF16A34A) : AppColors.primaryColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(6),
+          color: isAdded ? const Color(0xFF16A34A) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isAdded ? const Color(0xFF16A34A) : AppColors.primaryColor.withOpacity(0.4),
-            width: 1,
+            color: const Color(0xFF16A34A),
+            width: 1.5,
           ),
-          boxShadow: isAdded
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF16A34A).withOpacity(0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+          boxShadow: [
+            BoxShadow(
+              color: isAdded
+                  ? const Color(0xFF16A34A).withOpacity(0.3)
+                  : Colors.black.withOpacity(0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isAdded) ...[
-              const Icon(Icons.check_rounded, color: Colors.white, size: 12),
+              const Icon(Icons.check_rounded, color: Colors.white, size: 13),
+              const SizedBox(width: 4),
+              Text(
+                "ADDED",
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ] else ...[
+              Text(
+                "ADD",
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF16A34A),
+                  letterSpacing: 0.3,
+                ),
+              ),
               const SizedBox(width: 3),
+              const Icon(Icons.add_rounded, color: Color(0xFF16A34A), size: 14),
             ],
-            Text(
-              isAdded ? "ADDED" : "ADD",
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: isAdded ? Colors.white : AppColors.primaryColor,
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 6b. Swiggy-Style Large Product Card (Matching user reference screenshots)
+  Widget _buildSwiggyProductCard(BuildContext context, HomeProduct product) {
+    final num? oldPrice = product.oldprice;
+    final num? currentPrice = product.price;
+    final bool hasDiscount = (oldPrice != null && currentPrice != null && oldPrice > currentPrice);
+    final int discountPercent = hasDiscount
+        ? (((oldPrice - currentPrice) / oldPrice) * 100).round()
+        : 0;
+    final num savings = hasDiscount ? (oldPrice - currentPrice) : 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DescriptionPageScreen(
+                productId: product.id ?? 0,
+                colorId: product.colorId ?? "0",
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Hero Image Area (Aspect Ratio 1.85 with Badges & Wishlist Button)
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                  child: AspectRatio(
+                    aspectRatio: 1.85,
+                    child: Container(
+                      color: const Color(0xFFF8FAFC),
+                      child: (product.image != null && product.image!.isNotEmpty)
+                          ? Image.network(
+                              "${AppAssetImage.imageBaseUrl}storage/app/public/${product.image}",
+                              fit: BoxFit.cover,
+                              cacheWidth: 600,
+                              errorBuilder: (context, error, stackTrace) => const Center(
+                                child: Icon(Icons.format_paint_outlined, size: 48, color: Color(0xFFCBD5E1)),
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(Icons.format_paint_outlined, size: 48, color: Color(0xFFCBD5E1)),
+                            ),
+                    ),
+                  ),
+                ),
+                // Wishlist Heart Button (Top Right)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Consumer<WishlistProvider>(
+                    builder: (context, wishProv, _) {
+                      final isWishlisted = wishProv.isWishlisted(product.id);
+                      return Material(
+                        color: Colors.black.withOpacity(0.4),
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () async {
+                            HapticFeedback.lightImpact();
+                            final pId = product.id ?? 0;
+                            if (pId > 0) {
+                              final nowWish = await wishProv.toggleWishlist(
+                                context: context,
+                                productId: pId,
+                                color: product.colorId ?? "0",
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(milliseconds: 1100),
+                                    margin: const EdgeInsets.only(bottom: 70, left: 16, right: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    backgroundColor: nowWish ? const Color(0xFFE11D48) : const Color(0xFF1E293B),
+                                    content: Row(
+                                      children: [
+                                        Icon(
+                                          nowWish ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          nowWish ? "Saved to Wishlist ❤️" : "Removed from Wishlist",
+                                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(7),
+                            child: Icon(
+                              isWishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              size: 18,
+                              color: isWishlisted ? const Color(0xFFEF4444) : Colors.white,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                // 3-dots Menu Button (Top Right)
+                Positioned(
+                  top: 10,
+                  right: 48,
+                  child: Material(
+                    color: Colors.black.withOpacity(0.4),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DescriptionPageScreen(
+                              productId: product.id ?? 0,
+                              colorId: product.colorId ?? "0",
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(7),
+                        child: Icon(
+                          Icons.more_horiz_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Discount / Offer Pill (Bottom Left of image, Swiggy style)
+                if (hasDiscount && discountPercent > 0)
+                  Positioned(
+                    bottom: 8,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.78),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.local_offer_rounded, size: 11, color: Color(0xFFFB923C)),
+                          const SizedBox(width: 4),
+                          Text(
+                            "UP TO $discountPercent% OFF",
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // Dispatch Time Pill (Bottom Right of image, Swiggy '20-25 MINS' style)
+                Positioned(
+                  bottom: 8,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.78),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.flash_on_rounded, size: 12, color: Color(0xFFFBBF24)),
+                        const SizedBox(width: 3),
+                        Text(
+                          "24-48 HRS",
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // 2. Card Content Details Below Image
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Bolt Tag Row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFFFED7AA)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFFEA580C)),
+                            Text(
+                              "Bolt",
+                              style: GoogleFonts.poppins(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFFC2410C),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Direct Factory Dispatch",
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4B5563),
+                        ),
+                      ),
+                      const Spacer(),
+                      if (product.brandName != null && product.brandName!.isNotEmpty)
+                        Text(
+                          product.brandName!.toUpperCase(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFEA580C),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+
+                  // Product Title
+                  Text(
+                    product.name ?? "Factory Product",
+                    style: GoogleFonts.poppins(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                      height: 1.25,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Rating, Location & Pack Specs
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF15803D),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded, size: 11, color: Colors.white),
+                            const SizedBox(width: 2),
+                            Text(
+                              "4.2 (120+)",
+                              style: GoogleFonts.poppins(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "•  Factory Outlet, Direct",
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                      if (product.packSize != null && product.packSize!.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          "•  ${product.packSize}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF374151),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 8),
+
+                  // Pricing and ADD Button Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF111827),
+                                ),
+                              ),
+                              if (hasDiscount) ...[
+                                const SizedBox(width: 6),
+                                Text(
+                                  "₹${oldPrice.toStringAsFixed(0)}",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    decoration: TextDecoration.lineThrough,
+                                    color: const Color(0xFF9CA3AF),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (hasDiscount && savings > 0)
+                            Text(
+                              "Save ₹${savings.toStringAsFixed(0)} on wholesale",
+                              style: GoogleFonts.poppins(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF16A34A),
+                              ),
+                            ),
+                        ],
+                      ),
+                      _buildQuickAddButton(context, product),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -1851,9 +2251,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 duration: const Duration(milliseconds: 500),
                 curve: Curves.easeOutCubic,
               );
-              setState(() {
-                _showGoToTop = false;
-              });
+              _showGoToTopNotifier.value = false;
             },
             borderRadius: BorderRadius.circular(24),
             child: AnimatedContainer(
@@ -1950,6 +2348,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       }).toList();
     }
 
+    // Dynamic filtering based on Quick Filter Chips (99 Store, Bolt, Factory Direct, Sort)
+    if (_activeQuickFilter == '99 Store') {
+      tierFiltered = tierFiltered.where((p) => (p.price?.toDouble() ?? 0.0) <= 999).toList();
+    } else if (_activeQuickFilter == 'Bolt') {
+      tierFiltered = tierFiltered.where((p) => p.name != null && p.name!.isNotEmpty).toList();
+    } else if (_activeQuickFilter == 'Factory Direct') {
+      tierFiltered = tierFiltered.where((p) => p.brandId != null).toList();
+    } else if (_activeQuickFilter == 'Sort: Price Low') {
+      tierFiltered.sort((a, b) => (a.price ?? 0).compareTo(b.price ?? 0));
+    } else if (_activeQuickFilter == 'Sort: Price High') {
+      tierFiltered.sort((a, b) => (b.price ?? 0).compareTo(a.price ?? 0));
+    }
+
     final productsToShow = tierFiltered.isNotEmpty ? tierFiltered : baseProducts.take(12).toList();
 
     // Filter related subcategories for this category
@@ -1967,53 +2378,133 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Title
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Category Products",
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.secondaryColor,
-                ),
-              ),
-              InkWell(
-                onTap: () => provider.selectCategory(0),
-                child: Text(
-                  "Show All",
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryColor,
+          // 1. Swiggy Quick Filter Chips Row (Filter, Sort By, 99 Store, Bolt 15 min, Factory Direct)
+          _buildQuickFilterChipsRow(context, provider),
+
+          // 2. Section Title & Subtitle + View Toggle (Swiggy Feed vs 2-Column Grid)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12, top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        selectedId == 0 ? "Top Products to Explore" : "Category Products",
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1F2937),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      Text(
+                        selectedId == 0
+                            ? "Featured Direct Factory Items • Fast Dispatch"
+                            : "Direct Factory Rates • Verified Quality",
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                // View Mode Toggle (Swiggy Feed vs 2-Col Grid)
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      InkWell(
+                        onTap: () => setState(() => _isSwiggyCardView = true),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _isSwiggyCardView ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: _isSwiggyCardView
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Icon(
+                            Icons.view_agenda_rounded,
+                            size: 16,
+                            color: _isSwiggyCardView ? const Color(0xFFEA580C) : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      InkWell(
+                        onTap: () => setState(() => _isSwiggyCardView = false),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: !_isSwiggyCardView ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: !_isSwiggyCardView
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Icon(
+                            Icons.grid_view_rounded,
+                            size: 16,
+                            color: !_isSwiggyCardView ? const Color(0xFFEA580C) : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
 
           // First 2 products
-          if (productsToShow.isNotEmpty)
-            GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: productsToShow.length > 2 ? 2 : productsToShow.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 0.63,
+          if (productsToShow.isNotEmpty) ...[
+            if (_isSwiggyCardView) ...[
+              _buildSwiggyProductCard(context, productsToShow[0]),
+              if (productsToShow.length > 1) _buildSwiggyProductCard(context, productsToShow[1]),
+            ] else
+              GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: productsToShow.length > 2 ? 2 : productsToShow.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.63,
+                ),
+                itemBuilder: (context, idx) {
+                  return _buildBlinkitProductCard(context, productsToShow[idx], isGrid: true);
+                },
               ),
-              itemBuilder: (context, idx) {
-                return _buildBlinkitProductCard(context, productsToShow[idx], isGrid: true);
-              },
-            ),
+          ],
 
           // IN-BETWEEN SLIDER 1: Subcategories Horizontal Slider
           if (subcategoriesToShow.isNotEmpty) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Row(
               children: [
                 const Icon(Icons.tune_rounded, size: 16, color: AppColors.primaryColor),
@@ -2119,26 +2610,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
           // Next 2 products (items 2 to 4)
           if (productsToShow.length > 2) ...[
-            const SizedBox(height: 16),
-            GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: productsToShow.length > 4 ? 2 : (productsToShow.length - 2),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 0.63,
+            const SizedBox(height: 12),
+            if (_isSwiggyCardView) ...[
+              _buildSwiggyProductCard(context, productsToShow[2]),
+              if (productsToShow.length > 3) _buildSwiggyProductCard(context, productsToShow[3]),
+            ] else
+              GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: productsToShow.length > 4 ? 2 : (productsToShow.length - 2),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.63,
+                ),
+                itemBuilder: (context, idx) {
+                  return _buildBlinkitProductCard(context, productsToShow[idx + 2], isGrid: true);
+                },
               ),
-              itemBuilder: (context, idx) {
-                return _buildBlinkitProductCard(context, productsToShow[idx + 2], isGrid: true);
-              },
-            ),
           ],
 
           // IN-BETWEEN SLIDER 2: Brands & Verified Factory Companies with Warm Background
           if (brandsToShow.isNotEmpty || allCompanies.isNotEmpty) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -2263,21 +2758,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
           // Remaining products (items 4+)
           if (productsToShow.length > 4) ...[
-            const SizedBox(height: 16),
-            GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: productsToShow.length - 4,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 0.63,
+            const SizedBox(height: 12),
+            if (_isSwiggyCardView) ...[
+              ...productsToShow.skip(4).map((p) => _buildSwiggyProductCard(context, p)).toList(),
+            ] else
+              GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: productsToShow.length - 4,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.63,
+                ),
+                itemBuilder: (context, idx) {
+                  return _buildBlinkitProductCard(context, productsToShow[idx + 4], isGrid: true);
+                },
               ),
-              itemBuilder: (context, idx) {
-                return _buildBlinkitProductCard(context, productsToShow[idx + 4], isGrid: true);
-              },
-            ),
           ],
         ],
       ),

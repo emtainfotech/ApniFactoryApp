@@ -1,8 +1,9 @@
 class ApiEndPoint {
-  // Localhost API Endpoint for local backend (accessible via adb reverse tcp:8000 tcp:8000)
-  static const String baseUrl = "http://127.0.0.1:8000/api/";
+  // Live Hostinger Production Backend API
+  static const String baseUrl = "https://cyan-eagle-893359.hostingersite.com/api/";
+  // Localhost fallback: "http://127.0.0.1:8000/api/";
   // Alternative local Wi-Fi IP: "http://192.168.29.118:8000/api/";
-  // Production URL: "https://panel.apnifactory.co.in/api/";
+  // Alternative production domain: "https://panel.apnifactory.co.in/api/";
   static const String signUpApi = "${baseUrl}register";
   static const String loginApi = "${baseUrl}login";
   static const String getOtpApi = "${baseUrl}sendotp";

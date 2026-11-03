@@ -5,6 +5,8 @@ class AppAssetImage {
   static const String facebookIcon = "assets/images/Component 12.png";
   static const String homePageCurve = "assets/images/Vector.png";
   static const String gridImage = "assets/images/Isolation_Mode (3).png";
-  static const String imageBaseUrl ="http://127.0.0.1:8000/";
-  // Production URL: "https://panel.apnifactory.co.in/";
+  // Live Hostinger Production URL
+  static const String imageBaseUrl = "https://cyan-eagle-893359.hostingersite.com/";
+  // Localhost fallback: "http://127.0.0.1:8000/";
+  // Alternative production domain: "https://panel.apnifactory.co.in/";
 } 
