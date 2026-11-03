@@ -334,13 +334,18 @@ log(attributes.toString());
             },
           );
         } else {
-          loadingAddToWishlist = true;
+          loadingAddToWishlist = false;
           notifyListeners();
         }
+      } else {
+        loadingAddToWishlist = false;
+        notifyListeners();
       }
     } catch (e) {
       log("add to wishlist error: ${e.toString()}");
+    } finally {
+      loadingAddToWishlist = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 }

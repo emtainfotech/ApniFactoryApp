@@ -38,6 +38,18 @@ class SharedPref {
     return sharedPreferences.setString(userNameKey, userName);
   }
 
+  static String userMobileKey = 'userMobileKey';
+
+  static Future<String> getUserMobile() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.getString(userMobileKey) ?? "";
+  }
+
+  static Future<bool> setUserMobile(String userMobile) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.setString(userMobileKey, userMobile);
+  }
+
 
   static String isLoggedInKey = 'isLoggedInKey';
     static Future<bool> setIsLoggedIn(bool value) async {

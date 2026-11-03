@@ -143,19 +143,12 @@ class HomeScreenProvider extends ChangeNotifier {
       loadingNotification = true;
       notifyListeners();
       notificationModel = await CreatorApiServices.notificationDetails(context);
-
-      if (notificationModel != null && notificationModel!.code == 100) {
-        loadingNotification = false;
-
-        notifyListeners();
-      } else {
-        loadingNotification = true;
-        notifyListeners();
-      }
     } catch (e) {
       log("notification error: ${e.toString()}");
+    } finally {
+      loadingNotification = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   bool loadingAdminAppPages = true;

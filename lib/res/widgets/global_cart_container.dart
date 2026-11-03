@@ -1,11 +1,8 @@
 import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/res/colors.dart';
-import 'package:apni_factory/res/textstyle.dart';
-import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
-import 'package:apni_factory/res/widgets/round_button.dart';
 import 'package:apni_factory/screens/cart_screen.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class GlobalCartContainer extends StatelessWidget {
@@ -18,72 +15,147 @@ class GlobalCartContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<CartScreenProvider>(
       builder: (context, cartProvider, child) {
-        if (cartProvider.userCartModel?.data != null &&
-            cartProvider.userCartModel!.data!.isNotEmpty) {
-          // Show the container if items exist in the cart
-          return cartProvider.loadingUserCart
-              ? CircularProgressIndicatorWidget()
-              : Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    width: width,
-                    height: height / 10,
-                    decoration: BoxDecoration(
-                      color: AppColors.whiteColor,
-                      boxShadow: [BoxShadow()],
-                      borderRadius: BorderRadius.circular(height / 40),
+        final cartData = cartProvider.userCartModel?.data;
+        if (cartData != null && cartData.isNotEmpty) {
+          final int itemCount = cartProvider.userCartModel?.counter ?? cartData.length;
+          final num totalAmount = cartProvider.userCartModel?.grandTotal ??
+              cartProvider.userCartModel?.netamount ??
+              0;
+
+          return Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12, left: 14, right: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: height / 60),
-                      child: Row(
+                    BoxShadow(
+                      color: AppColors.primaryColor.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.12),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(9),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.shopping_bag_outlined,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            height: height / 25,
-                            width: height / 25,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(height / 60),
-                              image: DecorationImage(
-                                image: NetworkImage(
-                                    "https://cdn.pixabay.com/photo/2013/06/07/09/53/paint-117599_1280.png"),
-                                fit: BoxFit.cover,
+                          Text(
+                            "$itemCount ${itemCount == 1 ? 'ITEM' : 'ITEMS'} IN CART",
+                            style: GoogleFonts.poppins(
+                              color: const Color(0xFF94A3B8),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          if (totalAmount > 0)
+                            Text(
+                              "\u20B9${totalAmount.toStringAsFixed(0)}",
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            )
+                          else
+                            Text(
+                              "View Items",
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ),
-                          SizedBox(
-                            width: width / 40,
-                          ),
-                          Text(
-                            "${cartProvider.userCartModel!.counter} items",
-                            style: AppTextStyle.poppinsRegular16(
-                              context: context,
-                              color: AppColors.secondaryColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(
-                            width: width / 3,
-                          ),
-                          Expanded(
-                            child: RoundButton(
-                              title: "Go to Cart",
-                              backgroundColor: AppColors.primaryColor,
-                              onPressed: () {
-                                       Navigator.push(context, MaterialPageRoute(builder: (context) {
-                                         return CartScreen();
-                                       },));
-                                                                                                                                            
-                              },
-                            ),
-                          )
                         ],
                       ),
                     ),
-                  ),
-                );
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CartScreen(),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryColor.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "View Cart",
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
-
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
       },
     );
   }
 }
+
+

@@ -115,8 +115,8 @@ class Attribute {
     productId = json['product_id'];
     color = json['color'];
     quantity = json['quantity'];
-    oldprice = json['oldprice'];
-    price = json['price'];
+    oldprice = json['oldprice'] != null ? num.tryParse(json['oldprice'].toString()) : null;
+    price = json['price'] != null ? num.tryParse(json['price'].toString()) : null;
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
   }

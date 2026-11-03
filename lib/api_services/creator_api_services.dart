@@ -858,11 +858,14 @@ class CreatorApiServices {
 
       log("User Wishlist response is ${response.data.toString()}");
 
-      // var data = json.decode(response.data);
+      final dynamic rawData = response.data;
+      final Map<String, dynamic> data = (rawData is String)
+          ? json.decode(rawData)
+          : Map<String, dynamic>.from(rawData as Map);
 
       if (response.statusCode == 200) {
         UserWishlistModel userWishlistModel =
-            UserWishlistModel.fromJson(response.data);
+            UserWishlistModel.fromJson(data);
 
         log(userWishlistModel.toString());
         return userWishlistModel;
@@ -889,11 +892,14 @@ class CreatorApiServices {
 
       log("Delete Wishlist response is ${response.data.toString()}");
 
-      // var data = json.decode(response.data);
+      final dynamic rawData = response.data;
+      final Map<String, dynamic> data = (rawData is String)
+          ? json.decode(rawData)
+          : Map<String, dynamic>.from(rawData as Map);
 
       if (response.statusCode == 200) {
         DeleteWishlistModel deleteWishlistModel =
-            DeleteWishlistModel.fromJson(response.data);
+            DeleteWishlistModel.fromJson(data);
         log(deleteWishlistModel.toString());
         return deleteWishlistModel;
       } else {
@@ -917,11 +923,14 @@ class CreatorApiServices {
 
       log("Add To Wishlist response is ${response.data.toString()}");
 
-      // var data = json.decode(response.data);
+      final dynamic rawData = response.data;
+      final Map<String, dynamic> data = (rawData is String)
+          ? json.decode(rawData)
+          : Map<String, dynamic>.from(rawData as Map);
 
       if (response.statusCode == 200) {
         AddToWishlistModel addToWishlistModel =
-            AddToWishlistModel.fromJson(response.data);
+            AddToWishlistModel.fromJson(data);
         log(addToWishlistModel.toString());
         return addToWishlistModel;
       } else {
@@ -1639,7 +1648,10 @@ log("message");
 
       log("Notification response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      final dynamic rawData = response.data;
+      final Map<String, dynamic> data = (rawData is String)
+          ? json.decode(rawData)
+          : Map<String, dynamic>.from(rawData as Map);
 
       if (response.statusCode == 200) {
         NotificationModel notificationModel = NotificationModel.fromJson(data);
