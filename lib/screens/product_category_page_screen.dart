@@ -238,7 +238,10 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
             );
           }
 
-          final subcategories = provider.subCategoryDetails ?? [];
+          final subcategories = (provider.subCategoryDetails != null &&
+                  provider.subCategoryDetails!.isNotEmpty)
+              ? provider.subCategoryDetails!
+              : (provider.productCategoryListScreenModel?.data?.subcategory ?? []);
           final products = provider.productDetails ?? [];
 
           return Stack(

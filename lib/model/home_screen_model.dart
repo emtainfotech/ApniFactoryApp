@@ -177,6 +177,8 @@ class HomeProduct {
   num? price;
   num? oldprice;
   String? colorId;
+  String? packSize;
+  int? attributeId;
 
   HomeProduct({
     this.id,
@@ -189,6 +191,8 @@ class HomeProduct {
     this.price,
     this.oldprice,
     this.colorId,
+    this.packSize,
+    this.attributeId,
   });
 
   HomeProduct.fromJson(Map<String, dynamic> json) {
@@ -202,6 +206,8 @@ class HomeProduct {
     price = json['price'];
     oldprice = json['oldprice'];
     colorId = json['color_id']?.toString() ?? '0';
+    packSize = json['pack_size'];
+    attributeId = json['attribute_id'];
   }
 
   Map<String, dynamic> toJson() {
@@ -216,6 +222,8 @@ class HomeProduct {
     data['price'] = price;
     data['oldprice'] = oldprice;
     data['color_id'] = colorId;
+    data['pack_size'] = packSize;
+    data['attribute_id'] = attributeId;
     return data;
   }
 }

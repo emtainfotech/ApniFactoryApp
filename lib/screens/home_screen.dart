@@ -16,6 +16,8 @@ import 'package:apni_factory/model/home_screen_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../res/asset_image.dart';
 import '../utils.dart';
@@ -38,6 +40,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   bool _isStickyCategoryVisible = false;
   final Set<int> _addedProductIds = {};
+  int _selectedTier1Tab = 0;
+  bool _showGoToTop = false;
+  bool _freeCashClaimed = false;
+  String _activeQuickFilter = 'All';
 
   int _hintIndex = 0;
   Timer? _hintTimer;
@@ -79,10 +85,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _onScroll() {
     if (_scrollController.hasClients) {
       final currentScroll = _scrollController.position.pixels;
-      final shouldShowSticky = currentScroll > 520;
+      final shouldShowSticky = currentScroll > 360;
       if (_isStickyCategoryVisible != shouldShowSticky) {
         setState(() {
           _isStickyCategoryVisible = shouldShowSticky;
+        });
+      }
+
+      if (currentScroll < 250 && _showGoToTop) {
+        setState(() {
+          _showGoToTop = false;
         });
       }
 
@@ -138,107 +150,132 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   )
                 : Stack(
                     children: [
-                      RefreshIndicator(
-                        color: AppColors.primaryColor,
-                        onRefresh: () => provider.refreshHomeScreen(context),
-                        child: ListView(
-                          controller: _scrollController,
-                          padding: EdgeInsets.zero,
-                          children: [
-                            _buildTopHeader(context, provider, height, width),
-                            _buildModernSearchBar(context, provider, height, width),
-                            if (provider.searchModel != null)
-                              _buildSearchResults(context, provider, height, width)
-                            else ...[
-                              _buildHeroBannerSlider(context, provider, height, width),
-                              const SizedBox(height: 12),
-                              if (provider.categoryCarousels.isNotEmpty)
-                                _buildCategoryCarousel(
-                                  context: context,
-                                  carousel: provider.categoryCarousels[0],
-                                  height: height,
-                                  width: width,
-                                  shelfIndex: 0,
-                                ),
-                              _buildAdSlider(
-                                context: context,
-                                items: provider.advertisement ?? [],
-                                currentIndex: _adSlider1Index,
-                                onPageChanged: (idx) => setState(() => _adSlider1Index = idx),
-                                height: height,
-                                width: width,
-                                title: "Bulk Factory Deals",
-                                backgroundGradient: const LinearGradient(
-                                  colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5), Color(0xFFFEE2E2)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderColor: const Color(0xFFFED7AA),
-                                accentColor: const Color(0xFFEA580C),
-                                badgeText: "FACTORY DIRECT • 20% OFF",
-                              ),
-                              if (provider.categoryCarousels.length > 1)
-                                _buildCategoryCarousel(
-                                  context: context,
-                                  carousel: provider.categoryCarousels[1],
-                                  height: height,
-                                  width: width,
-                                  shelfIndex: 1,
-                                ),
-                              _buildWeDealIntoSection(context, provider, height, width),
-                              if (provider.selectedMainCategoryId != 0)
-                                _buildCategoryFilteredSection(context, provider, height, width),
-                              if (provider.categoryCarousels.length > 2)
-                                _buildCategoryCarousel(
-                                  context: context,
-                                  carousel: provider.categoryCarousels[2],
-                                  height: height,
-                                  width: width,
-                                  shelfIndex: 2,
-                                ),
-                              if ((provider.advertisement?.length ?? 0) > 1)
+                      NotificationListener<UserScrollNotification>(
+                        onNotification: (notification) {
+                          if (_scrollController.hasClients) {
+                            final currentScroll = _scrollController.position.pixels;
+                            if (notification.direction == ScrollDirection.forward &&
+                                currentScroll > 400) {
+                              if (!_showGoToTop) {
+                                setState(() {
+                                  _showGoToTop = true;
+                                });
+                              }
+                            } else if (notification.direction == ScrollDirection.reverse) {
+                              if (_showGoToTop) {
+                                setState(() {
+                                  _showGoToTop = false;
+                                });
+                              }
+                            }
+                          }
+                          return false;
+                        },
+                        child: RefreshIndicator(
+                          color: AppColors.primaryColor,
+                          onRefresh: () => provider.refreshHomeScreen(context),
+                          child: ListView(
+                            controller: _scrollController,
+                            padding: EdgeInsets.zero,
+                            children: [
+                              _buildTopHeader(context, provider, height, width),
+                              _buildModernSearchBar(context, provider, height, width),
+                              _buildSearchBarPromoPopup(context, provider, width),
+                              if (provider.searchModel != null)
+                                _buildSearchResults(context, provider, height, width)
+                              else ...[
+                                _buildHeroBannerSlider(context, provider, height, width),
+                                const SizedBox(height: 12),
+                                _buildWeDealIntoSection(context, provider, height, width),
+                                if (provider.selectedMainCategoryId != 0)
+                                  _buildCategoryFilteredSection(context, provider, height, width),
+                                if (provider.categoryCarousels.isNotEmpty)
+                                  _buildCategoryCarousel(
+                                    context: context,
+                                    carousel: provider.categoryCarousels[0],
+                                    height: height,
+                                    width: width,
+                                    shelfIndex: 0,
+                                  ),
                                 _buildAdSlider(
                                   context: context,
-                                  items: (provider.advertisement ?? []).reversed.toList(),
-                                  currentIndex: _adSlider2Index,
-                                  onPageChanged: (idx) => setState(() => _adSlider2Index = idx),
+                                  items: provider.advertisement ?? [],
+                                  currentIndex: _adSlider1Index,
+                                  onPageChanged: (idx) => setState(() => _adSlider1Index = idx),
                                   height: height,
                                   width: width,
-                                  title: "Commercial Specials",
+                                  title: "Bulk Factory Deals",
                                   backgroundGradient: const LinearGradient(
-                                    colors: [Color(0xFFFEFCE8), Color(0xFFFEF9C3), Color(0xFFFEF08A)],
+                                    colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5), Color(0xFFFEE2E2)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
-                                  borderColor: const Color(0xFFFDE047),
-                                  accentColor: const Color(0xFFCA8A04),
-                                  badgeText: "CONTRACTOR BULK DEALS",
+                                  borderColor: const Color(0xFFFED7AA),
+                                  accentColor: const Color(0xFFEA580C),
+                                  badgeText: "FACTORY DIRECT • 20% OFF",
                                 ),
-                              if (provider.categoryCarousels.length > 3)
-                                _buildCategoryCarousel(
-                                  context: context,
-                                  carousel: provider.categoryCarousels[3],
-                                  height: height,
-                                  width: width,
-                                  shelfIndex: 3,
-                                ),
-                              if (provider.categoryCarousels.length > 4)
-                                _buildCategoryCarousel(
-                                  context: context,
-                                  carousel: provider.categoryCarousels[4],
-                                  height: height,
-                                  width: width,
-                                  shelfIndex: 4,
-                                ),
-                              _buildPopularBrandsSection(context, provider, height, width),
-                              _buildExploreAllProductsGrid(context, provider, height, width),
-                              SizedBox(height: height / 8),
+                                if (provider.categoryCarousels.length > 1)
+                                  _buildCategoryCarousel(
+                                    context: context,
+                                    carousel: provider.categoryCarousels[1],
+                                    height: height,
+                                    width: width,
+                                    shelfIndex: 1,
+                                  ),
+                                if (provider.categoryCarousels.length > 2)
+                                  _buildCategoryCarousel(
+                                    context: context,
+                                    carousel: provider.categoryCarousels[2],
+                                    height: height,
+                                    width: width,
+                                    shelfIndex: 2,
+                                  ),
+                                if ((provider.advertisement?.length ?? 0) > 1)
+                                  _buildAdSlider(
+                                    context: context,
+                                    items: (provider.advertisement ?? []).reversed.toList(),
+                                    currentIndex: _adSlider2Index,
+                                    onPageChanged: (idx) => setState(() => _adSlider2Index = idx),
+                                    height: height,
+                                    width: width,
+                                    title: "Commercial Specials",
+                                    backgroundGradient: const LinearGradient(
+                                      colors: [Color(0xFFFEFCE8), Color(0xFFFEF9C3), Color(0xFFFEF08A)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderColor: const Color(0xFFFDE047),
+                                    accentColor: const Color(0xFFCA8A04),
+                                    badgeText: "CONTRACTOR BULK DEALS",
+                                  ),
+                                if (provider.categoryCarousels.length > 3)
+                                  _buildCategoryCarousel(
+                                    context: context,
+                                    carousel: provider.categoryCarousels[3],
+                                    height: height,
+                                    width: width,
+                                    shelfIndex: 3,
+                                  ),
+                                if (provider.categoryCarousels.length > 4)
+                                  _buildCategoryCarousel(
+                                    context: context,
+                                    carousel: provider.categoryCarousels[4],
+                                    height: height,
+                                    width: width,
+                                    shelfIndex: 4,
+                                  ),
+                                _buildPopularBrandsSection(context, provider, height, width),
+                                _buildExploreAllProductsGrid(context, provider, height, width),
+                                SizedBox(height: height / 8),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                       if (_isStickyCategoryVisible && provider.searchModel == null)
                         _buildStickyCategoryBar(context, provider, width),
+                      if (_showGoToTop)
+                        _buildGoToTopButton(),
                       if (provider.searchModel == null)
                         GlobalCartContainer(width: width, height: height),
                     ],
@@ -464,6 +501,403 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
       ),
+    );
+  }
+
+  // 2b. Promo Banner ("Use Your Free Cash: ₹30" - Swiggy Style from media_1793681481175_5ffac60c.jpg)
+  Widget _buildSearchBarPromoPopup(BuildContext context, HomeScreenProvider provider, double width) {
+    if (provider.searchModel != null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Scalloped / Crimson Free Cash Banner
+          InkWell(
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              setState(() {
+                _freeCashClaimed = true;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: const Color(0xFF881337),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle_rounded, color: Color(0xFFFFD700)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "₹30 Free Cash reward active on your account!",
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF881337),
+                    Color(0xFFBE123C),
+                    Color(0xFF9F1239),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF881337).withOpacity(0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Left: Text Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                _freeCashClaimed ? "REWARD ACTIVE" : "LIMITED OFFER",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFFFE4E6),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Use Your Free Cash: ₹30",
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "Valid till 9th Nov on orders above ₹149",
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w400,
+                            color: const Color(0xFFFFE4E6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Right: 3D Gold Coin with ₹ symbol
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const RadialGradient(
+                        center: Alignment(-0.25, -0.25),
+                        radius: 0.85,
+                        colors: [
+                          Color(0xFFFFF7C2),
+                          Color(0xFFFFD700),
+                          Color(0xFFE5A910),
+                          Color(0xFFB47806),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.25),
+                          blurRadius: 8,
+                          offset: const Offset(2, 4),
+                        ),
+                        BoxShadow(
+                          color: const Color(0xFFFFE082).withOpacity(0.6),
+                          blurRadius: 6,
+                          offset: const Offset(-2, -2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: const Color(0xFFFFECB3),
+                        width: 2.5,
+                      ),
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFC48603),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "₹",
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF6A3805),
+                              shadows: [
+                                const Shadow(
+                                  color: Color(0xFFFFF8E1),
+                                  offset: Offset(0.8, 0.8),
+                                  blurRadius: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // 2. Swiggy-Style Quick Filter Chips Row (Filter, Sort By, 99 Store, Bolt 15 min)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                _buildQuickFilterChip(
+                  icon: Icons.tune_rounded,
+                  label: "Filter",
+                  hasDropdown: false,
+                  isSelected: _activeQuickFilter == 'Filter',
+                  onTap: () {
+                    setState(() {
+                      _activeQuickFilter = _activeQuickFilter == 'Filter' ? 'All' : 'Filter';
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                _buildQuickFilterChip(
+                  icon: null,
+                  label: "Sort By",
+                  hasDropdown: true,
+                  isSelected: _activeQuickFilter.startsWith('Sort:'),
+                  onTap: () {
+                    _showSortBottomSheet(context, provider);
+                  },
+                ),
+                const SizedBox(width: 8),
+                _buildQuickFilterChip(
+                  icon: Icons.storefront_rounded,
+                  label: "99 Store",
+                  hasDropdown: false,
+                  badge: "HOT",
+                  badgeColor: const Color(0xFFEA580C),
+                  isSelected: _activeQuickFilter == '99 Store',
+                  onTap: () {
+                    setState(() {
+                      _activeQuickFilter = _activeQuickFilter == '99 Store' ? 'All' : '99 Store';
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                _buildQuickFilterChip(
+                  icon: Icons.bolt_rounded,
+                  iconColor: const Color(0xFFEA580C),
+                  label: "Bolt 15 min",
+                  hasDropdown: false,
+                  isSelected: _activeQuickFilter == 'Bolt',
+                  onTap: () {
+                    setState(() {
+                      _activeQuickFilter = _activeQuickFilter == 'Bolt' ? 'All' : 'Bolt';
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                _buildQuickFilterChip(
+                  icon: Icons.verified_rounded,
+                  iconColor: const Color(0xFF16A34A),
+                  label: "Factory Direct",
+                  hasDropdown: false,
+                  isSelected: _activeQuickFilter == 'Factory Direct',
+                  onTap: () {
+                    setState(() {
+                      _activeQuickFilter = _activeQuickFilter == 'Factory Direct' ? 'All' : 'Factory Direct';
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFilterChip({
+    IconData? icon,
+    Color? iconColor,
+    required String label,
+    required bool hasDropdown,
+    String? badge,
+    Color? badgeColor,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFFF7ED) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFEA580C) : const Color(0xFFE5E7EB),
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: iconColor ?? (isSelected ? const Color(0xFFEA580C) : const Color(0xFF4B5563))),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF374151),
+              ),
+            ),
+            if (hasDropdown) ...[
+              const SizedBox(width: 3),
+              const Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: Color(0xFF6B7280)),
+            ],
+            if (badge != null) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: badgeColor ?? const Color(0xFFEA580C),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  badge,
+                  style: GoogleFonts.poppins(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSortBottomSheet(BuildContext context, HomeScreenProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Sort Products By",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Icon(Icons.star_rounded, color: Color(0xFFEA580C)),
+                  title: Text("Relevance (Default)", style: GoogleFonts.poppins(fontSize: 14)),
+                  onTap: () {
+                    setState(() => _activeQuickFilter = 'Sort: Relevance');
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.arrow_upward_rounded, color: Color(0xFF16A34A)),
+                  title: Text("Price: Low to High", style: GoogleFonts.poppins(fontSize: 14)),
+                  onTap: () {
+                    setState(() => _activeQuickFilter = 'Sort: Price Low');
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.arrow_downward_rounded, color: Color(0xFFDC2626)),
+                  title: Text("Price: High to Low", style: GoogleFonts.poppins(fontSize: 14)),
+                  onTap: () {
+                    setState(() => _activeQuickFilter = 'Sort: Price High');
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1039,6 +1473,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                   ),
                   const SizedBox(height: 3),
+                  if (product.packSize != null && product.packSize!.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      margin: const EdgeInsets.only(bottom: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Text(
+                        product.packSize!,
+                        style: GoogleFonts.poppins(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   // Price and ADD Button Row (Completely decoupled from Description navigation)
                   Row(
@@ -1050,7 +1503,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         children: [
                           if (hasDiscount)
                             Text(
-                              "₹${oldPrice.toStringAsFixed(0)}",
+                              "\u20B9${oldPrice.toStringAsFixed(0)}",
                               style: GoogleFonts.poppins(
                                 fontSize: 9,
                                 decoration: TextDecoration.lineThrough,
@@ -1058,7 +1511,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                             ),
                           Text(
-                            "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
+                            "\u20B9${currentPrice?.toStringAsFixed(0) ?? "0"}",
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
@@ -1093,6 +1546,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           context: context,
           productId: pId.toString(),
           brandId: product.brandId?.toString() ?? "0",
+          attributeId: product.attributeId?.toString(),
         );
         if (mounted) {
           ScaffoldMessenger.of(context).clearSnackBars();
@@ -1180,13 +1634,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     final selectedId = provider.selectedMainCategoryId;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.whiteColor,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blackColor.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1196,17 +1662,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       height: 14,
                       width: 3.5,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
+                        color: const Color(0xFFEA580C),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      "We Deal Into",
+                      "What's on your mind?",
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.secondaryColor,
+                        color: const Color(0xFF1F2937),
                       ),
                     ),
                   ],
@@ -1230,14 +1696,75 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+
+          // Swiggy-Style Tier 1 Horizontal Tabs
+          Container(
+            height: 38,
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1)),
+            ),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              physics: const BouncingScrollPhysics(),
+              children: [
+                _buildTier1TabItem(
+                  icon: Icons.grid_view_rounded,
+                  label: "ALL",
+                  isSelected: _selectedTier1Tab == 0,
+                  onTap: () {
+                    setState(() => _selectedTier1Tab = 0);
+                    provider.selectCategory(0);
+                  },
+                ),
+                _buildTier1TabItem(
+                  icon: Icons.local_offer_outlined,
+                  label: "UNDER \u20B9999",
+                  badge: "HOT",
+                  isSelected: _selectedTier1Tab == 1,
+                  onTap: () {
+                    setState(() => _selectedTier1Tab = 1);
+                  },
+                ),
+                _buildTier1TabItem(
+                  icon: Icons.verified_rounded,
+                  label: "FACTORY DIRECT",
+                  isSelected: _selectedTier1Tab == 2,
+                  onTap: () {
+                    setState(() => _selectedTier1Tab = 2);
+                  },
+                ),
+                _buildTier1TabItem(
+                  icon: Icons.inventory_2_outlined,
+                  label: "BULK PACKS",
+                  isSelected: _selectedTier1Tab == 3,
+                  onTap: () {
+                    setState(() => _selectedTier1Tab = 3);
+                  },
+                ),
+                _buildTier1TabItem(
+                  icon: Icons.local_shipping_outlined,
+                  label: "FAST DISPATCH",
+                  isSelected: _selectedTier1Tab == 4,
+                  onTap: () {
+                    setState(() => _selectedTier1Tab = 4);
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Tier 2: Category Circular Avatars
           SizedBox(
-            height: 105,
+            height: 88,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
-              itemCount: categories.length + 1, // +1 for "All Categories"
+              itemCount: categories.length + 1,
               itemBuilder: (context, index) {
                 final bool isAll = index == 0;
                 final cat = isAll ? null : categories[index - 1];
@@ -1250,55 +1777,64 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    width: 85,
-                    margin: const EdgeInsets.only(right: 12),
+                    width: 70,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
                     child: Column(
                       children: [
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          height: 64,
-                          width: 64,
+                          height: 54,
+                          width: 54,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isSelected ? const Color(0xFFFFF3ED) : AppColors.whiteColor,
+                            color: isSelected ? const Color(0xFFFFF7ED) : AppColors.whiteColor,
                             border: Border.all(
-                              color: isSelected ? AppColors.primaryColor : const Color(0xffE5E7EB),
+                              color: isSelected ? const Color(0xFFEA580C) : const Color(0xffE5E7EB),
                               width: isSelected ? 2.5 : 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
                                 color: isSelected
-                                    ? AppColors.primaryColor.withOpacity(0.25)
+                                    ? const Color(0xFFEA580C).withOpacity(0.25)
                                     : AppColors.blackColor.withOpacity(0.05),
-                                blurRadius: isSelected ? 10 : 6,
+                                blurRadius: isSelected ? 8 : 4,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: ClipOval(
                             child: isAll
-                                ? Center(
-                                    child: Icon(
-                                      Icons.grid_view_rounded,
-                                      size: 28,
-                                      color: isSelected ? AppColors.primaryColor : AppColors.secondaryColor,
+                                ? Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Color(0xFFFEF08A), Color(0xFFFBBF24)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.grid_view_rounded,
+                                        size: 26,
+                                        color: Color(0xFF854D0E),
+                                      ),
                                     ),
                                   )
                                 : (cat?.image != null && cat!.image!.isNotEmpty)
                                     ? Image.network(
                                         "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
                                         fit: BoxFit.cover,
-                                        cacheWidth: 150,
-                                        cacheHeight: 150,
+                                        cacheWidth: 140,
+                                        cacheHeight: 140,
                                         errorBuilder: (context, error, stackTrace) => Center(
                                           child: Text(
                                             (cat.name?.isNotEmpty ?? false)
                                                 ? cat.name![0].toUpperCase()
                                                 : "C",
                                             style: GoogleFonts.poppins(
-                                              fontSize: 22,
+                                              fontSize: 18,
                                               fontWeight: FontWeight.bold,
-                                              color: AppColors.primaryColor,
+                                              color: const Color(0xFFEA580C),
                                             ),
                                           ),
                                         ),
@@ -1309,23 +1845,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               ? cat!.name![0].toUpperCase()
                                               : "C",
                                           style: GoogleFonts.poppins(
-                                            fontSize: 22,
+                                            fontSize: 18,
                                             fontWeight: FontWeight.bold,
-                                            color: AppColors.primaryColor,
+                                            color: const Color(0xFFEA580C),
                                           ),
                                         ),
                                       ),
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 5),
                         Text(
                           isAll ? "All Items" : (cat?.name ?? ""),
                           style: GoogleFonts.poppins(
                             fontSize: 10.5,
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? AppColors.primaryColor : AppColors.secondaryColor,
+                            color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF4B5563),
                           ),
-                          maxLines: 2,
+                          maxLines: 1,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1341,7 +1877,69 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // Sticky Category Bar (Fixed at top when user scrolls)
+  // Tier 1 Horizontal Tab Item with active bottom underline
+  Widget _buildTier1TabItem({
+    required IconData icon,
+    required String label,
+    String? badge,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isSelected ? const Color(0xFFEA580C) : Colors.transparent,
+              width: 2.5,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF6B7280),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF4B5563),
+              ),
+            ),
+            if (badge != null) ...[
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  badge,
+                  style: GoogleFonts.poppins(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Sticky Category Bar (Frozen at top on reach, matching media_1793681383364_d11e444b.jpg)
   Widget _buildStickyCategoryBar(
       BuildContext context, HomeScreenProvider provider, double width) {
     final categories = provider.homeScreenModel?.data?.maincategory ?? [];
@@ -1351,74 +1949,268 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final topPadding = MediaQuery.of(context).padding.top;
 
     return Positioned(
-      top: topPadding + 52,
+      top: 0,
       left: 0,
       right: 0,
       child: Container(
-        height: 52,
+        padding: EdgeInsets.only(top: topPadding),
         decoration: BoxDecoration(
-          color: AppColors.whiteColor.withOpacity(0.96),
+          color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: AppColors.blackColor.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.08),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
           ],
-          border: const Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
+          border: const Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
         ),
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          itemCount: categories.length + 1,
-          itemBuilder: (context, index) {
-            final bool isAll = index == 0;
-            final cat = isAll ? null : categories[index - 1];
-            final catId = isAll ? 0 : (cat?.id ?? 0);
-            final bool isSelected = selectedId == catId;
-
-            return InkWell(
-              onTap: () {
-                provider.selectCategory(catId);
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryColor : const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primaryColor : const Color(0xFFE5E7EB),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Tier 1: Horizontal tabs (:: ALL, UNDER ₹299 NEW, 99 STORE, OFFERS)
+            Container(
+              height: 40,
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1)),
+              ),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                physics: const BouncingScrollPhysics(),
+                children: [
+                  _buildTier1TabItem(
+                    icon: Icons.grid_view_rounded,
+                    label: "ALL",
+                    isSelected: _selectedTier1Tab == 0,
+                    onTap: () {
+                      setState(() => _selectedTier1Tab = 0);
+                      provider.selectCategory(0);
+                    },
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (!isAll && cat?.image != null && cat!.image!.isNotEmpty) ...[
-                      CircleAvatar(
-                        radius: 11,
-                        backgroundColor: Colors.transparent,
-                        backgroundImage: NetworkImage(
-                          "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                    ],
-                    Text(
-                      isAll ? "All" : (cat?.name ?? ""),
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                        color: isSelected ? AppColors.whiteColor : AppColors.secondaryColor,
+                  _buildTier1TabItem(
+                    icon: Icons.local_offer_outlined,
+                    label: "UNDER \u20B9999",
+                    badge: "HOT",
+                    isSelected: _selectedTier1Tab == 1,
+                    onTap: () {
+                      setState(() => _selectedTier1Tab = 1);
+                    },
+                  ),
+                  _buildTier1TabItem(
+                    icon: Icons.verified_rounded,
+                    label: "FACTORY DIRECT",
+                    isSelected: _selectedTier1Tab == 2,
+                    onTap: () {
+                      setState(() => _selectedTier1Tab = 2);
+                    },
+                  ),
+                  _buildTier1TabItem(
+                    icon: Icons.inventory_2_outlined,
+                    label: "BULK PACKS",
+                    isSelected: _selectedTier1Tab == 3,
+                    onTap: () {
+                      setState(() => _selectedTier1Tab = 3);
+                    },
+                  ),
+                  _buildTier1TabItem(
+                    icon: Icons.local_shipping_outlined,
+                    label: "FAST DISPATCH",
+                    isSelected: _selectedTier1Tab == 4,
+                    onTap: () {
+                      setState(() => _selectedTier1Tab = 4);
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // Tier 2: Category Circular Avatars (Meals, Poha, Kachori, Paints, etc.)
+            Container(
+              height: 80,
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                physics: const BouncingScrollPhysics(),
+                itemCount: categories.length + 1,
+                itemBuilder: (context, index) {
+                  final bool isAll = index == 0;
+                  final cat = isAll ? null : categories[index - 1];
+                  final catId = isAll ? 0 : (cat?.id ?? 0);
+                  final bool isSelected = selectedId == catId;
+
+                  return InkWell(
+                    onTap: () {
+                      provider.selectCategory(catId);
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: 66,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            height: 48,
+                            width: 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSelected ? const Color(0xFFFFF7ED) : const Color(0xFFF9FAFB),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFFEA580C) : const Color(0xFFE5E7EB),
+                                width: isSelected ? 2 : 1,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFFEA580C).withOpacity(0.2),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            child: ClipOval(
+                              child: isAll
+                                  ? Container(
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [Color(0xFFFEF08A), Color(0xFFFBBF24)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.grid_view_rounded,
+                                          size: 22,
+                                          color: Color(0xFF854D0E),
+                                        ),
+                                      ),
+                                    )
+                                  : (cat?.image != null && cat!.image!.isNotEmpty)
+                                      ? Image.network(
+                                          "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
+                                          fit: BoxFit.cover,
+                                          cacheWidth: 100,
+                                          cacheHeight: 100,
+                                          errorBuilder: (context, error, stackTrace) => Center(
+                                            child: Text(
+                                              (cat.name?.isNotEmpty ?? false) ? cat.name![0].toUpperCase() : "C",
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFFEA580C),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Text(
+                                            (cat?.name?.isNotEmpty ?? false) ? cat!.name![0].toUpperCase() : "C",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFFEA580C),
+                                            ),
+                                          ),
+                                        ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isAll ? "All Items" : (cat?.name ?? ""),
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF4B5563),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Swiggy-Style Floating "Back to Top" Pill Button
+  Widget _buildGoToTopButton() {
+    return Positioned(
+      bottom: 96,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _scrollController.animateTo(
+                0,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
+              );
+              setState(() {
+                _showGoToTop = false;
+              });
+            },
+            borderRadius: BorderRadius.circular(24),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEA580C), // Swiggy Orange
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_upward_rounded,
+                      color: Colors.white,
+                      size: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Back to top",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1F2937),
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -1434,13 +2226,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final allCompanies = provider.companies;
 
     // Filter products matching this category
-    final filteredProducts = allProducts.where((p) {
-      if (p.categoryId == selectedId) return true;
-      return false;
-    }).toList();
+    List<HomeProduct> baseProducts = (selectedId == 0)
+        ? allProducts
+        : allProducts.where((p) => p.categoryId == selectedId).toList();
+    if (baseProducts.isEmpty && selectedId != 0) {
+      baseProducts = allProducts;
+    }
 
-    // If no explicit matches by categoryId, show related products
-    final productsToShow = filteredProducts.isNotEmpty ? filteredProducts : allProducts.take(12).toList();
+    // Dynamic filtering based on active Tier 1 Tab (ALL, UNDER ₹999, FACTORY DIRECT, BULK PACKS, FAST DISPATCH)
+    List<HomeProduct> tierFiltered = baseProducts;
+    if (_selectedTier1Tab == 1) {
+      // UNDER ₹999
+      tierFiltered = baseProducts.where((p) {
+        final price = p.price?.toDouble() ?? 0.0;
+        return price > 0 && price <= 999;
+      }).toList();
+      if (tierFiltered.isEmpty) {
+        tierFiltered = baseProducts.where((p) => (p.price?.toDouble() ?? 0.0) <= 1500).toList();
+      }
+    } else if (_selectedTier1Tab == 3) {
+      // BULK PACKS
+      tierFiltered = baseProducts.where((p) {
+        final pack = (p.packSize ?? '').toLowerCase();
+        return pack.contains('ltr') || pack.contains('kg') || (p.oldprice ?? 0) > (p.price ?? 0);
+      }).toList();
+    }
+
+    final productsToShow = tierFiltered.isNotEmpty ? tierFiltered : baseProducts.take(12).toList();
 
     // Filter related subcategories
     final subcategoriesToShow = allSubcategories.where((s) {

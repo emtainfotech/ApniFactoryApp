@@ -35,9 +35,17 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
       if (productCategoryListScreenModel != null &&
           productCategoryListScreenModel!.code == 100) {
                    loadingProductCategoryListScreen = false;
-        selectedCategory = productCategoryListScreenModel
-            ?.data?.product?[0].categoryname
-            .toString();
+        if (productCategoryListScreenModel?.data?.subcategory != null &&
+            productCategoryListScreenModel!.data!.subcategory!.isNotEmpty) {
+          selectedCategory =
+              productCategoryListScreenModel!.data!.subcategory![0].name;
+        } else if (productCategoryListScreenModel?.data?.product != null &&
+            productCategoryListScreenModel!.data!.product!.isNotEmpty) {
+          selectedCategory =
+              productCategoryListScreenModel!.data!.product![0].categoryname;
+        } else {
+          selectedCategory = "Products";
+        }
 
         notifyListeners();
         subCategoryDetails = productCategoryListScreenModel?.data?.subcategory;
@@ -80,25 +88,24 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
       if (productListBySubCategoryScreenModel != null &&
           productListBySubCategoryScreenModel!.code == 100) {
         loadingProductListBySubcategory = false;
-        notifyListeners();
-        productDetails = productListBySubCategoryScreenModel?.data?.product;
-        subCategoryDetails =
-            productListBySubCategoryScreenModel?.data?.subcategory;
-
-        // selectedColorId=productListBySubCategoryScreenModel?.data?.product?[index].colorid;
-        // selectedPid=productListBySubCategoryScreenModel?.data?.product?[index].pid;
-        // selectedCategory =
-        //     productCategoryListScreenModel?.data?.subcategory?[0].toString();
-
-        // slider =companyScreenModel?.data?.;
+        productDetails = productListBySubCategoryScreenModel?.data?.product ?? [];
+        // Preserve existing subCategoryDetails if new response has null or empty subcategories
+        if (productListBySubCategoryScreenModel?.data?.subcategory != null &&
+            productListBySubCategoryScreenModel!.data!.subcategory!.isNotEmpty) {
+          subCategoryDetails =
+              productListBySubCategoryScreenModel?.data?.subcategory;
+        }
         notifyListeners();
       } else {
-        loadingProductListBySubcategory = true;
+        loadingProductListBySubcategory = false;
+        productDetails = [];
         notifyListeners();
       }
-      // }
     } catch (e) {
       log("product list by sub category error: ${e.toString()}");
+      loadingProductListBySubcategory = false;
+      productDetails = [];
+      notifyListeners();
     }
     notifyListeners();
   }
@@ -114,11 +121,16 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
   }) {
     selectedCategoryIndex = index;
 
-    selectedCategory =
-        productCategoryListScreenModel?.data?.subcategory?[index].toString();
-    selectedBid =
-        productCategoryListScreenModel?.data?.subcategory?[index].bid ?? 0;
-    selectedSid = productCategoryListScreenModel?.data?.subcategory?[index].cid;
+    final subcat = (subCategoryDetails != null && index < subCategoryDetails!.length)
+        ? subCategoryDetails![index]
+        : (productCategoryListScreenModel?.data?.subcategory != null &&
+                index < productCategoryListScreenModel!.data!.subcategory!.length)
+            ? productCategoryListScreenModel!.data!.subcategory![index]
+            : null;
+
+    selectedCategory = subcat?.name ?? "Products";
+    selectedBid = subcat?.bid ?? 0;
+    selectedSid = subcat?.cid ?? 0;
 
     productListBySubCategoryScreen(
       context: context,
