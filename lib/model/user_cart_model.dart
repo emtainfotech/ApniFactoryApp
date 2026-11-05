@@ -10,6 +10,8 @@ class UserCartModel {
   num igst;
   num? couponbyadmin;
   String combinecoupon;
+  List<SellerGroupModel>? sellerGroups;
+  bool? allSellersCanCheckout;
 
   final Map<String, List<List<ProductCategory>>> data;
 
@@ -25,6 +27,8 @@ class UserCartModel {
     required this.igst,
     required this.couponbyadmin,
     required this.combinecoupon,
+    this.sellerGroups,
+    this.allSellersCanCheckout,
     required this.data,
   });
 
@@ -42,6 +46,12 @@ class UserCartModel {
       igst: json['igst'],
       couponbyadmin: json['couponbyadmin'],
       combinecoupon: json['combinecoupon'],
+      sellerGroups: json['seller_groups'] != null
+          ? (json['seller_groups'] as List)
+              .map((item) => SellerGroupModel.fromJson(item))
+              .toList()
+          : null,
+      allSellersCanCheckout: json['all_sellers_can_checkout'],
       data: (json['data'] as Map<String, dynamic>).map(
         (key, value) => MapEntry(
           key,
@@ -177,6 +187,66 @@ class AttributeData {
     };
   }
 }
+
+class SellerGroupModel {
+  final int companyId;
+  final String companyName;
+  final String companyStatus;
+  final bool isSellerActive;
+  final int itemsCount;
+  final int totalQuantity;
+  final num sellerSubtotal;
+  final num sellerTax;
+  final num sellerGrandTotal;
+  final num freightAmount;
+  final num configuredMov;
+  final num movShortfall;
+  final num movProgressPercentage;
+  final String movStatus;
+  final bool isMovSatisfied;
+  final bool canCheckout;
+
+  SellerGroupModel({
+    required this.companyId,
+    required this.companyName,
+    required this.companyStatus,
+    required this.isSellerActive,
+    required this.itemsCount,
+    required this.totalQuantity,
+    required this.sellerSubtotal,
+    required this.sellerTax,
+    required this.sellerGrandTotal,
+    required this.freightAmount,
+    required this.configuredMov,
+    required this.movShortfall,
+    required this.movProgressPercentage,
+    required this.movStatus,
+    required this.isMovSatisfied,
+    required this.canCheckout,
+  });
+
+  factory SellerGroupModel.fromJson(Map<String, dynamic> json) {
+    return SellerGroupModel(
+      companyId: json['company_id'] ?? 0,
+      companyName: json['company_name'] ?? 'Manufacturer',
+      companyStatus: json['company_status']?.toString() ?? 'Active',
+      isSellerActive: json['is_seller_active'] ?? true,
+      itemsCount: json['items_count'] ?? 0,
+      totalQuantity: json['total_quantity'] ?? 0,
+      sellerSubtotal: json['seller_subtotal'] ?? 0,
+      sellerTax: json['seller_tax'] ?? 0,
+      sellerGrandTotal: json['seller_grand_total'] ?? 0,
+      freightAmount: json['freight_amount'] ?? 0,
+      configuredMov: json['configured_mov'] ?? 0,
+      movShortfall: json['mov_shortfall'] ?? 0,
+      movProgressPercentage: json['mov_progress_percentage'] ?? 100,
+      movStatus: json['mov_status'] ?? 'not_configured',
+      isMovSatisfied: json['is_mov_satisfied'] ?? true,
+      canCheckout: json['can_checkout'] ?? true,
+    );
+  }
+}
+
 
 
 

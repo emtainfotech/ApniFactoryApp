@@ -150,6 +150,11 @@ class _CartScreenState extends State<CartScreen> {
                   // 1. Delivery Destination Address Card
                   _buildDeliveryAddressBanner(context, provider, width),
 
+                  // 1b. Seller Minimum Order Value (MOV) & Multi-Seller Compliance
+                  if (provider.userCartModel?.sellerGroups != null &&
+                      provider.userCartModel!.sellerGroups!.isNotEmpty)
+                    _buildSellerMovSection(context, provider.userCartModel!.sellerGroups!, width),
+
                   // 2. Cart Items Grouped by Category/Manufacturer
                   _buildCartItemsSection(context, provider, cartData, width, height),
 
@@ -291,6 +296,175 @@ class _CartScreenState extends State<CartScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // 1b. Seller Minimum Order Value (MOV) Status Cards
+  Widget _buildSellerMovSection(
+    BuildContext context,
+    List<SellerGroupModel> sellerGroups,
+    double width,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.storefront_rounded, size: 18, color: AppColors.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                "Manufacturer Minimum Order Value (MOV)",
+                style: GoogleFonts.poppins(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.secondaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...sellerGroups.map((group) {
+            final bool hasMov = group.configuredMov > 0;
+            final bool isMet = group.isMovSatisfied || !hasMov;
+            final double progressFraction = (group.movProgressPercentage / 100.0).clamp(0.0, 1.0).toDouble();
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isMet ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isMet ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          group.companyName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1E293B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isMet ? const Color(0xFF22C55E) : const Color(0xFFF59E0B),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isMet ? "✓ MOV MET" : "SHORTFALL: ₹${group.movShortfall.toStringAsFixed(0)}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (hasMov) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Subtotal: ₹${group.sellerSubtotal.toStringAsFixed(2)}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF475569),
+                          ),
+                        ),
+                        Text(
+                          "Target MOV: ₹${group.configuredMov.toStringAsFixed(2)}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progressFraction,
+                        minHeight: 6,
+                        backgroundColor: isMet ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          isMet ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isMet
+                          ? "Order threshold met for factory direct dispatch."
+                          : "Add ₹${group.movShortfall.toStringAsFixed(2)} more of ${group.companyName} products to qualify for checkout.",
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: isMet ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                      ),
+                    ),
+                  ] else ...[
+                    Text(
+                      "No Minimum Order Value required by this manufacturer.",
+                      style: GoogleFonts.poppins(
+                        fontSize: 10.5,
+                        color: const Color(0xFF15803D),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.local_shipping_outlined, size: 12, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Freight calculated & payable separately before final dispatch.",
+                        style: GoogleFonts.poppins(
+                          fontSize: 9.5,
+                          color: const Color(0xFF64748B),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
       ),
     );
   }
@@ -1189,6 +1363,16 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
               onPressed: () {
+                final List<SellerGroupModel> shortfalls = provider.userCartModel?.sellerGroups
+                        ?.where((g) => !g.isMovSatisfied && g.configuredMov > 0)
+                        .toList() ??
+                    [];
+
+                if (shortfalls.isNotEmpty) {
+                  _showMovShortfallDialog(context, shortfalls);
+                  return;
+                }
+
                 if (provider.selectedAddressId == null) {
                   Utils.commonSnackBar(
                     context,
@@ -1223,6 +1407,60 @@ class _CartScreenState extends State<CartScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showMovShortfallDialog(BuildContext context, List<SellerGroupModel> shortfalls) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFF59E0B), size: 24),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Minimum Order Value Shortfall",
+                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "One or more manufacturers require a Minimum Order Value before factory direct dispatch:",
+                style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF475569)),
+              ),
+              const SizedBox(height: 12),
+              ...shortfalls.map((s) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      "• ${s.companyName}: Shortfall of ₹${s.movShortfall.toStringAsFixed(2)} (Target MOV: ₹${s.configuredMov.toStringAsFixed(2)})",
+                      style: GoogleFonts.poppins(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                  )),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                "ADD MORE ITEMS",
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.primaryColor),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
