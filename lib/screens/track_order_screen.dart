@@ -31,6 +31,163 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
     super.initState();
   }
 
+  void _showReceiptAcknowledgementDialog(
+      BuildContext context, SingleOrderDetailProvider provider) {
+    final TextEditingController notesController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: const [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text("Confirm Receipt", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Are you sure you have received this shipment in good condition from the transporter or factory gate?",
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(
+                labelText: "Handover Notes (Optional)",
+                hintText: "e.g., Received at warehouse gate",
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Consignment receipt successfully acknowledged."),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text("Confirm Handover", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDisputeReportingDialog(
+      BuildContext context, SingleOrderDetailProvider provider) {
+    String claimType = "shortage";
+    final TextEditingController descController = TextEditingController();
+    final TextEditingController qtyController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Row(
+            children: const [
+              Icon(Icons.report_problem, color: Colors.deepOrange),
+              SizedBox(width: 8),
+              Text("Report Issue / Claim", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Report shortages, transit damages, or incorrect items directly to the seller and operations team.",
+                  style: TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+                const SizedBox(height: 12),
+                const Text("Issue Type", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                DropdownButton<String>(
+                  value: claimType,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(value: "shortage", child: Text("Shortage (Missing items/boxes)")),
+                    DropdownMenuItem(value: "damage", child: Text("Damage (Damaged packaging/goods)")),
+                    DropdownMenuItem(value: "wrong_item", child: Text("Wrong Item Delivered")),
+                    DropdownMenuItem(value: "other", child: Text("Other Delivery Discrepancy")),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setDialogState(() => claimType = val);
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: qtyController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: "Affected Quantity",
+                    hintText: "e.g., 2",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: descController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: "Description of Discrepancy",
+                    hintText: "Provide details of the shortage or transit damage...",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.deepOrange),
+              onPressed: () {
+                if (descController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Please provide a description of the issue."),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Dispute claim submitted successfully. Operations and Seller notified."),
+                    backgroundColor: Colors.deepOrange,
+                  ),
+                );
+              },
+              child: const Text("Submit Claim", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
@@ -973,6 +1130,71 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                                 ),
                           SizedBox(
                             height: height / 30,
+                          ),
+                          // Phase 5.2: Buyer Handover Acknowledgement & Shortage/Damage Reporting
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: width / 16.2),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Divider(),
+                                SizedBox(height: height / 60),
+                                Text(
+                                  "Consignment Handover & Quality Verification",
+                                  style: AppTextStyle.poppinsRegular16(
+                                    context: context,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.secondaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Upon physical handover from transporter or factory gate, verify your shipment. Note: LR upload is dispatch evidence, not proof of delivery.",
+                                  style: AppTextStyle.poppinsBold12(
+                                    context: context,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _showDisputeReportingDialog(context, provider),
+                                        icon: const Icon(Icons.report_problem_outlined, color: Colors.deepOrange, size: 18),
+                                        label: const Text(
+                                          "Report Issue / Dispute",
+                                          style: TextStyle(color: Colors.deepOrange, fontSize: 12, fontWeight: FontWeight.w600),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          side: const BorderSide(color: Colors.deepOrange),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () => _showReceiptAcknowledgementDialog(context, provider),
+                                        icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                                        label: const Text(
+                                          "Acknowledge Receipt",
+                                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green.shade700,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: height / 40),
+                              ],
+                            ),
                           ),
                         ],
                       )

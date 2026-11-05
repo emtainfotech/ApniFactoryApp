@@ -56,4 +56,9 @@ class ApiEndPoint {
   static const String adminAppPagesApi ="${baseUrl}adminapppages";
   static const String helpNoForAppApi ="${baseUrl}helpnoforapp";
   static const String gstVerificationApi ="${baseUrl}gstverification";
+  
+  // Phase 5.2: Buyer Receipt Acknowledgement & Dispute Claims
+  static const String acknowledgeReceiptApi = "${baseUrl}v2/buyer/fulfilment/";
+  static const String buyerClaimsApi = "${baseUrl}v2/buyer/claims";
+  static const String lodgeClaimApi = "${baseUrl}v2/buyer/fulfilment/";
 }
