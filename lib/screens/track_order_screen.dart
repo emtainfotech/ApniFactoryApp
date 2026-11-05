@@ -337,6 +337,71 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                           SizedBox(
                             height: height / 30,
                           ),
+                          // Phase 5.2: Buyer Handover Acknowledgement & Shortage/Damage Reporting
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: width / 16.2),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Divider(),
+                                SizedBox(height: height / 60),
+                                Text(
+                                  "Consignment Handover & Quality Verification",
+                                  style: AppTextStyle.poppinsRegular16(
+                                    context: context,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.secondaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Upon physical handover from transporter or factory gate, verify your shipment. Note: LR upload is dispatch evidence, not proof of delivery.",
+                                  style: AppTextStyle.poppinsBold12(
+                                    context: context,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _showDisputeReportingDialog(context, provider),
+                                        icon: const Icon(Icons.report_problem_outlined, color: Colors.deepOrange, size: 18),
+                                        label: const Text(
+                                          "Report Issue / Dispute",
+                                          style: TextStyle(color: Colors.deepOrange, fontSize: 12, fontWeight: FontWeight.w600),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          side: const BorderSide(color: Colors.deepOrange),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () => _showReceiptAcknowledgementDialog(context, provider),
+                                        icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                                        label: const Text(
+                                          "Acknowledge Receipt",
+                                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green.shade700,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: height / 40),
+                              ],
+                            ),
+                          ),
                           ListView.builder(
                             shrinkWrap: true,
                             physics: NeverScrollableScrollPhysics(),
