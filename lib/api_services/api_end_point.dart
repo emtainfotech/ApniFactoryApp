@@ -1,64 +1,71 @@
+import '../config/api_config.dart';
+
 class ApiEndPoint {
-  // Live Hostinger Production Backend API
-  static const String baseUrl = "https://cyan-eagle-893359.hostingersite.com/api/";
-  // Localhost fallback: "http://127.0.0.1:8000/api/";
-  // Alternative local Wi-Fi IP: "http://192.168.29.118:8000/api/";
-  // Alternative production domain: "https://panel.apnifactory.co.in/api/";
-  static const String signUpApi = "${baseUrl}register";
-  static const String loginApi = "${baseUrl}login";
-  static const String getOtpApi = "${baseUrl}sendotp";
-  static const String verifyOtpApi = "${baseUrl}verifyotp";
-  static const String resetPasswordApi = "${baseUrl}resetpassword";
-  static const String homeScreenApi = "${baseUrl}homescreen";
-  static const String randomProductsApi = "${baseUrl}randomproducts";
-  static const String searchApi ="${baseUrl}search";
-  static const String categoryScreenApi = "${baseUrl}categoryscreen?";
-  static const String companyScreenApi = "${baseUrl}companyscreen?";
-  static const String brandScreenApi = "${baseUrl}brandscreen?";
-  static const String productCategoryListScreenApi = "${baseUrl}productlist?";
-  static const String productListBySubCategoryScreenApi =
-      "${baseUrl}productlistbycategory?";
-  static const String productDetailApi = "${baseUrl}productdetail";
-  static const String getAddressListApi = "${baseUrl}address";
-  static const String addAddressApi = "${baseUrl}addaddress";
-  static const String getAddressDetailApi = "${baseUrl}address/";
-  static const String updateAddressApi = "${baseUrl}address/";
-  static const String deleteAddressApi = "${baseUrl}address/";
-  static const String updateCartAddressApi = "${baseUrl}updatecartaddress";
-  static const String productReviewApi = "${baseUrl}productreview";
-  static const String addToCartApi = "${baseUrl}addtocart";
-  static const String userCartApi = "${baseUrl}usercart";
-  static const String deleteCartApi = "${baseUrl}deletecart";
-  static const String deleteCartAttributeApi = "${baseUrl}deletecartattribute";
-  static const String emptyCartApi = "${baseUrl}emptycart";
-  static const String addToWishlistApi = "${baseUrl}addtowishlist";
-  static const String userWishlistApi = "${baseUrl}userwishlist";
-  static const String deleteWishlistApi = "${baseUrl}deletewishlist";
-  static const String getProfileApi = "${baseUrl}viewprofile/";
-  static const String updateProfileApi = "${baseUrl}updateprofile/";
-  static const String getFaqApi = "${baseUrl}faq";
-  static const String getFeedbackListApi = "${baseUrl}feedback/";
-  static const String postFeedbackApi = "${baseUrl}feedback";
-  static const String changePasswordApi = "${baseUrl}changepassword/";
-  static const String increaseCartQuantityApi = "${baseUrl}increasecartqty";
-  static const String orderApi = "${baseUrl}order";
-  static const String orderHistoryApi = "${baseUrl}orderhistory";
-  static const String getPagesApi = "${baseUrl}pages";
-  static const String getCouponListApi = "${baseUrl}couponlist";
-  static const String applyCouponApi = "${baseUrl}applycoupon";
-  static const String stateCityPincodeApi = "${baseUrl}statecitypincode";
-  static const String checkAvailabilityApi = "${baseUrl}checkavailability";
-  static const String payuHashApi = "${baseUrl}payuhash";
-  static const String singleOrderDetailApi = "${baseUrl}orderdetail";
-  static const String brandDetailApi ="${baseUrl}branddetail";
-  static const String notificationApi ="${baseUrl}notification?";
-  static const String relatedProductApi ="${baseUrl}relatedproductincart";
-  static const String adminAppPagesApi ="${baseUrl}adminapppages";
-  static const String helpNoForAppApi ="${baseUrl}helpnoforapp";
-  static const String gstVerificationApi ="${baseUrl}gstverification";
-  
-  // Phase 5.2: Buyer Receipt Acknowledgement & Dispute Claims
-  static const String acknowledgeReceiptApi = "${baseUrl}v2/buyer/fulfilment/";
-  static const String buyerClaimsApi = "${baseUrl}v2/buyer/claims";
-  static const String lodgeClaimApi = "${baseUrl}v2/buyer/fulfilment/";
+  static String get baseUrl => ApiConfig.baseUrl;
+
+  static String get signUpApi => '${baseUrl}register';
+  static String get loginApi => '${baseUrl}login';
+  static String get getOtpApi => '${baseUrl}sendotp';
+  static String get verifyOtpApi => '${baseUrl}verifyotp';
+  static String get resetPasswordApi => '${baseUrl}resetpassword';
+  static String get homeScreenApi => '${baseUrl}homescreen';
+  static String get randomProductsApi => '${baseUrl}randomproducts';
+  static String get searchApi => '${baseUrl}search';
+  static String get categoryScreenApi => '${baseUrl}categoryscreen?';
+  static String get companyScreenApi => '${baseUrl}companyscreen?';
+  static String get brandScreenApi => '${baseUrl}brandscreen?';
+  static String get productCategoryListScreenApi => '${baseUrl}productlist?';
+  static String get productListBySubCategoryScreenApi =>
+      '${baseUrl}productlistbycategory?';
+  static String get productDetailApi => '${baseUrl}productdetail';
+  static String get getAddressListApi => '${baseUrl}address';
+  static String get addAddressApi => '${baseUrl}addaddress';
+  static String get getAddressDetailApi => '${baseUrl}address/';
+  static String get updateAddressApi => '${baseUrl}address/';
+  static String get deleteAddressApi => '${baseUrl}address/';
+  static String get updateCartAddressApi => '${baseUrl}updatecartaddress';
+  static String get productReviewApi => '${baseUrl}productreview';
+  static String get addToCartApi => '${baseUrl}addtocart';
+  static String get userCartApi => '${baseUrl}usercart';
+  static String get deleteCartApi => '${baseUrl}deletecart';
+  static String get deleteCartAttributeApi => '${baseUrl}deletecartattribute';
+  static String get emptyCartApi => '${baseUrl}emptycart';
+  static String get addToWishlistApi => '${baseUrl}addtowishlist';
+  static String get userWishlistApi => '${baseUrl}userwishlist';
+  static String get deleteWishlistApi => '${baseUrl}deletewishlist';
+  static String get getProfileApi => '${baseUrl}viewprofile/';
+  static String get updateProfileApi => '${baseUrl}updateprofile/';
+  static String get getFaqApi => '${baseUrl}faq';
+  static String get getFeedbackListApi => '${baseUrl}feedback/';
+  static String get postFeedbackApi => '${baseUrl}feedback';
+  static String get changePasswordApi => '${baseUrl}changepassword/';
+  static String get increaseCartQuantityApi => '${baseUrl}increasecartqty';
+  static String get orderApi => '${baseUrl}order';
+  static String get orderHistoryApi => '${baseUrl}orderhistory';
+  static String get getPagesApi => '${baseUrl}pages';
+  static String get getCouponListApi => '${baseUrl}couponlist';
+  static String get applyCouponApi => '${baseUrl}applycoupon';
+  static String get stateCityPincodeApi => '${baseUrl}statecitypincode';
+  static String get checkAvailabilityApi => '${baseUrl}checkavailability';
+  static String get payuHashApi => '${baseUrl}payuhash';
+  static String get singleOrderDetailApi => '${baseUrl}orderdetail';
+  static String get brandDetailApi => '${baseUrl}branddetail';
+  static String get notificationApi => '${baseUrl}notification?';
+  static String get relatedProductApi => '${baseUrl}relatedproductincart';
+  static String get adminAppPagesApi => '${baseUrl}adminapppages';
+  static String get helpNoForAppApi => '${baseUrl}helpnoforapp';
+  static String get gstVerificationApi => '${baseUrl}gstverification';
+
+  // Phase 5.2 & Phase 7.2: Buyer Receipt Acknowledgement & Dispute Claims
+  static String get acknowledgeReceiptApi =>
+      '${baseUrl}v2/buyer/fulfilment/';
+  static String get buyerClaimsApi => '${baseUrl}v2/buyer/claims';
+  static String get lodgeClaimApi => '${baseUrl}v2/buyer/fulfilment/';
+
+  // Phase 7.1 Authoritative v2 Catalog, Cart & Tracking Endpoints
+  static String get v2ProductsApi => '${baseUrl}v2/products';
+  static String get v2SearchApi => '${baseUrl}v2/search';
+  static String get v2CartApi => '${baseUrl}v2/cart';
+  static String get v2OrderTrackingApi => '${baseUrl}v2/orders/track';
+  static String get v2BuyerProgressApi => '${baseUrl}v2/buyer/progress';
 }

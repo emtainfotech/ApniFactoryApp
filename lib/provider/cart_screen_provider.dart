@@ -977,4 +977,26 @@ class CartScreenProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    addressController.dispose();
+    landmarkController.dispose();
+    countryController.dispose();
+    phonenoController.dispose();
+    locationController.dispose();
+    identitynameController.dispose();
+    editNameController.dispose();
+    editLandmarkController.dispose();
+    editAddressController.dispose();
+    editCountryController.dispose();
+    editStateController.dispose();
+    editCityController.dispose();
+    editPincodeController.dispose();
+    editPhonenoController.dispose();
+    editLocationController.dispose();
+    editIdentitynameController.dispose();
+    super.dispose();
+  }
 }

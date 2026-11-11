@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:apni_factory/api_services/creator_api_services.dart';
@@ -8,6 +9,7 @@ import 'package:apni_factory/screens/all_screen.dart';
 import 'package:apni_factory/shared_pref.dart';
 import 'package:apni_factory/utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:flutter/material.dart';
@@ -17,7 +19,10 @@ class LoginProvider extends ChangeNotifier {
   TextEditingController passwordController = TextEditingController();
   bool loadingLogin = false;
   bool isPasswordVisible = true;
-  final FirebaseAuth auth = FirebaseAuth.instance;
+  StreamSubscription<User?>? _authSubscription;
+
+  FirebaseAuth? get auth =>
+      Firebase.apps.isEmpty ? null : FirebaseAuth.instance;
   User? user;
   void passwordVisibility() {
     isPasswordVisible = !isPasswordVisible;
@@ -25,7 +30,10 @@ class LoginProvider extends ChangeNotifier {
   }
 
   void authChange() {
-    auth.authStateChanges().listen((event) {
+    final firebaseAuth = auth;
+    if (firebaseAuth == null) return;
+    _authSubscription?.cancel();
+    _authSubscription = firebaseAuth.authStateChanges().listen((event) {
       user = event;
     });
     notifyListeners();
@@ -36,8 +44,14 @@ class LoginProvider extends ChangeNotifier {
     required BuildContext context,
   }) async {
     try {
+      final firebaseAuth = auth;
+      if (firebaseAuth == null) {
+        Utils.commonSnackBar(context,
+            height: height, message: "Authentication service unavailable");
+        return;
+      }
       GoogleAuthProvider _googleAuthProvider = GoogleAuthProvider();
-      await auth.signInWithProvider(_googleAuthProvider);
+      await firebaseAuth.signInWithProvider(_googleAuthProvider);
       if (user != null) {
         user!.getIdToken().then((value) {
           log(value.toString());
@@ -86,11 +100,13 @@ class LoginProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  FirebaseMessaging? get messaging =>
+      Firebase.apps.isEmpty ? null : FirebaseMessaging.instance;
   Future<String> getDeviceToken() async {
-    String? token = await messaging.getToken();
-
-    return token!;
+    final fcm = messaging;
+    if (fcm == null) return '';
+    String? token = await fcm.getToken();
+    return token ?? '';
   }
 
   Future<void> login(
@@ -159,5 +175,13 @@ class LoginProvider extends ChangeNotifier {
       log("login error: ${e.toString()}");
     }
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 }

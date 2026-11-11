@@ -215,4 +215,13 @@ class ForgotPasswordProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    disposeTimer();
+    emailController.dispose();
+    passwordController.dispose();
+    otpController.dispose();
+    super.dispose();
+  }
 }

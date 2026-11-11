@@ -152,4 +152,10 @@ class CategoryScreenProvider extends ChangeNotifier {
   //   categoryScre();
   //   await BrandPageScreen(cmpid: cmpid,cid:cid ,);
   // }
+
+  @override
+  void dispose() {
+    categorySearchController.dispose();
+    super.dispose();
+  }
 }

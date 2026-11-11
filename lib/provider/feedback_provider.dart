@@ -80,4 +80,10 @@ class FeedbackProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    feedbackController.dispose();
+    super.dispose();
+  }
 }

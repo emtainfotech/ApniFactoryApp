@@ -108,4 +108,10 @@ class CompanyScreenProvider extends ChangeNotifier {
     loadingSearch = false;
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    companySearchController.dispose();
+    super.dispose();
+  }
 }

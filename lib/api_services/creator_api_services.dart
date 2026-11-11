@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
+import 'package:apni_factory/api_services/api_client.dart';
 import 'package:apni_factory/api_services/handle_dio.dart';
 
 import 'package:apni_factory/model/about_us_model.dart';
@@ -66,22 +66,43 @@ import '../model/login_model.dart';
 import 'api_end_point.dart';
 
 class CreatorApiServices {
-  static Future<LoginModel?> loginDetails(BuildContext context,
-      {required String email, String? password, String? deviceid}) async {
-    Dio dio = Dio();
-    FormData formData;
+  static void _log(Object? message) {
+    ApiClient.safeLog('CreatorApiServices', message);
+  }
 
-    formData = FormData.fromMap(
+  static Future<LoginModel?> loginDetails(BuildContext context,
+      {required String email,
+      String? password,
+      String? deviceid,
+      CancelToken? cancelToken}) async {
+    final Dio dio = ApiClient.instance.dio;
+    final FormData formData = FormData.fromMap(
         {"email": email, "password": password, "deviceid": deviceid});
     try {
-      Response response = await dio.post(ApiEndPoint.loginApi, data: formData);
+      Response response = await dio.post(
+        ApiEndPoint.loginApi,
+        data: formData,
+        cancelToken: cancelToken,
+      );
 
-      log("login response is ${response.data.toString()}");
+      _log("login status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        LoginModel loginModel = LoginModel.fromJson(response.data);
-
-        return loginModel;
+        final dynamic payload = response.data is String
+            ? json.decode(response.data)
+            : response.data;
+        if (payload is Map<String, dynamic>) {
+          final String? token = payload['token']?.toString() ??
+              payload['access_token']?.toString() ??
+              (payload['data'] is Map
+                  ? payload['data']['token']?.toString()
+                  : null);
+          if (token != null && token.isNotEmpty) {
+            await SharedPref.setAuthToken(token);
+          }
+          return LoginModel.fromJson(payload);
+        }
+        return LoginModel.fromJson(response.data);
       } else {
         return null;
       }
@@ -96,7 +117,7 @@ class CreatorApiServices {
       required mobileNo,
       required password,
       required String regby}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData = FormData.fromMap({
       "email": email,
@@ -132,7 +153,7 @@ class CreatorApiServices {
         data: formData,
       );
 
-      log("Sign Up response is ${response.data.toString()}");
+      _log("Sign Up response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -148,51 +169,12 @@ class CreatorApiServices {
     }
   }
 
-  // static Future<dynamic> gstVerificationDetails(
-  //   BuildContext context, {
-  //   required String gstNumber,
-  // }) async {
-  //   Dio dio = Dio();
-  //   const String apiKey =
-  //       'fz3sSQg528hXFIOGkHLEEUrhjnS2'; // Replace with your actual key
-  //   final String url =
-  //       'https://appyflow.in/api/verifyGST?gstNo=$gstNumber&key_secret=$apiKey';
-
-  //   try {
-  //     Response response = await dio.post(
-  //       url,
-  //     );
-  //     log("GST Verification response: ${response.data}");
-
-  //     // var data = json.decode(response.data);
-
-  //     if (response.statusCode == 200) {
-  //       final data = response.data;
-  //       if (data['error'] == true) {
-  //         // Parse error model
-  //         GstErrorResponseModel errorModel =
-  //             GstErrorResponseModel.fromJson(data);
-  //         log(errorModel.message.toString());
-  //         return errorModel;
-  //       } else {
-  //         // Parse success model
-  //         GstResponseModel gstModel = GstResponseModel.fromJson(data);
-  //         log(gstModel.taxpayerInfo?.gstin ?? "");
-  //         return gstModel;
-  //       }
-  //     } else {
-  //       return null;
-  //     }
-  //   } on DioException catch (error) {
-  //     return await HandleDio.handleDioError(error: error, context: context);
-  //   }
-  // }
 
   static Future<ChangePasswordModel?> changePasswordDetails(
       BuildContext context,
       {required String currentPassword,
       required String newPassword}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     FormData formData;
     formData = FormData.fromMap({
       "currentpassword": currentPassword,
@@ -203,7 +185,7 @@ class CreatorApiServices {
       Response response = await dio.post(ApiEndPoint.changePasswordApi + userId,
           data: formData);
 
-      log("change password response is ${response.data.toString()}");
+      _log("change password response is ${response.data.toString()}");
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
@@ -221,20 +203,20 @@ class CreatorApiServices {
 
   static Future<GetOtpModel?> getOtpDetails(BuildContext context,
       {required String email, required String sendon}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData =
         FormData.fromMap({"emailmobile": email, "sendon": sendon});
     try {
       Response response = await dio.post(ApiEndPoint.getOtpApi, data: formData);
 
-      log("Get Otp response is ${response.data.toString()}");
+      _log("Get Otp response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         GetOtpModel getOtpModel = GetOtpModel.fromJson(data);
-        log(getOtpModel.toString());
+        _log(getOtpModel.toString());
         return getOtpModel;
       } else {
         return null;
@@ -246,7 +228,7 @@ class CreatorApiServices {
 
   static Future<VerifyOtpModel?> verifyOtpDetails(BuildContext context,
       {required String email, required String otp}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData =
         FormData.fromMap({"emailmobile": email, "otp": int.parse(otp)});
@@ -254,13 +236,13 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.verifyOtpApi, data: formData);
 
-      log("Verify Otp response is ${response.data.toString()}");
+      _log("Verify Otp response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         VerifyOtpModel verifyOtpModel = VerifyOtpModel.fromJson(data);
-        log(verifyOtpModel.toString());
+        _log(verifyOtpModel.toString());
         return verifyOtpModel;
       } else {
         return null;
@@ -274,7 +256,7 @@ class CreatorApiServices {
       {required String id,
       required String password,
       required String emailmobile}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData = FormData.fromMap(
         {"id": id, "password": password, "emailmobile": emailmobile});
@@ -282,14 +264,14 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.resetPasswordApi, data: formData);
 
-      log("Reset Password response is ${response.data.toString()}");
+      _log("Reset Password response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         ResetPasswordModel resetPasswordModel =
             ResetPasswordModel.fromJson(data);
-        log(resetPasswordModel.toString());
+        _log(resetPasswordModel.toString());
         return resetPasswordModel;
       } else {
         return null;
@@ -302,14 +284,14 @@ class CreatorApiServices {
   static Future<HomescreenModel?> homeScreenDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userId = await SharedPref.getUserLoginId();
     try {
       Response response = await dio.get(
         "${ApiEndPoint.homeScreenApi}?userid=${userId}",
       );
 
-      log("HomeScreen response is ${response.data.toString()}");
+      _log("HomeScreen response is ${response.data.toString()}");
 
       var data = (response.data is String)
           ? json.decode(response.data)
@@ -317,13 +299,13 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         HomescreenModel homeScreenModel = HomescreenModel.fromJson(data);
-        log(homeScreenModel.toString());
+        _log(homeScreenModel.toString());
         return homeScreenModel;
       } else {
         return null;
       }
     } catch (error) {
-      log("homeScreenDetails error: $error");
+      _log("homeScreenDetails error: $error");
       return null;
     }
   }
@@ -334,7 +316,7 @@ class CreatorApiServices {
     int page = 1,
     List<int>? excludeIds,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     try {
       String url = "${ApiEndPoint.randomProductsApi}?limit=$limit&page=$page";
       if (excludeIds != null && excludeIds.isNotEmpty) {
@@ -353,7 +335,7 @@ class CreatorApiServices {
       }
       return null;
     } catch (error) {
-      log("getRandomProducts error: $error");
+      _log("getRandomProducts error: $error");
       return null;
     }
   }
@@ -364,7 +346,7 @@ class CreatorApiServices {
     int limit = 8,
     List<int>? excludeIds,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     try {
       String url = "${ApiEndPoint.randomProductsApi}?page=$page&limit=$limit";
       if (excludeIds != null && excludeIds.isNotEmpty) {
@@ -388,7 +370,7 @@ class CreatorApiServices {
       }
       return null;
     } catch (error) {
-      log("getRandomProductsPaginated error: $error");
+      _log("getRandomProductsPaginated error: $error");
       return null;
     }
   }
@@ -397,7 +379,7 @@ class CreatorApiServices {
     BuildContext context, {
     required String word,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData = FormData.fromMap({
       "word": word,
@@ -406,14 +388,14 @@ class CreatorApiServices {
     try {
       Response response = await dio.post(ApiEndPoint.searchApi, data: formData);
 
-      log("Search response is ${response.data.toString()}");
+      _log("Search response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         SearchModel searchModel = SearchModel.fromJson(data);
 
-        log(searchModel.toString());
+        _log(searchModel.toString());
         return searchModel;
       } else {
         return null;
@@ -426,7 +408,7 @@ class CreatorApiServices {
   static Future<GetProfileModel?> getProfileDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userLoginId = await SharedPref.getUserLoginId();
 
     try {
@@ -434,13 +416,13 @@ class CreatorApiServices {
         ApiEndPoint.getProfileApi + "${int.parse(userLoginId)}",
       );
 
-      log("Get Profile response is ${response.data.toString()}");
+      _log("Get Profile response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         GetProfileModel getProfileModel = GetProfileModel.fromJson(data);
-        log(getProfileModel.toString());
+        _log(getProfileModel.toString());
         return getProfileModel;
       } else {
         return null;
@@ -460,7 +442,7 @@ class CreatorApiServices {
     required String gstorpan,
     File? image,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userLoginId = await SharedPref.getUserLoginId();
     String imageFileName = image?.path.split('/').last ?? "";
     FormData formData;
@@ -492,14 +474,14 @@ class CreatorApiServices {
           ApiEndPoint.updateProfileApi + "${int.parse(userLoginId)}",
           data: formData);
 
-      log("Update Profile response is ${response.data.toString()}");
+      _log("Update Profile response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         UpdateProfileModel updateProfileModel =
             UpdateProfileModel.fromJson(data);
-        log(updateProfileModel.toString());
+        _log(updateProfileModel.toString());
         return updateProfileModel;
       } else {
         return null;
@@ -512,25 +494,25 @@ class CreatorApiServices {
   static Future<GetFeedbackListModel?> getFeedbackListDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userLoginId = await SharedPref.getUserLoginId();
     // FormData formData = FormData.fromMap({
     //   "userid": userLoginId,
     // });
-    log(ApiEndPoint.getFeedbackListApi + userLoginId);
+    _log(ApiEndPoint.getFeedbackListApi + userLoginId);
     try {
       Response response = await dio.get(
         ApiEndPoint.getFeedbackListApi + userLoginId,
       );
 
-      log("Get Feedback response is ${response.data.toString()}");
+      _log("Get Feedback response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         GetFeedbackListModel getFeedbackListModel =
             GetFeedbackListModel.fromJson(data);
-        log(getFeedbackListModel.toString());
+        _log(getFeedbackListModel.toString());
         return getFeedbackListModel;
       } else {
         return null;
@@ -542,7 +524,7 @@ class CreatorApiServices {
 
   static Future<PostFeedbackModel?> postFeedbackDetails(BuildContext context,
       {required String feedback}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String id = await SharedPref.getUserLoginId();
     String name = await SharedPref.getUserName();
     String email = await SharedPref.getUserEmailId();
@@ -552,13 +534,13 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.postFeedbackApi, data: formData);
 
-      log("Post feedback response is ${response.data.toString()}");
+      _log("Post feedback response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         PostFeedbackModel postFeedbackModel = PostFeedbackModel.fromJson(data);
-        log(postFeedbackModel.toString());
+        _log(postFeedbackModel.toString());
         return postFeedbackModel;
       } else {
         return null;
@@ -570,20 +552,20 @@ class CreatorApiServices {
 
   static Future<GetPagesModel?> getPagesDetails(BuildContext context,
       {required String slug}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     try {
       Response response = await dio.get(
         ApiEndPoint.getPagesApi + "?name=${slug}",
       );
 
-      log("Get Page response is ${response.data.toString()}");
+      _log("Get Page response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         GetPagesModel getPagesModel = GetPagesModel.fromJson(data);
-        log(getPagesModel.toString());
+        _log(getPagesModel.toString());
         return getPagesModel;
       } else {
         return null;
@@ -596,20 +578,20 @@ class CreatorApiServices {
   static Future<HelpNoForAppModel?> helpNoForAppDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     try {
       Response response = await dio.get(
         ApiEndPoint.helpNoForAppApi,
       );
 
-      log("Help No For App response is ${response.data.toString()}");
+      _log("Help No For App response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         HelpNoForAppModel helpNoForAppModel = HelpNoForAppModel.fromJson(data);
-        log(helpNoForAppModel.toString());
+        _log(helpNoForAppModel.toString());
         return helpNoForAppModel;
       } else {
         return null;
@@ -623,26 +605,26 @@ class CreatorApiServices {
     BuildContext context, {
     required int mid,
   }) async {
-    log(mid.toString());
-    Dio dio = Dio();
+    _log(mid.toString());
+    final Dio dio = ApiClient.instance.dio;
     // FormData formData = FormData.fromMap({
     //   "mid": mid,
     // });
     try {
-      log(ApiEndPoint.categoryScreenApi + "mid=${mid}");
+      _log(ApiEndPoint.categoryScreenApi + "mid=${mid}");
       Response response = await dio.get(
         ApiEndPoint.categoryScreenApi + "mid=${mid}",
         // data: formData
       );
 
-      log("Category response is ${response.data.toString()}");
+      _log("Category response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         CategoryScreenModel categoryScreenModel =
             CategoryScreenModel.fromJson(data);
-        log(categoryScreenModel.toString());
+        _log(categoryScreenModel.toString());
         return categoryScreenModel;
       } else {
         return null;
@@ -656,8 +638,8 @@ class CreatorApiServices {
     BuildContext context, {
     required int cid,
   }) async {
-    log(cid.toString());
-    Dio dio = Dio();
+    _log(cid.toString());
+    final Dio dio = ApiClient.instance.dio;
     FormData formData = FormData.fromMap({
       "cid": cid,
     });
@@ -667,14 +649,14 @@ class CreatorApiServices {
         ApiEndPoint.companyScreenApi + "cid=${cid}",
       );
 
-      log("Company response is ${response.data.toString()}");
+      _log("Company response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         CompanyScreenModel comapnyScreenModel =
             CompanyScreenModel.fromJson(data);
-        log(comapnyScreenModel.toString());
+        _log(comapnyScreenModel.toString());
         return comapnyScreenModel;
       } else {
         return null;
@@ -689,22 +671,22 @@ class CreatorApiServices {
     required int cmpid,
     required int cid,
   }) async {
-    log(cmpid.toString());
-    log(cid.toString());
-    Dio dio = Dio();
+    _log(cmpid.toString());
+    _log(cid.toString());
+    final Dio dio = ApiClient.instance.dio;
     FormData formData = FormData.fromMap({"cmpid": cmpid, "category_id": cid});
     try {
       Response response = await dio.get(
         ApiEndPoint.brandScreenApi + "cmpid=${cmpid}&cid=${cid}",
       );
 
-      log("Brand response is ${response.data.toString()}");
+      _log("Brand response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         BrandScreenModel brandScreenModel = BrandScreenModel.fromJson(data);
-        log(brandScreenModel.toString());
+        _log(brandScreenModel.toString());
         return brandScreenModel;
       } else {
         return null;
@@ -717,24 +699,24 @@ class CreatorApiServices {
   static Future<ProductCategoryListScreenModel?>
       productCategoryListScreenDetails(BuildContext context,
           {required int bid, required int cid}) async {
-    log(bid.toString());
-    log(cid.toString());
-    Dio dio = Dio();
+    _log(bid.toString());
+    _log(cid.toString());
+    final Dio dio = ApiClient.instance.dio;
     FormData formData = FormData.fromMap({"bid": bid, "cid": cid});
     try {
-      log(ApiEndPoint.productCategoryListScreenApi + "bid=${bid}&cid=${cid}");
+      _log(ApiEndPoint.productCategoryListScreenApi + "bid=${bid}&cid=${cid}");
       Response response = await dio.get(
         ApiEndPoint.productCategoryListScreenApi + "bid=${bid}&cid=${cid}",
       );
 
-      log("Product Category List response is ${response.data.toString()}");
+      _log("Product Category List response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         ProductCategoryListScreenModel productCategoryListScreenModel =
             ProductCategoryListScreenModel.fromJson(data);
-        log(productCategoryListScreenModel.toString());
+        _log(productCategoryListScreenModel.toString());
         return productCategoryListScreenModel;
       } else {
         return null;
@@ -750,24 +732,24 @@ class CreatorApiServices {
     required int sid,
     required int bid,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     FormData formData = FormData.fromMap({"bid": bid, "sid": sid});
 
     try {
-      log("sid is ${sid}");
-      log("bid is ${bid}");
+      _log("sid is ${sid}");
+      _log("bid is ${bid}");
       Response response = await dio.get(
         ApiEndPoint.productListBySubCategoryScreenApi + "sid=${sid}&bid=${bid}",
       );
 
-      log("Product List By Subcategory response is ${response.data.toString()}");
+      _log("Product List By Subcategory response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         ProductListByCategoryScreenModel productListBySubCategoryScreenModel =
             ProductListByCategoryScreenModel.fromJson(data);
-        log(productListBySubCategoryScreenModel.toString());
+        _log(productListBySubCategoryScreenModel.toString());
         return productListBySubCategoryScreenModel;
       } else {
         return null;
@@ -783,21 +765,21 @@ class CreatorApiServices {
     required String colorid,
   }) async {
     String userid = await SharedPref.getUserLoginId();
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     FormData formData = FormData.fromMap(
         {"productid": productid, "colorid": colorid, "userid": userid});
     try {
       Response response =
           await dio.post(ApiEndPoint.productDetailApi, data: formData);
 
-      log("Product Detail Screen response is ${response.data.toString()}");
+      _log("Product Detail Screen response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         ProductDetailModel productDetailModel =
             ProductDetailModel.fromJson(response.data);
-        log(productDetailModel.toString());
+        _log(productDetailModel.toString());
         return productDetailModel;
       } else {
         return null;
@@ -814,7 +796,7 @@ class CreatorApiServices {
     required String review,
   }) async {
     String userid = await SharedPref.getUserLoginId();
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     FormData formData = FormData.fromMap({
       "productid": productid,
       "userid": userid,
@@ -825,14 +807,14 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.productReviewApi, data: formData);
 
-      log("Product Review Screen response is ${response.data.toString()}");
+      _log("Product Review Screen response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         ProductReviewModel productReviewModel =
             ProductReviewModel.fromJson(data);
-        log(productReviewModel.toString());
+        _log(productReviewModel.toString());
         return productReviewModel;
       } else {
         return null;
@@ -845,7 +827,7 @@ class CreatorApiServices {
   static Future<UserWishlistModel?> userWishlistDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userid = await SharedPref.getUserLoginId();
 
     FormData formData = FormData.fromMap({
@@ -856,7 +838,7 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.userWishlistApi, data: formData);
 
-      log("User Wishlist response is ${response.data.toString()}");
+      _log("User Wishlist response is ${response.data.toString()}");
 
       final dynamic rawData = response.data;
       final Map<String, dynamic> data = (rawData is String)
@@ -867,7 +849,7 @@ class CreatorApiServices {
         UserWishlistModel userWishlistModel =
             UserWishlistModel.fromJson(data);
 
-        log(userWishlistModel.toString());
+        _log(userWishlistModel.toString());
         return userWishlistModel;
       } else {
         return null;
@@ -880,7 +862,7 @@ class CreatorApiServices {
   static Future<DeleteWishlistModel?> deleteWishlistDetails(
       BuildContext context,
       {required String wishlistid}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userid = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "wishlistid": wishlistid,
@@ -890,7 +872,7 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.deleteWishlistApi, data: formData);
 
-      log("Delete Wishlist response is ${response.data.toString()}");
+      _log("Delete Wishlist response is ${response.data.toString()}");
 
       final dynamic rawData = response.data;
       final Map<String, dynamic> data = (rawData is String)
@@ -900,7 +882,7 @@ class CreatorApiServices {
       if (response.statusCode == 200) {
         DeleteWishlistModel deleteWishlistModel =
             DeleteWishlistModel.fromJson(data);
-        log(deleteWishlistModel.toString());
+        _log(deleteWishlistModel.toString());
         return deleteWishlistModel;
       } else {
         return null;
@@ -912,7 +894,7 @@ class CreatorApiServices {
 
   static Future<AddToWishlistModel?> addToWishlistDetails(BuildContext context,
       {required String productid, required String color}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userid = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap(
         {"productid": productid, "userid": userid, "color": color});
@@ -921,7 +903,7 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.addToWishlistApi, data: formData);
 
-      log("Add To Wishlist response is ${response.data.toString()}");
+      _log("Add To Wishlist response is ${response.data.toString()}");
 
       final dynamic rawData = response.data;
       final Map<String, dynamic> data = (rawData is String)
@@ -931,7 +913,7 @@ class CreatorApiServices {
       if (response.statusCode == 200) {
         AddToWishlistModel addToWishlistModel =
             AddToWishlistModel.fromJson(data);
-        log(addToWishlistModel.toString());
+        _log(addToWishlistModel.toString());
         return addToWishlistModel;
       } else {
         return null;
@@ -944,23 +926,23 @@ class CreatorApiServices {
   static Future<UserCartModel?> userCartDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userid = await SharedPref.getUserLoginId();
 
     FormData formData = FormData.fromMap({
       "userid": userid,
     });
-    log(userid.toString());
+    _log(userid.toString());
     try {
       Response response =
           await dio.post(ApiEndPoint.userCartApi, data: formData);
 
-      log("User Cart response is ${response.data.toString()}");
+      _log("User Cart response is ${response.data.toString()}");
 
       if (response.statusCode == 200) {
         UserCartModel userCartModel = UserCartModel.fromJson(response.data);
 
-        log(userCartModel.toString());
+        _log(userCartModel.toString());
         return userCartModel;
       } else {
         return null;
@@ -972,7 +954,7 @@ class CreatorApiServices {
 
   static Future<DeleteCartModel?> deleteCartDetails(BuildContext context,
       {required String cartid}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData = FormData.fromMap({
       "cartid": cartid,
@@ -981,14 +963,14 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.deleteCartApi, data: formData);
 
-      log("Delete Cart response is ${response.data.toString()}");
+      _log("Delete Cart response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         DeleteCartModel deleteCartModel =
             DeleteCartModel.fromJson(response.data);
-        log(deleteCartModel.toString());
+        _log(deleteCartModel.toString());
         return deleteCartModel;
       } else {
         return null;
@@ -1001,7 +983,7 @@ class CreatorApiServices {
   static Future<DeleteCartAttributeModel?> deleteCartAttributeDetails(
       BuildContext context,
       {required String cartattributeid}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData = FormData.fromMap({
       "cartattributeid": cartattributeid,
@@ -1010,14 +992,14 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.deleteCartAttributeApi, data: formData);
 
-      log("Delete Cart Attribute response is ${response.data.toString()}");
+      _log("Delete Cart Attribute response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         DeleteCartAttributeModel deleteCartAttributeModel =
             DeleteCartAttributeModel.fromJson(response.data);
-        log(deleteCartAttributeModel.toString());
+        _log(deleteCartAttributeModel.toString());
         return deleteCartAttributeModel;
       } else {
         return null;
@@ -1030,7 +1012,7 @@ class CreatorApiServices {
   static Future<EmptyCartModel?> emptyCartDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String customerid = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "customer_id": customerid,
@@ -1039,13 +1021,13 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.emptyCartApi, data: formData);
 
-      log("Empty Cart response is ${response.data.toString()}");
+      _log("Empty Cart response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         EmptyCartModel emptyCartModel = EmptyCartModel.fromJson(response.data);
-        log(emptyCartModel.toString());
+        _log(emptyCartModel.toString());
         return emptyCartModel;
       } else {
         return null;
@@ -1059,7 +1041,7 @@ class CreatorApiServices {
       {required String productid,
       required String brandid,
       required List attributes}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userid = await SharedPref.getUserLoginId();
     final Map<String, dynamic> body = {
       "productid": productid,
@@ -1073,13 +1055,13 @@ class CreatorApiServices {
     try {
       Response response = await dio.post(ApiEndPoint.addToCartApi, data: body);
 
-      log("Add To Cart response is ${response.data.toString()}");
+      _log("Add To Cart response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         AddToCartModel addToCartModel = AddToCartModel.fromJson(response.data);
-        log(addToCartModel.toString());
+        _log(addToCartModel.toString());
         return addToCartModel;
       } else {
         return null;
@@ -1093,7 +1075,7 @@ class CreatorApiServices {
       BuildContext context,
       {required String cartattributeid,
       required String qty}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData =
         FormData.fromMap({"cartattributeid": cartattributeid, "qty": qty});
@@ -1101,14 +1083,14 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.increaseCartQuantityApi, data: formData);
 
-      log("Increase Cart Quantity response is ${response.data.toString()}");
+      _log("Increase Cart Quantity response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         IncreaseCartQtyModel increaseCartQtyModel =
             IncreaseCartQtyModel.fromJson(response.data);
-        log(increaseCartQtyModel.toString());
+        _log(increaseCartQtyModel.toString());
         return increaseCartQtyModel;
       } else {
         return null;
@@ -1121,20 +1103,20 @@ class CreatorApiServices {
   static Future<GetFaqModel?> getFaqDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     try {
       Response response = await dio.get(
         ApiEndPoint.getFaqApi,
       );
 
-      log("Get Faq response is ${response.data.toString()}");
+      _log("Get Faq response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         GetFaqModel getFaqModel = GetFaqModel.fromJson(data);
-        log(getFaqModel.toString());
+        _log(getFaqModel.toString());
         return getFaqModel;
       } else {
         return null;
@@ -1146,7 +1128,7 @@ class CreatorApiServices {
 
   static Future<GetCouponListModel?> getCouponListDetails(BuildContext context,
       {required String couponof}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userid = await SharedPref.getUserLoginId();
     FormData formData =
         FormData.fromMap({"userid": userid, "couponof": couponof});
@@ -1154,14 +1136,14 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.getCouponListApi, data: formData);
 
-      log("Get Coupon List response is ${response.data.toString()}");
+      _log("Get Coupon List response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         GetCouponListModel getCouponListModel =
             GetCouponListModel.fromJson(response.data);
-        log(getCouponListModel.toString());
+        _log(getCouponListModel.toString());
         return getCouponListModel;
       } else {
         return null;
@@ -1175,7 +1157,7 @@ class CreatorApiServices {
     BuildContext context, {
     required String couponid,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userid = await SharedPref.getUserLoginId();
     FormData formData =
         FormData.fromMap({"userid": userid, "couponid": couponid});
@@ -1183,14 +1165,14 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.applyCouponApi, data: formData);
 
-      log("Apply Coupon response is ${response.data.toString()}");
+      _log("Apply Coupon response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         ApplyCouponModel applyCouponModel =
             ApplyCouponModel.fromJson(response.data);
-        log(applyCouponModel.toString());
+        _log(applyCouponModel.toString());
         return applyCouponModel;
       } else {
         return null;
@@ -1203,17 +1185,17 @@ class CreatorApiServices {
   static Future<GetAddressListModel?> getAddressListDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String customerId = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "customer_id": customerId,
     });
     try {
-      log(customerId);
+      _log(customerId);
       Response response =
           await dio.post(ApiEndPoint.getAddressListApi, data: formData);
 
-      log("Get Address List response is ${response.data.toString()}");
+      _log("Get Address List response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1241,7 +1223,7 @@ class CreatorApiServices {
       required String pincode,
       required String phoneno,
       required String identityname}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String customerId = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "customer_id": customerId,
@@ -1261,7 +1243,7 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.addAddressApi, data: formData);
 
-      log("Add Address response is ${response.data.toString()}");
+      _log("Add Address response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1290,7 +1272,7 @@ class CreatorApiServices {
       required String identityname,
       required String addressId,
       required String type}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String customerId = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "customer_id": customerId,
@@ -1310,7 +1292,7 @@ class CreatorApiServices {
       Response response = await dio
           .post(ApiEndPoint.updateAddressApi + addressId, data: formData);
 
-      log("Update Address response is ${response.data.toString()}");
+      _log("Update Address response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1330,13 +1312,13 @@ class CreatorApiServices {
   static Future<GetAddressDetailModel?> getIdAddressDetails(
       BuildContext context,
       {required String addressId}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     try {
       Response response =
           await dio.get(ApiEndPoint.getAddressDetailApi + addressId);
 
-      log("Get Id Address response is ${response.data.toString()}");
+      _log("Get Id Address response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1355,13 +1337,13 @@ class CreatorApiServices {
 
   static Future<DeleteAddressModel?> deleteAddressDetails(BuildContext context,
       {required String addressid}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     try {
       Response response =
           await dio.delete(ApiEndPoint.deleteAddressApi + addressid);
 
-      log("Delete Address response is ${response.data.toString()}");
+      _log("Delete Address response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1382,7 +1364,7 @@ class CreatorApiServices {
     BuildContext context, {
     required String addressid,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String customerId = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "userid": customerId,
@@ -1392,7 +1374,7 @@ class CreatorApiServices {
       Response response =
           await dio.post(ApiEndPoint.updateCartAddressApi, data: formData);
 
-      log("Update Cart Address response is ${response.data.toString()}");
+      _log("Update Cart Address response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1412,7 +1394,7 @@ class CreatorApiServices {
   static Future<StateModel?> stateModelDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     // String customerId = await SharedPref.getUserLoginId();
     // FormData formData = FormData.fromMap({
     //   "customer_id": customerId,
@@ -1422,7 +1404,7 @@ class CreatorApiServices {
         "${ApiEndPoint.stateCityPincodeApi}?listof=state&name=",
       );
 
-      log("Get State List is ${response.data.toString()}");
+      _log("Get State List is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
@@ -1440,14 +1422,14 @@ class CreatorApiServices {
 
   static Future<CityListModel?> cityModelDetails(BuildContext context,
       {required String state}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     try {
       Response response = await dio.get(
         "${ApiEndPoint.stateCityPincodeApi}?listof=city&name=${state}",
       );
 
-      log("Get City List is ${response.data.toString()}");
+      _log("Get City List is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
@@ -1465,14 +1447,14 @@ class CreatorApiServices {
 
   static Future<PincodeListModel?> pincodeModelDetails(BuildContext context,
       {required String city}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     try {
       Response response = await dio.get(
         "${ApiEndPoint.stateCityPincodeApi}?listof=pincode&name=${city}",
       );
 
-      log("Get Pincode List is ${response.data.toString()}");
+      _log("Get Pincode List is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
@@ -1490,7 +1472,7 @@ class CreatorApiServices {
 
   static Future<CheckAddressAvailabilityModel?> checkAddressAvailabilityDetails(
       {required BuildContext context, required String addressid}) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userId = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "userid": userId,
@@ -1500,7 +1482,7 @@ class CreatorApiServices {
       Response response =
           await dio.post("${ApiEndPoint.checkAvailabilityApi}", data: formData);
 
-      log("Check Address Availability is ${response.data.toString()}");
+      _log("Check Address Availability is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1521,7 +1503,7 @@ class CreatorApiServices {
     BuildContext context, {
     required String addressid,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userId = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "userid": userId,
@@ -1530,7 +1512,7 @@ class CreatorApiServices {
     try {
       Response response = await dio.post(ApiEndPoint.orderApi, data: formData);
 
-      log("Order response is ${response.data.toString()}");
+      _log("Order response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1550,17 +1532,17 @@ class CreatorApiServices {
     BuildContext context, {
     required String orderno,
   }) async {
-    Dio dio = Dio();
-log("message");
+    final Dio dio = ApiClient.instance.dio;
+_log("message");
     FormData formData = FormData.fromMap({
       "orderno": orderno,
     });
-    log(orderno);
+    _log(orderno);
     try {
       Response response =
           await dio.post(ApiEndPoint.singleOrderDetailApi, data: formData);
 
-      log("Single Order Detail response is ${response.data.toString()}");
+      _log("Single Order Detail response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1581,7 +1563,7 @@ log("message");
     BuildContext context, {
     required String brandid,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData = FormData.fromMap({
       "brandid": brandid,
@@ -1590,7 +1572,7 @@ log("message");
       Response response =
           await dio.post(ApiEndPoint.brandDetailApi, data: formData);
 
-      log("Brand Detail response is ${response.data.toString()}");
+      _log("Brand Detail response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
@@ -1609,7 +1591,7 @@ log("message");
   static Future<OrderHistoryModel?> orderHistoryDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userId = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "userid": userId,
@@ -1618,7 +1600,7 @@ log("message");
       Response response =
           await dio.post(ApiEndPoint.orderHistoryApi, data: formData);
 
-      log("Order History response is ${response.data.toString()}");
+      _log("Order History response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
@@ -1638,7 +1620,7 @@ log("message");
   static Future<NotificationModel?> notificationDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userId = await SharedPref.getUserLoginId();
 
     try {
@@ -1646,7 +1628,7 @@ log("message");
         ApiEndPoint.notificationApi + "userid=${userId}",
       );
 
-      log("Notification response is ${response.data.toString()}");
+      _log("Notification response is ${response.data.toString()}");
 
       final dynamic rawData = response.data;
       final Map<String, dynamic> data = (rawData is String)
@@ -1655,7 +1637,7 @@ log("message");
 
       if (response.statusCode == 200) {
         NotificationModel notificationModel = NotificationModel.fromJson(data);
-        log(notificationModel.toString());
+        _log(notificationModel.toString());
         return notificationModel;
       } else {
         return null;
@@ -1668,7 +1650,7 @@ log("message");
   static Future<RelatedProductModel?> relatedProductDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
     String userId = await SharedPref.getUserLoginId();
     FormData formData = FormData.fromMap({
       "userid": userId,
@@ -1677,14 +1659,14 @@ log("message");
       Response response =
           await dio.post(ApiEndPoint.relatedProductApi, data: formData);
 
-      log("Related Product response is ${response.data.toString()}");
+      _log("Related Product response is ${response.data.toString()}");
 
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         RelatedProductModel relatedProductModel =
             RelatedProductModel.fromJson(response.data);
-        log(relatedProductModel.toString());
+        _log(relatedProductModel.toString());
         return relatedProductModel;
       } else {
         return null;
@@ -1697,21 +1679,21 @@ log("message");
   static Future<AdminAppPagesModel?> adminAppPagesDetails(
     BuildContext context,
   ) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     try {
       Response response = await dio.get(
         ApiEndPoint.adminAppPagesApi,
       );
 
-      log("Admin app pages response is ${response.data.toString()}");
+      _log("Admin app pages response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         AdminAppPagesModel adminAppPagesModel =
             AdminAppPagesModel.fromJson(data);
-        log(adminAppPagesModel.toString());
+        _log(adminAppPagesModel.toString());
         return adminAppPagesModel;
       } else {
         return null;
@@ -1725,7 +1707,7 @@ log("message");
     BuildContext context, {
     required String gstNumber,
   }) async {
-    Dio dio = Dio();
+    final Dio dio = ApiClient.instance.dio;
 
     FormData formData = FormData.fromMap({
       "gst": gstNumber,
@@ -1734,20 +1716,150 @@ log("message");
       Response response =
           await dio.post(ApiEndPoint.gstVerificationApi, data: formData);
 
-      log("Gst Verification response is ${response.data.toString()}");
+      _log("Gst Verification response is ${response.data.toString()}");
 
       var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
         GstVerificationModel gstVerificationModel =
             GstVerificationModel.fromJson(data);
-        log(gstVerificationModel.toString());
+        _log(gstVerificationModel.toString());
         return gstVerificationModel;
       } else {
         return null;
       }
     } on DioException catch (error) {
       return await HandleDio.handleDioError(error: error, context: context);
+    }
+  }
+
+  /// Phase 7.2: Fetch buyer multi-seller order tracking details (/v2/buyer/orders/{orderId}/tracking).
+  static Future<Map<String, dynamic>> fetchOrderTracking({
+    required int orderId,
+    int? customerId,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final response = await ApiClient.instance.dio.get(
+        '${ApiEndPoint.baseUrl}v2/buyer/orders/$orderId/tracking',
+        queryParameters:
+            customerId != null ? {'customer_id': customerId} : null,
+        cancelToken: cancelToken,
+      );
+      final dynamic body =
+          response.data is String ? json.decode(response.data) : response.data;
+      if (body is Map<String, dynamic> && body['status'] == true) {
+        return {
+          'ok': true,
+          'statusCode': response.statusCode,
+          'data': body['data'],
+          'message': 'Tracking summary loaded.',
+        };
+      }
+      return {
+        'ok': false,
+        'statusCode': response.statusCode,
+        'message': (body is Map ? body['message']?.toString() : null) ??
+            'Unable to load fulfilment tracking.',
+      };
+    } on DioException catch (error) {
+      final apiError = ApiClient.mapError(error);
+      return {
+        'ok': false,
+        'statusCode': apiError.statusCode,
+        'message': apiError.message,
+      };
+    }
+  }
+
+  /// Phase 7.2: Submit buyer receipt acknowledgement to /v2/buyer/fulfilment/{fulfilmentId}/acknowledge.
+  static Future<Map<String, dynamic>> acknowledgeConsignmentReceipt({
+    required int fulfilmentId,
+    int? customerId,
+    String? notes,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final response = await ApiClient.instance.dio.post(
+        '${ApiEndPoint.acknowledgeReceiptApi}$fulfilmentId/acknowledge',
+        data: {
+          if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+          if (customerId != null && customerId > 0) 'customer_id': customerId,
+        },
+        cancelToken: cancelToken,
+      );
+      final dynamic body =
+          response.data is String ? json.decode(response.data) : response.data;
+      if (body is Map<String, dynamic> && body['status'] == true) {
+        return {
+          'ok': true,
+          'statusCode': response.statusCode,
+          'message': body['message']?.toString() ??
+              'Consignment receipt acknowledged.',
+          'data': body['data'],
+        };
+      }
+      return {
+        'ok': false,
+        'statusCode': response.statusCode,
+        'message': (body is Map ? body['message']?.toString() : null) ??
+            'Could not acknowledge consignment receipt.',
+      };
+    } on DioException catch (error) {
+      final apiError = ApiClient.mapError(error);
+      return {
+        'ok': false,
+        'statusCode': apiError.statusCode,
+        'message': apiError.message,
+      };
+    }
+  }
+
+  /// Phase 7.2: Submit buyer shortage/damage claim to /v2/buyer/fulfilment/{fulfilmentId}/claim.
+  static Future<Map<String, dynamic>> submitConsignmentClaim({
+    required int fulfilmentId,
+    required String claimType,
+    required String description,
+    int? customerId,
+    String? idempotencyKey,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final response = await ApiClient.instance.dio.post(
+        '${ApiEndPoint.lodgeClaimApi}$fulfilmentId/claim',
+        data: {
+          'claim_type': claimType,
+          'description': description.trim(),
+          if (customerId != null && customerId > 0) 'customer_id': customerId,
+          if (idempotencyKey != null && idempotencyKey.isNotEmpty)
+            'idempotency_key': idempotencyKey,
+        },
+        cancelToken: cancelToken,
+      );
+      final dynamic body =
+          response.data is String ? json.decode(response.data) : response.data;
+      if (body is Map<String, dynamic> && body['status'] == true) {
+        return {
+          'ok': true,
+          'statusCode': response.statusCode,
+          'message': body['message']?.toString() ??
+              'Dispute claim submitted successfully.',
+          'data': body['data'],
+        };
+      }
+      return {
+        'ok': false,
+        'statusCode': response.statusCode,
+        'message': (body is Map ? body['message']?.toString() : null) ??
+            'Could not submit dispute claim.',
+      };
+    } on DioException catch (error) {
+      final apiError = ApiClient.mapError(error);
+      return {
+        'ok': false,
+        'statusCode': apiError.statusCode,
+        'message': apiError.message,
+      };
     }
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:apni_factory/api_services/creator_api_services.dart';
 import 'package:apni_factory/provider/single_order_detail_provider.dart';
+import 'package:apni_factory/shared_pref.dart';
 import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/textstyle.dart';
@@ -31,79 +33,180 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
     super.initState();
   }
 
-  void _showReceiptAcknowledgementDialog(
-      BuildContext context, SingleOrderDetailProvider provider) {
-    final TextEditingController notesController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          children: const [
-            Icon(Icons.check_circle, color: Colors.green),
-            SizedBox(width: 8),
-            Text("Confirm Receipt", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Are you sure you have received this shipment in good condition from the transporter or factory gate?",
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: notesController,
-              decoration: const InputDecoration(
-                labelText: "Handover Notes (Optional)",
-                hintText: "e.g., Received at warehouse gate",
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Consignment receipt successfully acknowledged."),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text("Confirm Handover", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+  Future<int?> _resolveFulfilmentId(
+      SingleOrderDetailProvider provider) async {
+    final int? orderId = provider.singleOrderDetailModel?.data?.id;
+    if (orderId == null) return null;
+
+    final String rawUid = await SharedPref.getUserLoginId();
+    final int? customerId = int.tryParse(rawUid);
+
+    final trackingRes = await CreatorApiServices.fetchOrderTracking(
+      orderId: orderId,
+      customerId: customerId,
     );
+    if (trackingRes['ok'] != true) {
+      return null;
+    }
+
+    final dynamic data = trackingRes['data'];
+    if (data is Map<String, dynamic> && data['sellers'] is List) {
+      final List sellers = data['sellers'] as List;
+      for (final item in sellers) {
+        if (item is Map<String, dynamic>) {
+          final dynamic rawFid = item['fulfilment_id'] ?? item['id'];
+          final int? parsed = int.tryParse(rawFid?.toString() ?? '');
+          if (parsed != null && parsed > 0) {
+            return parsed;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  void _showReceiptAcknowledgementDialog(
+      BuildContext parentContext, SingleOrderDetailProvider provider) {
+    final TextEditingController notesController = TextEditingController();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: parentContext,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 8),
+              Text("Confirm Receipt",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Are you sure you have received this shipment in good condition from the transporter or factory gate?",
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                enabled: !isSubmitting,
+                decoration: const InputDecoration(
+                  labelText: "Handover Notes (Optional)",
+                  hintText: "e.g., Received at warehouse gate",
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      setDialogState(() => isSubmitting = true);
+                      final String token = await SharedPref.getAuthToken();
+                      if (token.isEmpty) {
+                        if (!mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Receipt acknowledgement requires an authenticated session token. Please sign in again once server token auth is enabled.",
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final int? fulfilmentId =
+                          await _resolveFulfilmentId(provider);
+                      if (fulfilmentId == null) {
+                        if (!mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Unable to resolve shipment fulfilment ID from server tracking.",
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final String rawUid = await SharedPref.getUserLoginId();
+                      final int? customerId = int.tryParse(rawUid);
+                      final res =
+                          await CreatorApiServices.acknowledgeConsignmentReceipt(
+                        fulfilmentId: fulfilmentId,
+                        customerId: customerId,
+                        notes: notesController.text,
+                      );
+
+                      if (!mounted) return;
+                      Navigator.pop(ctx);
+                      final bool ok = res['ok'] == true;
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        SnackBar(
+                          content: Text(res['message']?.toString() ??
+                              (ok
+                                  ? "Consignment receipt acknowledged."
+                                  : "Could not acknowledge consignment receipt.")),
+                          backgroundColor: ok ? Colors.green : Colors.red,
+                        ),
+                      );
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text("Confirm Handover",
+                      style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(notesController.dispose);
   }
 
   void _showDisputeReportingDialog(
-      BuildContext context, SingleOrderDetailProvider provider) {
+      BuildContext parentContext, SingleOrderDetailProvider provider) {
     String claimType = "shortage";
     final TextEditingController descController = TextEditingController();
     final TextEditingController qtyController = TextEditingController();
+    bool isSubmitting = false;
 
     showDialog(
-      context: context,
+      context: parentContext,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Row(
-            children: const [
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Row(
+            children: [
               Icon(Icons.report_problem, color: Colors.deepOrange),
               SizedBox(width: 8),
-              Text("Report Issue / Claim", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text("Report Issue / Claim",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
           content: SingleChildScrollView(
@@ -116,25 +219,38 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                   style: TextStyle(fontSize: 13, color: Colors.black87),
                 ),
                 const SizedBox(height: 12),
-                const Text("Issue Type", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const Text("Issue Type",
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 DropdownButton<String>(
                   value: claimType,
                   isExpanded: true,
                   items: const [
-                    DropdownMenuItem(value: "shortage", child: Text("Shortage (Missing items/boxes)")),
-                    DropdownMenuItem(value: "damage", child: Text("Damage (Damaged packaging/goods)")),
-                    DropdownMenuItem(value: "wrong_item", child: Text("Wrong Item Delivered")),
-                    DropdownMenuItem(value: "other", child: Text("Other Delivery Discrepancy")),
+                    DropdownMenuItem(
+                        value: "shortage",
+                        child: Text("Shortage (Missing items/boxes)")),
+                    DropdownMenuItem(
+                        value: "damage",
+                        child: Text("Damage (Damaged packaging/goods)")),
+                    DropdownMenuItem(
+                        value: "wrong_item",
+                        child: Text("Wrong Item Delivered")),
+                    DropdownMenuItem(
+                        value: "other",
+                        child: Text("Other Delivery Discrepancy")),
                   ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setDialogState(() => claimType = val);
-                    }
-                  },
+                  onChanged: isSubmitting
+                      ? null
+                      : (val) {
+                          if (val != null) {
+                            setDialogState(() => claimType = val);
+                          }
+                        },
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: qtyController,
+                  enabled: !isSubmitting,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     labelText: "Affected Quantity",
@@ -145,10 +261,12 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                 const SizedBox(height: 10),
                 TextField(
                   controller: descController,
+                  enabled: !isSubmitting,
                   maxLines: 3,
                   decoration: const InputDecoration(
                     labelText: "Description of Discrepancy",
-                    hintText: "Provide details of the shortage or transit damage...",
+                    hintText:
+                        "Provide details of the shortage or transit damage...",
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -157,37 +275,108 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
               child: const Text("Cancel"),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.deepOrange),
-              onPressed: () {
-                if (descController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Please provide a description of the issue."),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Dispute claim submitted successfully. Operations and Seller notified."),
-                    backgroundColor: Colors.deepOrange,
-                  ),
-                );
-              },
-              child: const Text("Submit Claim", style: TextStyle(color: Colors.white)),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: Colors.deepOrange),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final String description = descController.text.trim();
+                      if (description.length < 10) {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                "Please provide at least 10 characters describing the issue."),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isSubmitting = true);
+                      final String token = await SharedPref.getAuthToken();
+                      if (token.isEmpty) {
+                        if (!mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Claim submission requires an authenticated session token. Please sign in again once server token auth is enabled.",
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final int? fulfilmentId =
+                          await _resolveFulfilmentId(provider);
+                      if (fulfilmentId == null) {
+                        if (!mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Unable to resolve shipment fulfilment ID from server tracking.",
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final String rawUid = await SharedPref.getUserLoginId();
+                      final int? customerId = int.tryParse(rawUid);
+                      final String qtyNote = qtyController.text.trim();
+                      final String fullDesc = qtyNote.isNotEmpty
+                          ? '$description (Affected qty: $qtyNote)'
+                          : description;
+
+                      final res = await CreatorApiServices.submitConsignmentClaim(
+                        fulfilmentId: fulfilmentId,
+                        claimType: claimType,
+                        description: fullDesc,
+                        customerId: customerId,
+                        idempotencyKey:
+                            'claim-$fulfilmentId-${DateTime.now().millisecondsSinceEpoch}',
+                      );
+
+                      if (!mounted) return;
+                      Navigator.pop(ctx);
+                      final bool ok = res['ok'] == true;
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        SnackBar(
+                          content: Text(res['message']?.toString() ??
+                              (ok
+                                  ? "Dispute claim submitted successfully."
+                                  : "Could not submit dispute claim.")),
+                          backgroundColor: ok ? Colors.deepOrange : Colors.red,
+                        ),
+                      );
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text("Submit Claim",
+                      style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      descController.dispose();
+      qtyController.dispose();
+    });
   }
-
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;

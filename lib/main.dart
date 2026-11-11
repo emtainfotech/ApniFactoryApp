@@ -12,14 +12,20 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (_) {
+    // Allow app startup to degrade gracefully when push services are unavailable.
+  }
 
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Widget? home;
+
+  const MyApp({super.key, this.home});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +35,7 @@ class MyApp extends StatelessWidget {
           navigatorKey: navigatorKey,
           title: AppText.apniFactory,
           theme: AppTheme.themeData(),
-          home: SpalshScreen(),
+          home: home ?? const SpalshScreen(),
         ));
   }
 }

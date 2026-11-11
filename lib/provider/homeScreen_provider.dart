@@ -743,4 +743,27 @@ class HomeScreenProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    nameController.dispose();
+    addressController.dispose();
+    landmark1Controller.dispose();
+    countryController.dispose();
+    phonenoController.dispose();
+    locationController.dispose();
+    identitynameController.dispose();
+    editNameController.dispose();
+    editLandmarkController.dispose();
+    editAddressController.dispose();
+    editCountryController.dispose();
+    editStateController.dispose();
+    editCityController.dispose();
+    editPincodeController.dispose();
+    editPhonenoController.dispose();
+    editLocationController.dispose();
+    editIdentitynameController.dispose();
+    super.dispose();
+  }
 }

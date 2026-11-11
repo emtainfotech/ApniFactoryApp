@@ -4,9 +4,23 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
 class HashService {
-  static const merchantSalt = "djZL6KEpEXi91j4VYA7sxjmCjGSv35RR"; // Add you Salt here.
-  static const merchantSecretKey = "Ks0wGV"; // Add Merchant Secrete Key - Optional
+  // Merchant salt & key MUST NEVER be hardcoded in source control.
+  // Production hash generation belongs on the backend (/api/payuhash or /api/v2/payments/initiate);
+  // local staging builds may supply PAYU_MERCHANT_SALT / PAYU_MERCHANT_KEY via --dart-define.
+  static const String merchantSalt =
+      String.fromEnvironment('PAYU_MERCHANT_SALT', defaultValue: '');
+  static const String merchantSecretKey =
+      String.fromEnvironment('PAYU_MERCHANT_KEY', defaultValue: '');
+
+  static bool get hasLocalHashConfig => merchantSalt.isNotEmpty;
+
   static Map generateHash(Map response) {
+    if (!hasLocalHashConfig) {
+      throw StateError(
+        'Client-side PayU merchantSalt is removed for security. Use server-returned hash (/api/v2/payments/initiate) or supply --dart-define=PAYU_MERCHANT_SALT for staging tests.',
+      );
+    }
+
     var hashName = response[PayUHashConstantsKeys.hashName];
     var hashStringWithoutSalt = response[PayUHashConstantsKeys.hashString];
     var hashType = response[PayUHashConstantsKeys.hashType];
@@ -24,26 +38,25 @@ class HashService {
       }
       hash = getSHA512Hash(hashDataWithSalt);
     }
-    var finalHash = {hashName: hash};
-    return finalHash;
+    return {hashName: hash};
   }
+
   static String getSHA512Hash(String hashData) {
     var bytes = utf8.encode(hashData);
-    var hash = sha512.convert(bytes);
-    return hash.toString();
+    return sha512.convert(bytes).toString();
   }
+
   static String getHmacSHA256Hash(String hashData, String salt) {
     var key = utf8.encode(salt);
     var bytes = utf8.encode(hashData);
     final hmacSha256 = Hmac(sha256, key).convert(bytes).bytes;
-    final hmacBase64 = base64Encode(hmacSha256);
-    return hmacBase64;
+    return base64Encode(hmacSha256);
   }
+
   static String getHmacSHA1Hash(String hashData, String salt) {
     var key = utf8.encode(salt);
     var bytes = utf8.encode(hashData);
-    var hmacSha1 = Hmac(sha1, key); // HMAC-SHA1
-    var hash = hmacSha1.convert(bytes);
-    return hash.toString();
+    var hmacSha1 = Hmac(sha1, key);
+    return hmacSha1.convert(bytes).toString();
   }
 }

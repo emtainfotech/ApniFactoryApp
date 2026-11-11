@@ -6,7 +6,10 @@ import 'package:apni_factory/model/product_list_by_category_model.dart';
 import 'package:flutter/material.dart';
 
 class ProductCategoryListScreenProvider extends ChangeNotifier {
+  static const int pageSize = 20;
+
   bool loadingProductCategoryListScreen = true;
+  String? errorMessage;
   List? slider;
   ProductCategoryListScreenModel? productCategoryListScreenModel;
   String? selectedCategory;
@@ -15,6 +18,28 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
 
   List? productDetails;
   List? subCategoryDetails;
+  int _visibleProductCount = pageSize;
+
+  /// Incrementally slices the loaded product list to avoid rendering hundreds
+  /// of complex grid tiles at once while preserving instant filtering.
+  List get paginatedProducts {
+    final all = productDetails ?? [];
+    if (all.length <= _visibleProductCount) return all;
+    return all.sublist(0, _visibleProductCount);
+  }
+
+  bool get hasMoreProducts {
+    final all = productDetails ?? [];
+    return _visibleProductCount < all.length;
+  }
+
+  void loadMoreProducts() {
+    final all = productDetails ?? [];
+    if (_visibleProductCount >= all.length) return;
+    _visibleProductCount =
+        (_visibleProductCount + pageSize).clamp(0, all.length);
+    notifyListeners();
+  }
 
   Future<void> productCategoryListScreen({
     required BuildContext context,
@@ -23,52 +48,51 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
   }) async {
     try {
       productCategoryListScreenModel = null;
-      notifyListeners();
-
+      errorMessage = null;
       loadingProductCategoryListScreen = true;
+      _visibleProductCount = pageSize;
+      notifyListeners();
 
       productCategoryListScreenModel =
           await CreatorApiServices.productCategoryListScreenDetails(context,
               bid: bid, cid: cid);
 
-      notifyListeners();
       if (productCategoryListScreenModel != null &&
           productCategoryListScreenModel!.code == 100) {
-                   loadingProductCategoryListScreen = false;
-        if (productCategoryListScreenModel?.data?.subcategory != null &&
-            productCategoryListScreenModel!.data!.subcategory!.isNotEmpty) {
-          selectedCategory =
-              productCategoryListScreenModel!.data!.subcategory![0].name;
-        } else if (productCategoryListScreenModel?.data?.product != null &&
-            productCategoryListScreenModel!.data!.product!.isNotEmpty) {
-          selectedCategory =
-              productCategoryListScreenModel!.data!.product![0].categoryname;
+        loadingProductCategoryListScreen = false;
+        errorMessage = null;
+        final subcats = productCategoryListScreenModel?.data?.subcategory;
+        final prods = productCategoryListScreenModel?.data?.product;
+
+        if (subcats != null && subcats.isNotEmpty) {
+          selectedCategory = subcats[0].name;
+          selectedBid = subcats[0].bid ?? 0;
+          selectedSid = subcats[0].cid ?? 0;
+        } else if (prods != null && prods.isNotEmpty) {
+          selectedCategory = prods[0].categoryname;
+          selectedBid = bid;
+          selectedSid = cid;
         } else {
           selectedCategory = "Products";
+          selectedBid = bid;
+          selectedSid = cid;
         }
 
-        notifyListeners();
-        subCategoryDetails = productCategoryListScreenModel?.data?.subcategory;
-        selectedBid =
-            productCategoryListScreenModel?.data?.subcategory?[0].bid ?? 0;
-        selectedSid =
-            productCategoryListScreenModel?.data?.subcategory?[0].cid ?? 0;
-
-        productDetails = productCategoryListScreenModel?.data?.product;
-
-        notifyListeners();
- 
-        // slider =companyScreenModel?.data?.;
+        subCategoryDetails = subcats;
+        productDetails = prods ?? [];
         notifyListeners();
       } else {
-        loadingProductCategoryListScreen = true;
+        loadingProductCategoryListScreen = false;
+        errorMessage = productCategoryListScreenModel?.msg?.toString() ??
+            'Unable to load products right now. Please retry.';
         notifyListeners();
       }
-      // }
     } catch (e) {
       log("product category list error: ${e.toString()}");
+      loadingProductCategoryListScreen = false;
+      errorMessage = 'Unable to load products right now. Please retry.';
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   ProductListByCategoryScreenModel? productListBySubCategoryScreenModel;
@@ -80,11 +104,13 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
   }) async {
     try {
       loadingProductListBySubcategory = true;
+      errorMessage = null;
+      _visibleProductCount = pageSize;
+      notifyListeners();
 
       productListBySubCategoryScreenModel =
           await CreatorApiServices.productListByCategoryScreenDetails(context,
               sid: sid, bid: bid);
-      notifyListeners();
       if (productListBySubCategoryScreenModel != null &&
           productListBySubCategoryScreenModel!.code == 100) {
         loadingProductListBySubcategory = false;
@@ -107,7 +133,6 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
       productDetails = [];
       notifyListeners();
     }
-    notifyListeners();
   }
 
   // final List<String> categories = ['Electronics', 'Clothing', 'Groceries'];
@@ -144,6 +169,8 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
   void resetState() {
     selectedCategoryIndex = 0;
     selectedCategory = null;
+    errorMessage = null;
+    _visibleProductCount = pageSize;
     productDetails = null;
     subCategoryDetails = null;
     productCategoryListScreenModel = null;

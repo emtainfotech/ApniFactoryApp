@@ -65,6 +65,23 @@ class SharedPref {
   }
 
 
+  static String authTokenKey = 'authTokenKey';
+
+  static Future<String> getAuthToken() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.getString(authTokenKey) ?? "";
+  }
+
+  static Future<bool> setAuthToken(String token) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.setString(authTokenKey, token);
+  }
+
+  static Future<bool> clearAuthToken() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.remove(authTokenKey);
+  }
+
   static Future<bool> clearToken() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     return sharedPreferences.clear();

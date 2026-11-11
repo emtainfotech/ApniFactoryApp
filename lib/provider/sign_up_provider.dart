@@ -416,6 +416,18 @@ class SignUpProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    mobileNumberController.dispose();
+    confirmPasswordController.dispose();
+    nameController.dispose();
+    emailOtpController.dispose();
+    mobileOtpController.dispose();
+    super.dispose();
+  }
 }
 
 extension EmailValidator on String {

@@ -312,4 +312,15 @@ class YourProfileScreenProvider extends ChangeNotifier {
   //   }
   //   notifyListeners();
   // }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    nameController.dispose();
+    mobileController.dispose();
+    locationController.dispose();
+    whatsappnoController.dispose();
+    gstorpanController.dispose();
+    super.dispose();
+  }
 }

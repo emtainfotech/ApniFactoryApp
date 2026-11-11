@@ -102,4 +102,10 @@ void clearSearch() {
     }
     notifyListeners();
   }
-} 
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+}

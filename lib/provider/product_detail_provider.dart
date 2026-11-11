@@ -348,4 +348,10 @@ log(attributes.toString());
       notifyListeners();
     }
   }
+
+  @override
+  void dispose() {
+    revierController.dispose();
+    super.dispose();
+  }
 }

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:apni_factory/api_services/notification_services.dart';
 import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/colors.dart';
@@ -9,7 +7,12 @@ import 'package:apni_factory/shared_pref.dart';
 import 'package:flutter/material.dart';
 
 class SpalshScreen extends StatefulWidget {
-  const SpalshScreen({super.key});
+  final Duration splashDelay;
+
+  const SpalshScreen({
+    super.key,
+    this.splashDelay = const Duration(milliseconds: 800),
+  });
 
   @override
   State<SpalshScreen> createState() => _SpalshScreenState();
@@ -18,23 +21,18 @@ class SpalshScreen extends StatefulWidget {
 class _SpalshScreenState extends State<SpalshScreen> {
   @override
   void initState() {
-    _initApp();
-    
-    // TODO: implement initState
     super.initState();
+    _initApp();
   }
 
+  Future<void> _initApp() async {
+    // Init notifications non-blockingly and safely even if Firebase is unconfigured
+    NotificationServices().init(context).catchError((_) {});
 
-   Future<void> _initApp() async {
-    // 🔔 Init notification (safe)
-    NotificationServices().init(context);
-
-    // ✅ ONLY source of truth
-    bool isLoggedIn = await SharedPref.getIsLoggedIn();
-
-    log("Is Logged In => $isLoggedIn");
-
-    await Future.delayed(const Duration(seconds: 3));
+    final bool isLoggedIn = await SharedPref.getIsLoggedIn();
+    if (widget.splashDelay > Duration.zero) {
+      await Future.delayed(widget.splashDelay);
+    }
 
     if (!mounted) return;
 

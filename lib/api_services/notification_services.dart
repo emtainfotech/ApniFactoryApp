@@ -22,14 +22,20 @@ import 'package:url_launcher/url_launcher.dart';
 // Helper to download image bytes for BigPicture notification banner
 Future<Uint8List?> _downloadNotificationImageBytes(String url) async {
   try {
-    final client = HttpClient();
-    final request = await client.getUrl(Uri.parse(url));
-    final response = await request.close();
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 5);
+    final request = await client
+        .getUrl(Uri.parse(url))
+        .timeout(const Duration(seconds: 8));
+    final response = await request.close().timeout(const Duration(seconds: 8));
     if (response.statusCode == 200) {
-      return await consolidateHttpClientResponseBytes(response);
+      return await consolidateHttpClientResponseBytes(response)
+          .timeout(const Duration(seconds: 8));
     }
   } catch (e) {
-    log("Failed to download notification banner: $e");
+    if (kDebugMode) {
+      log("Failed to download notification banner: $e");
+    }
   }
   return null;
 }
@@ -97,7 +103,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class NotificationServices {
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  FirebaseMessaging? get _messaging =>
+      Firebase.apps.isEmpty ? null : FirebaseMessaging.instance;
+
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -110,13 +118,20 @@ class NotificationServices {
   );
 
   Future<void> init(BuildContext context) async {
+    if (_messaging == null) {
+      return;
+    }
     await requestNotificationPermission();
     await firebaseInit();
     await setupInteractedMessage();
-    isTokenRefresh(context);
+    if (context.mounted) {
+      isTokenRefresh(context);
+    }
   }
 
   Future<void> requestNotificationPermission() async {
+    final messaging = _messaging;
+    if (messaging == null) return;
     NotificationSettings settings = await messaging.requestPermission(
       alert: true,
       announcement: true,
@@ -126,12 +141,15 @@ class NotificationServices {
       provisional: true,
       sound: true,
     );
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      log("Notification permission granted");
-    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-      log("Provisional notification permission granted");
-    } else {
-      log("Notification permission denied");
+    if (kDebugMode) {
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        log("Notification permission granted");
+      } else if (settings.authorizationStatus ==
+          AuthorizationStatus.provisional) {
+        log("Provisional notification permission granted");
+      } else {
+        log("Notification permission denied");
+      }
     }
   }
 
@@ -175,9 +193,13 @@ class NotificationServices {
   }
 
   Future<void> setupInteractedMessage() async {
-    RemoteMessage? message = await FirebaseMessaging.instance.getInitialMessage();
+    final messaging = _messaging;
+    if (messaging == null) return;
+    RemoteMessage? message = await messaging.getInitialMessage();
     if (message != null) {
-      log("📩 Cold-start notification tapped: ${message.data}");
+      if (kDebugMode) {
+        log("Cold-start notification tapped");
+      }
       handleNotificationNavigation(message.data);
     }
   }
@@ -322,17 +344,23 @@ class NotificationServices {
   }
 
   Future<String> getDeviceToken() async {
-    String? token = await messaging.getToken();
-    log("FCM Token: $token");
-    return token ?? '';
+    final messaging = _messaging;
+    if (messaging == null) return '';
+    try {
+      String? token = await messaging.getToken();
+      return token ?? '';
+    } catch (_) {
+      return '';
+    }
   }
 
   void isTokenRefresh(BuildContext context) {
+    final messaging = _messaging;
+    if (messaging == null) return;
     messaging.onTokenRefresh.listen((newToken) async {
-      log("🔥 New FCM Token: $newToken");
       String email = await SharedPref.getUserEmailId();
       String userId = await SharedPref.getUserLoginId();
-      if (email.isNotEmpty && userId.isNotEmpty) {
+      if (email.isNotEmpty && userId.isNotEmpty && context.mounted) {
         await CreatorApiServices.loginDetails(
           context,
           email: email,

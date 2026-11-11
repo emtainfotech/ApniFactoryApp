@@ -1,7 +1,9 @@
 import 'dart:convert';
-import 'dart:developer';
+import 'package:apni_factory/api_services/api_client.dart';
 import 'package:apni_factory/api_services/hash_service';
+import 'package:apni_factory/config/api_config.dart';
 import 'package:apni_factory/provider/cart_screen_provider.dart';
+import 'package:apni_factory/res/widgets/app_network_image.dart';
 import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
 import 'package:apni_factory/res/widgets/round_button.dart';
 import 'package:apni_factory/screens/payment_failure_screen.dart';
@@ -16,7 +18,6 @@ import '../res/textstyle.dart';
 import '../res/widgets/back_button_widget.dart';
 
 class CheckOutScreen extends StatefulWidget {
-  
   const CheckOutScreen({super.key});
 
   @override
@@ -26,6 +27,7 @@ class CheckOutScreen extends StatefulWidget {
 class _CheckOutScreenState extends State<CheckOutScreen>
     implements PayUCheckoutProProtocol {
   String? serverHash;
+  bool _isSubmittingOrder = false;
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
@@ -131,9 +133,13 @@ class _CheckOutScreenState extends State<CheckOutScreen>
                                           horizontal: width / 16.2),
                                       child: Row(
                                         children: [
-                                          Image.network(
-                                            "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1280px-MasterCard_Logo.svg.png",
+                                          AppNetworkImage(
+                                            imageUrl:
+                                                "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1280px-MasterCard_Logo.svg.png",
                                             height: height / 40,
+                                            width: height / 24,
+                                            fit: BoxFit.contain,
+                                            fallbackIcon: Icons.credit_card,
                                           ),
                                           SizedBox(
                                             width: width / 20,
@@ -170,88 +176,96 @@ class _CheckOutScreenState extends State<CheckOutScreen>
                               padding: EdgeInsets.symmetric(
                                   horizontal: width / 16.2),
                               child: RoundButton(
-                                title: "Pay",
+                                title:
+                                    _isSubmittingOrder ? "Processing..." : "Pay",
                                 onPressed: () async {
-                                  provider
-                                      .order(
-                                    context: context,
-                                    height: height,
-                                    addressId: provider.selectedAddressId ?? "",
-                                  )
-                                      .then(
-                                    (value) {
-                                      var orderModel = provider.orderModel;
-                                      if (orderModel == null ||
-                                          orderModel.data == null) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content: Text(
-                                                  "Order creation failed")),
-                                        );
-                                        return;
-                                      }
-                                      var orderData = orderModel.data!;
-                                      var hashParameter =
-                                          orderModel.hashparameter!;
-                                      // serverHash = orderModel.hash;
-                                      String phone = "";
-                                      if (orderData.address != null) {
-                                        try {
-                                          final addressJson =
-                                              orderData.address is String
-                                                  ? jsonDecode(
-                                                      orderData.address ?? "")
-                                                  : orderData.address;
-                                          phone = addressJson['phoneno'] ?? "";
-                                        } catch (e) {
-                                          log(
-                                              "Address parsing failed: $e");
-                                        }
-                                      }
-                                      String txnId =
-                                          hashParameter.txnid.toString();
-                                      String amount =
-                                          hashParameter.amount.toString();
-                                      String productInfo =
-                                          hashParameter.productinfo.toString();
-                                      String firstName = hashParameter.firstname
-                                          .toString(); // Replace
-                                      String email = hashParameter.email
-                                          .toString(); // Replace
-
-                                      provider.checkoutPro.openCheckoutScreen(
-                                        payUPaymentParams: {
-                                          PayUPaymentParamKey.key:
-                                              orderModel.hashparameter?.key,
-                                          PayUPaymentParamKey.userCredential:
-                                              "default",
-                                          PayUPaymentParamKey.transactionId:
-                                              txnId,
-                                          PayUPaymentParamKey.amount: amount,
-                                          PayUPaymentParamKey.productInfo:
-                                              productInfo,
-                                          PayUPaymentParamKey.firstName:
-                                              firstName,
-                                          PayUPaymentParamKey.email: email,
-                                          PayUPaymentParamKey.phone: phone,
-                                          PayUPaymentParamKey.ios_surl:
-                                              orderModel.surl,
-                                          PayUPaymentParamKey.ios_furl:
-                                              orderModel.furl,
-                                          PayUPaymentParamKey.android_surl:
-                                              orderModel.surl,
-                                          PayUPaymentParamKey.android_furl:
-                                              orderModel.furl,
-                                          PayUPaymentParamKey.environment: "0",
-                                        },
-                                        payUCheckoutProConfig: {
-                                          "showExitConfirmationOnPaymentScreen":
-                                              true,
-                                        },
+                                  if (_isSubmittingOrder) return;
+                                  setState(() => _isSubmittingOrder = true);
+                                  try {
+                                    await provider.order(
+                                      context: context,
+                                      height: height,
+                                      addressId:
+                                          provider.selectedAddressId ?? "",
+                                    );
+                                    if (!mounted) return;
+                                    final orderModel = provider.orderModel;
+                                    if (orderModel == null ||
+                                        orderModel.data == null ||
+                                        orderModel.hashparameter == null) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content:
+                                                Text("Order creation failed")),
                                       );
-                                    },
-                                  );
+                                      return;
+                                    }
+                                    final orderData = orderModel.data!;
+                                    final hashParameter =
+                                        orderModel.hashparameter!;
+                                    String phone = "";
+                                    if (orderData.address != null) {
+                                      try {
+                                        final addressJson =
+                                            orderData.address is String
+                                                ? jsonDecode(
+                                                    orderData.address ?? "")
+                                                : orderData.address;
+                                        phone = addressJson['phoneno'] ?? "";
+                                      } catch (e) {
+                                        ApiClient.safeLog('CheckOutScreen',
+                                            'Address parse failed');
+                                      }
+                                    }
+                                    final String txnId =
+                                        hashParameter.txnid.toString();
+                                    final String amount =
+                                        hashParameter.amount.toString();
+                                    final String productInfo =
+                                        hashParameter.productinfo.toString();
+                                    final String firstName =
+                                        hashParameter.firstname.toString();
+                                    final String email =
+                                        hashParameter.email.toString();
+
+                                    provider.checkoutPro.openCheckoutScreen(
+                                      payUPaymentParams: {
+                                        PayUPaymentParamKey.key:
+                                            orderModel.hashparameter?.key,
+                                        PayUPaymentParamKey.userCredential:
+                                            "default",
+                                        PayUPaymentParamKey.transactionId:
+                                            txnId,
+                                        PayUPaymentParamKey.amount: amount,
+                                        PayUPaymentParamKey.productInfo:
+                                            productInfo,
+                                        PayUPaymentParamKey.firstName:
+                                            firstName,
+                                        PayUPaymentParamKey.email: email,
+                                        PayUPaymentParamKey.phone: phone,
+                                        PayUPaymentParamKey.ios_surl:
+                                            orderModel.surl,
+                                        PayUPaymentParamKey.ios_furl:
+                                            orderModel.furl,
+                                        PayUPaymentParamKey.android_surl:
+                                            orderModel.surl,
+                                        PayUPaymentParamKey.android_furl:
+                                            orderModel.furl,
+                                        PayUPaymentParamKey.environment:
+                                            ApiConfig.payuEnvironment,
+                                      },
+                                      payUCheckoutProConfig: {
+                                        "showExitConfirmationOnPaymentScreen":
+                                            true,
+                                      },
+                                    );
+                                  } finally {
+                                    if (mounted) {
+                                      setState(
+                                          () => _isSubmittingOrder = false);
+                                    }
+                                  }
                                 },
                               ),
                             ),
@@ -269,140 +283,88 @@ class _CheckOutScreenState extends State<CheckOutScreen>
 
   @override
   generateHash(Map response) {
-    Map hashResponse = HashService.generateHash(response);
-    log(response.toString());
-
-    Provider.of<CartScreenProvider>(context,listen: false).checkoutPro.hashGenerated(hash: hashResponse);
-
-    // log("⚡ PayU asked for hash: $response");
-    // var hashName = response[PayUHashConstantsKeys.hashName];
-    // var hashStringWithoutSalt = response[PayUHashConstantsKeys.hashString];
-    // var hashType = response[PayUHashConstantsKeys.hashType];
-    // var postSalt = response[PayUHashConstantsKeys.postSalt];
-    // var hash = serverHash!;
-    // _checkoutPro.hashGenerated(hash:
-    // {
-    //   "hashName": response['hashName'],
-    //   "hashString": hash,
-    // }
-    // );
-
-//  <Get Hash Backend with < hashString, merchantSalt , postSalt >
-// Call hashGenerated with HashResponse< hashName , Hash>
-// _checkoutPro.hashGenerated(hash: hashResponse);
-
-    // Pass response param to your backend server
-    // Backend will generate the hash which you need to pass to SDK
-    // hashResponse: is the response which you get from your server
-
-    // if (serverHash != null) {
-    //   log(response['hashName']);
-    //   _checkoutPro.hashGenerated(hash: {
-    //     "hashName": response['hashName'],
-    //     "hashString": serverHash!,
-    //   });
-    // }
-    // else {
-    //  log("❌ No hash available from backend");
-    // }
-
-    // TODO: implement generateHash
+    try {
+      final Map hashResponse = HashService.generateHash(response);
+      Provider.of<CartScreenProvider>(context, listen: false)
+          .checkoutPro
+          .hashGenerated(hash: hashResponse);
+    } catch (e) {
+      ApiClient.safeLog('CheckOutScreen', 'PayU hash error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Payment configuration unavailable. Please contact support or retry shortly.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   onError(Map? response) {
-    log("⚡ PayU Error: $response");
-    // TODO: implement onError
+    ApiClient.safeLog('CheckOutScreen', 'PayU Error: $response');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Payment gateway error. Please retry.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
   onPaymentCancel(Map? response) {
-    log("⚠️ Payment Cancelled by User");
+    ApiClient.safeLog('CheckOutScreen', 'Payment cancelled by user');
 
-WidgetsBinding.instance.addPostFrameCallback((_) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PaymentFailureScreen(
-          error: "Payment cancelled by user",
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PaymentFailureScreen(
+            error: "Payment cancelled by user",
+          ),
         ),
-      ),
-      (route) => false,
-    );
-  });
-
-  // Navigator.pushReplacement(
-  //   context,
-  //   MaterialPageRoute(
-  //     builder: (_) => const PaymentFailureScreen(
-  //       error: "Payment cancelled by user",
-  //     ),
-  //   ),
-  // );
-    // TODO: implement onPaymentCancel
+        (route) => false,
+      );
+    });
   }
 
   @override
   onPaymentFailure(response) {
-    log("❌ Payment Failure: $response");
+    ApiClient.safeLog('CheckOutScreen', 'Payment Failure: $response');
 
-     WidgetsBinding.instance.addPostFrameCallback((_) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PaymentFailureScreen(
-          error: response?['error_Message']?.toString() ?? "Payment Failed",
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PaymentFailureScreen(
+            error: response?['error_Message']?.toString() ?? "Payment Failed",
+          ),
         ),
-      ),
-      (route) => false,
-    );
-  });
-
-// Navigator.pushAndRemoveUntil(
-//     context,
-//     MaterialPageRoute(
-//       builder: (_) => PaymentFailureScreen(
-//         error: response?['error_Message']?.toString() ??
-//             "Payment Failed",
-//       ),
-//     ),(route) => false,
-//   );
-
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   const SnackBar(content: Text("Payment Failed")),
-    // );
-    // TODO: implement onPaymentFailure
+        (route) => false,
+      );
+    });
   }
 
   @override
   onPaymentSuccess(response) {
-  log("Payment Success : ${response}");
+    ApiClient.safeLog('CheckOutScreen', 'Payment Success: $response');
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PaymentSuccessfulScreen(),
-      ),
-      (route) => false, // 🔥 clears PayU + checkout screen
-    );
-  });
-
-
-
-  //     Navigator.pushAndRemoveUntil(
-  //   context,
-  //   MaterialPageRoute(
-  //     builder: (_) => PaymentSuccessfulScreen(
-  //       // txnId: response['txnid']?.toString(),
-  //       // amount: response['amount']?.toString(),
-  //     ),
-  //   ),(route) => false,
-  // );
-
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   const SnackBar(content: Text("Payment Successful")),
-    // );
-    // TODO: implement onPaymentSuccess
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PaymentSuccessfulScreen(),
+        ),
+        (route) => false,
+      );
+    });
   }
 }

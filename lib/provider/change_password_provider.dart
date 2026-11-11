@@ -54,4 +54,11 @@ class ChangePasswordProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    currentPasswordController.dispose();
+    newPasswordController.dispose();
+    super.dispose();
+  }
 }

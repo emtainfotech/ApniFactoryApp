@@ -3,6 +3,8 @@ import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/provider/product_category_list_screen_provider.dart';
 import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/colors.dart';
+import 'package:apni_factory/res/widgets/app_network_image.dart';
+import 'package:apni_factory/res/widgets/app_state_views.dart';
 import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
 import 'package:apni_factory/res/widgets/global_cart_container.dart';
 import 'package:apni_factory/screens/cart_screen.dart';
@@ -27,13 +29,31 @@ class ProductCategoryPageScreen extends StatefulWidget {
 
 class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
   final Set<int> _addedProductIds = {};
+  final ScrollController _gridScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _gridScrollController.addListener(_onGridScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
+  }
+
+  void _onGridScroll() {
+    if (!_gridScrollController.hasClients || !mounted) return;
+    final pos = _gridScrollController.position;
+    if (pos.maxScrollExtent - pos.pixels <= 250) {
+      Provider.of<ProductCategoryListScreenProvider>(context, listen: false)
+          .loadMoreProducts();
+    }
+  }
+
+  @override
+  void dispose() {
+    _gridScrollController.removeListener(_onGridScroll);
+    _gridScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -238,11 +258,20 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
             );
           }
 
+          if (provider.errorMessage != null) {
+            return AppErrorRetryView(
+              message: provider.errorMessage!,
+              onRetry: _loadData,
+            );
+          }
+
           final subcategories = (provider.subCategoryDetails != null &&
                   provider.subCategoryDetails!.isNotEmpty)
               ? provider.subCategoryDetails!
-              : (provider.productCategoryListScreenModel?.data?.subcategory ?? []);
+              : (provider.productCategoryListScreenModel?.data?.subcategory ??
+                  []);
           final products = provider.productDetails ?? [];
+          final visibleProducts = provider.paginatedProducts;
 
           return Stack(
             children: [
@@ -325,17 +354,14 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                                       child: (subcat.image != null &&
                                               subcat.image.isNotEmpty &&
                                               subcat.image != "default.png")
-                                          ? Image.network(
-                                              "${AppAssetImage.imageBaseUrl}storage/app/public/${subcat.image}",
+                                          ? AppNetworkImage(
+                                              imageUrl:
+                                                  "${AppAssetImage.imageBaseUrl}storage/app/public/${subcat.image}",
+                                              width: 48,
+                                              height: 48,
                                               fit: BoxFit.cover,
-                                              cacheWidth: 140,
-                                              errorBuilder: (context, error,
-                                                      stackTrace) =>
-                                                  const Icon(
-                                                Icons.category_outlined,
-                                                size: 22,
-                                                color: Color(0xFF9CA3AF),
-                                              ),
+                                              fallbackIcon:
+                                                  Icons.category_outlined,
                                             )
                                           : const Icon(
                                               Icons.category_outlined,
@@ -433,7 +459,9 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          "${products.length} Products Found",
+                                          provider.hasMoreProducts
+                                              ? "Showing ${visibleProducts.length} of ${products.length}"
+                                              : "${products.length} Products Found",
                                           style: GoogleFonts.poppins(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
@@ -464,6 +492,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                                   // Products Grid
                                   Expanded(
                                     child: GridView.builder(
+                                      controller: _gridScrollController,
                                       padding: const EdgeInsets.fromLTRB(
                                           10, 10, 10, 80),
                                       gridDelegate:
@@ -473,10 +502,10 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                                         crossAxisSpacing: 8,
                                         mainAxisSpacing: 8,
                                       ),
-                                      itemCount: products.length,
+                                      itemCount: visibleProducts.length,
                                       physics: const BouncingScrollPhysics(),
                                       itemBuilder: (context, index) {
-                                        final prod = products[index];
+                                        final prod = visibleProducts[index];
                                         final int pId = prod.pid ?? 0;
                                         final bool isAdded =
                                             _addedProductIds.contains(pId);
@@ -489,6 +518,23 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                                       },
                                     ),
                                   ),
+                                  if (provider.hasMoreProducts)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Center(
+                                        child: TextButton(
+                                          onPressed: provider.loadMoreProducts,
+                                          child: Text(
+                                            'Load more products',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                   ),
@@ -560,18 +606,12 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                       child: (prod.image != null &&
                               prod.image.isNotEmpty &&
                               prod.image != "default.png")
-                          ? Image.network(
-                              "${AppAssetImage.imageBaseUrl}storage/app/public/${prod.image}",
+                          ? AppNetworkImage(
+                              imageUrl:
+                                  "${AppAssetImage.imageBaseUrl}storage/app/public/${prod.image}",
                               fit: BoxFit.cover,
-                              cacheWidth: 320,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Center(
-                                child: Icon(
-                                  Icons.format_paint_outlined,
-                                  size: 28,
-                                  color: Color(0xFF9CA3AF),
-                                ),
-                              ),
+                              width: 160,
+                              fallbackIcon: Icons.format_paint_outlined,
                             )
                           : const Center(
                               child: Icon(

@@ -63,6 +63,7 @@ dependencies:
   url_launcher: ^6.2.6
   webview_flutter: 4.7.0
   webview_flutter_android: 3.16.9
+  cached_network_image: ^3.4.1
 
 
  
