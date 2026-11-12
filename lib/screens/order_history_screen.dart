@@ -169,7 +169,21 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           return Padding(
                             padding: EdgeInsets.symmetric(
                                 horizontal: width / 16.2, vertical: width / 70),
-                            child: Card(
+                            child: InkWell(
+                              borderRadius:
+                                  BorderRadius.circular(height / 66.6),
+                              onTap: () {
+                                Navigator.push(context, MaterialPageRoute(
+                                  builder: (context) {
+                                    return TrackOrderScreen(
+                                      orderid: provider.orderHistoryModel
+                                              ?.data?[index].orderno ??
+                                          "",
+                                    );
+                                  },
+                                ));
+                              },
+                              child: Card(
                               child: Container(
                                 width: width,
                                 decoration: BoxDecoration(
@@ -261,54 +275,76 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                           SizedBox(
                                             width: width / 30,
                                           ),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                provider
-                                                                .orderHistoryModel
-                                                                ?.data?[index]
-                                                                .orderstatus !=
-                                                            null &&
-                                                        provider
-                                                            .orderHistoryModel!
-                                                            .data![index]
-                                                            .orderstatus!
-                                                            .isNotEmpty
-                                                    ? (provider
-                                                                .orderHistoryModel!
-                                                                .data![index]
-                                                                .orderstatus![0]
-                                                                .status ??
-                                                            "")
-                                                        .toUpperCase()
-                                                    : "PENDING",
-                                                style:
-                                                    AppTextStyle.poppinsBold13(
-                                                  context: context,
-                                                  fontWeight: FontWeight.w500,
-                                                  color:
-                                                      AppColors.secondaryColor,
-                                                ),
-                                              ),
-                                              if (provider
-                                                          .orderHistoryModel
-                                                          ?.data?[index]
-                                                          .orderstatus !=
-                                                      null &&
-                                                  provider
-                                                      .orderHistoryModel!
-                                                      .data![index]
-                                                      .orderstatus!
-                                                      .isNotEmpty)
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
                                                 Text(
                                                   provider
-                                                          .orderHistoryModel!
-                                                          .data![index]
-                                                          .orderstatus![0]
-                                                          .msg ??
-                                                      "",
+                                                                  .orderHistoryModel
+                                                                  ?.data?[index]
+                                                                  .orderstatus !=
+                                                              null &&
+                                                          provider
+                                                              .orderHistoryModel!
+                                                              .data![index]
+                                                              .orderstatus!
+                                                              .isNotEmpty
+                                                      ? (provider
+                                                                  .orderHistoryModel!
+                                                                  .data![index]
+                                                                  .orderstatus![0]
+                                                                  .status ??
+                                                              "")
+                                                          .toUpperCase()
+                                                      : "PENDING",
+                                                  style: AppTextStyle
+                                                      .poppinsBold13(
+                                                    context: context,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: AppColors
+                                                        .secondaryColor,
+                                                  ),
+                                                ),
+                                                if (provider
+                                                            .orderHistoryModel
+                                                            ?.data?[index]
+                                                            .orderstatus !=
+                                                        null &&
+                                                    provider
+                                                        .orderHistoryModel!
+                                                        .data![index]
+                                                        .orderstatus!
+                                                        .isNotEmpty)
+                                                  Text(
+                                                    provider
+                                                            .orderHistoryModel!
+                                                            .data![index]
+                                                            .orderstatus![0]
+                                                            .msg ??
+                                                        "",
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: AppTextStyle
+                                                        .poppinsBold12(
+                                                      context: context,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color:
+                                                          AppColors.lightText,
+                                                    ),
+                                                  ),
+                                                SizedBox(height: height / 80),
+                                                Text(
+                                                  formatDate(
+                                                    provider
+                                                            .orderHistoryModel
+                                                            ?.data?[index]
+                                                            .createdAt ??
+                                                        "",
+                                                  ),
                                                   style: AppTextStyle
                                                       .poppinsBold12(
                                                     context: context,
@@ -316,25 +352,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                                     color: AppColors.lightText,
                                                   ),
                                                 ),
-                                              SizedBox(height: height / 80),
-                                              Text(
-                                                formatDate(
-                                                  provider
-                                                          .orderHistoryModel
-                                                          ?.data?[index]
-                                                          .createdAt ??
-                                                      "",
-                                                ),
-                                                style:
-                                                    AppTextStyle.poppinsBold12(
-                                                  context: context,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: AppColors.lightText,
-                                                ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
-                                          Spacer(),
+                                          SizedBox(width: width / 30),
                                           Text(
                                             "MRP\n₹${provider.orderHistoryModel?.data?[index].grandtotal}",
                                             textAlign: TextAlign.right,
@@ -499,6 +520,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                 ),
                               ),
                             ),
+                            ),
                           );
                         },
                       ),
@@ -513,5 +535,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 }
 
 String formatDate(String date) {
-  return DateTime.parse(date).toLocal().toString().split(' ')[0];
+  final parsed = DateTime.tryParse(date);
+  return parsed != null ? parsed.toLocal().toString().split(' ')[0] : '';
 }
