@@ -1,11 +1,9 @@
-import 'dart:developer';
 import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/provider/product_category_list_screen_provider.dart';
 import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/widgets/app_network_image.dart';
 import 'package:apni_factory/res/widgets/app_state_views.dart';
-import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
 import 'package:apni_factory/res/widgets/global_cart_container.dart';
 import 'package:apni_factory/screens/cart_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';

@@ -1,6 +1,8 @@
 import 'package:apni_factory/main.dart';
 import 'package:apni_factory/res/widgets/app_network_image.dart';
+import 'package:apni_factory/model/search_model.dart' as search_model;
 import 'package:apni_factory/res/widgets/app_state_views.dart';
+import 'package:apni_factory/res/widgets/storefront_widgets.dart';
 import 'package:apni_factory/screens/sign_in.dart';
 import 'package:apni_factory/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
@@ -94,5 +96,58 @@ void main() {
     );
 
     expect(find.byIcon(Icons.image_not_supported_outlined), findsOneWidget);
+  });
+
+  testWidgets('Redesigned Storefront widgets render search bar, empty state, and results',
+      (WidgetTester tester) async {
+    final controller = TextEditingController(text: 'HomeCoat');
+    bool cleared = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                StorefrontSearchBar(
+                  controller: controller,
+                  hintText: 'Search factories...',
+                  onChanged: (_) {},
+                  onClear: () => cleared = true,
+                ),
+                const StorefrontEmptyView(
+                  icon: Icons.factory_outlined,
+                  title: 'No Factories',
+                  subtitle: 'Nothing listed yet',
+                ),
+                StorefrontSearchResults(
+                  searchModel: search_model.SearchModel(
+                    status: true,
+                    code: 100,
+                    data: [
+                      search_model.Data(
+                        id: 15,
+                        name: 'HomeCoat',
+                        image: '',
+                        relatedid: 39,
+                        screen: 'company',
+                      ),
+                    ],
+                  ),
+                  height: 800,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('No Factories'), findsOneWidget);
+    expect(find.text('HomeCoat'), findsAtLeastNWidgets(1));
+    expect(find.text('COMPANY'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pump();
+    expect(cleared, isTrue);
+    controller.dispose();
   });
 }
