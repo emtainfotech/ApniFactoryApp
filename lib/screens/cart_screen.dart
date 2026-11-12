@@ -394,20 +394,28 @@ class _CartScreenState extends State<CartScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Subtotal: ₹${group.sellerSubtotal.toStringAsFixed(2)}",
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF475569),
+                        Flexible(
+                          child: Text(
+                            "Subtotal: ₹${group.sellerSubtotal.toStringAsFixed(2)}",
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF475569),
+                            ),
                           ),
                         ),
-                        Text(
-                          "Target MOV: ₹${group.configuredMov.toStringAsFixed(2)}",
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF64748B),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            "Target MOV: ₹${group.configuredMov.toStringAsFixed(2)}",
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF64748B),
+                            ),
                           ),
                         ),
                       ],
@@ -447,15 +455,22 @@ class _CartScreenState extends State<CartScreen> {
                   ],
                   const SizedBox(height: 4),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.local_shipping_outlined, size: 12, color: Color(0xFF64748B)),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 1),
+                        child: Icon(Icons.local_shipping_outlined,
+                            size: 12, color: Color(0xFF64748B)),
+                      ),
                       const SizedBox(width: 4),
-                      Text(
-                        "Freight calculated & payable separately before final dispatch.",
-                        style: GoogleFonts.poppins(
-                          fontSize: 9.5,
-                          color: const Color(0xFF64748B),
-                          fontStyle: FontStyle.italic,
+                      Expanded(
+                        child: Text(
+                          "Freight calculated & payable separately before final dispatch.",
+                          style: GoogleFonts.poppins(
+                            fontSize: 9.5,
+                            color: const Color(0xFF64748B),
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
                     ],

@@ -64,7 +64,7 @@ class ApiEndPoint {
 
   // Phase 7.1 Authoritative v2 Catalog, Cart & Tracking Endpoints
   static String get v2ProductsApi => '${baseUrl}v2/products';
-  static String get v2SearchApi => '${baseUrl}v2/search';
+  static String get v2SearchApi => '${baseUrl}v2/catalogue/search';
   static String get v2CartApi => '${baseUrl}v2/cart';
   static String get v2OrderTrackingApi => '${baseUrl}v2/orders/track';
   static String get v2BuyerProgressApi => '${baseUrl}v2/buyer/progress';
