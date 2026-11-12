@@ -20,10 +20,11 @@ class FaqProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingGetFaq = true;
+        loadingGetFaq = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingGetFaq = false;
       log("get faq error: ${e.toString()}");
     }
     notifyListeners();

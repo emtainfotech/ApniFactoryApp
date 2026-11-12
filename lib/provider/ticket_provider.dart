@@ -23,10 +23,11 @@ HelpNoForAppModel? helpNoForAppModel;
 
         notifyListeners();
       } else {
-      loadingHelpNoForApp = true;
+      loadingHelpNoForApp = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingHelpNoForApp = false;
       log("help no for app error: ${e.toString()}");
     }
     notifyListeners();

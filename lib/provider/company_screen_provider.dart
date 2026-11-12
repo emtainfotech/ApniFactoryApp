@@ -35,12 +35,13 @@ class CompanyScreenProvider extends ChangeNotifier {
 
         // slider =companyScreenModel?.data?.;
       } else {
-        loadingCompanyScreen = true;
+        loadingCompanyScreen = false;
         notifyListeners();
       }        notifyListeners();
 
       // }
     } catch (e) {
+      loadingCompanyScreen = false;
       log("company error: ${e.toString()}");
     }
     notifyListeners();

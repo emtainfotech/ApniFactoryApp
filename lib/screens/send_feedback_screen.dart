@@ -50,9 +50,8 @@ class _SendFeedbackScreenState extends State<SendFeedbackScreen> {
                           Navigator.pop(context);
                         },
                         child: BackButtonWidget(
-                          title: provider.getFeedbackListModel != null &&
-                                  provider
-                                      .getFeedbackListModel!.data!.isNotEmpty
+                          title: (provider.getFeedbackListModel?.data ?? [])
+                                  .isNotEmpty
                               ? "Your Feedback"
                               : "Send Feedback",
                         ),
@@ -65,9 +64,8 @@ class _SendFeedbackScreenState extends State<SendFeedbackScreen> {
                       padding: EdgeInsets.symmetric(horizontal: width / 16.2),
                       child: Column(
                         children: [
-                          provider.getFeedbackListModel != null &&
-                                  provider
-                                      .getFeedbackListModel!.data!.isNotEmpty
+                          (provider.getFeedbackListModel?.data ?? [])
+                                  .isNotEmpty
                               ? Container(
                                   width: width,
                                   decoration: BoxDecoration(
@@ -143,9 +141,8 @@ class _SendFeedbackScreenState extends State<SendFeedbackScreen> {
                           SizedBox(
                             height: height / 2,
                           ),
-                          provider.getFeedbackListModel != null &&
-                                  provider
-                                      .getFeedbackListModel!.data!.isNotEmpty
+                          (provider.getFeedbackListModel?.data ?? [])
+                                  .isNotEmpty
                               ? SizedBox.shrink()
                               : provider.loadingPostFeedback
                                   ? CircularProgressIndicatorWidget()

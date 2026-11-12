@@ -23,10 +23,11 @@ class FeedbackProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingGetFeedbackList = true;
+        loadingGetFeedbackList = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingGetFeedbackList = false;
       log("get feedback error: ${e.toString()}");
     }
     notifyListeners();

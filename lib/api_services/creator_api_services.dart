@@ -70,6 +70,15 @@ class CreatorApiServices {
     ApiClient.safeLog('CreatorApiServices', message);
   }
 
+  static dynamic _decodeBody(dynamic raw) {
+    if (raw is String) {
+      final String trimmed = raw.trim();
+      if (trimmed.isEmpty) return <String, dynamic>{};
+      return json.decode(trimmed);
+    }
+    return raw;
+  }
+
   static Future<LoginModel?> loginDetails(BuildContext context,
       {required String email,
       String? password,
@@ -102,7 +111,7 @@ class CreatorApiServices {
           }
           return LoginModel.fromJson(payload);
         }
-        return LoginModel.fromJson(response.data);
+        return LoginModel.fromJson(_decodeBody(response.data));
       } else {
         return null;
       }
@@ -158,7 +167,7 @@ class CreatorApiServices {
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
-        SignUpModel signUpModel = SignUpModel.fromJson(response.data);
+        SignUpModel signUpModel = SignUpModel.fromJson(_decodeBody(response.data));
 
         return signUpModel;
       } else {
@@ -186,7 +195,7 @@ class CreatorApiServices {
           data: formData);
 
       _log("change password response is ${response.data.toString()}");
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         ChangePasswordModel changePasswordModel =
@@ -212,7 +221,7 @@ class CreatorApiServices {
 
       _log("Get Otp response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         GetOtpModel getOtpModel = GetOtpModel.fromJson(data);
@@ -238,7 +247,7 @@ class CreatorApiServices {
 
       _log("Verify Otp response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         VerifyOtpModel verifyOtpModel = VerifyOtpModel.fromJson(data);
@@ -266,7 +275,7 @@ class CreatorApiServices {
 
       _log("Reset Password response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         ResetPasswordModel resetPasswordModel =
@@ -390,7 +399,7 @@ class CreatorApiServices {
 
       _log("Search response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         SearchModel searchModel = SearchModel.fromJson(data);
@@ -418,7 +427,7 @@ class CreatorApiServices {
 
       _log("Get Profile response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         GetProfileModel getProfileModel = GetProfileModel.fromJson(data);
@@ -476,7 +485,7 @@ class CreatorApiServices {
 
       _log("Update Profile response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         UpdateProfileModel updateProfileModel =
@@ -507,7 +516,7 @@ class CreatorApiServices {
 
       _log("Get Feedback response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         GetFeedbackListModel getFeedbackListModel =
@@ -536,7 +545,7 @@ class CreatorApiServices {
 
       _log("Post feedback response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         PostFeedbackModel postFeedbackModel = PostFeedbackModel.fromJson(data);
@@ -561,7 +570,7 @@ class CreatorApiServices {
 
       _log("Get Page response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         GetPagesModel getPagesModel = GetPagesModel.fromJson(data);
@@ -587,7 +596,7 @@ class CreatorApiServices {
 
       _log("Help No For App response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         HelpNoForAppModel helpNoForAppModel = HelpNoForAppModel.fromJson(data);
@@ -619,7 +628,7 @@ class CreatorApiServices {
 
       _log("Category response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         CategoryScreenModel categoryScreenModel =
@@ -651,7 +660,7 @@ class CreatorApiServices {
 
       _log("Company response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         CompanyScreenModel comapnyScreenModel =
@@ -682,7 +691,7 @@ class CreatorApiServices {
 
       _log("Brand response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         BrandScreenModel brandScreenModel = BrandScreenModel.fromJson(data);
@@ -711,7 +720,7 @@ class CreatorApiServices {
 
       _log("Product Category List response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         ProductCategoryListScreenModel productCategoryListScreenModel =
@@ -744,7 +753,7 @@ class CreatorApiServices {
 
       _log("Product List By Subcategory response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         ProductListByCategoryScreenModel productListBySubCategoryScreenModel =
@@ -778,7 +787,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         ProductDetailModel productDetailModel =
-            ProductDetailModel.fromJson(response.data);
+            ProductDetailModel.fromJson(_decodeBody(response.data));
         _log(productDetailModel.toString());
         return productDetailModel;
       } else {
@@ -809,7 +818,7 @@ class CreatorApiServices {
 
       _log("Product Review Screen response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         ProductReviewModel productReviewModel =
@@ -940,7 +949,7 @@ class CreatorApiServices {
       _log("User Cart response is ${response.data.toString()}");
 
       if (response.statusCode == 200) {
-        UserCartModel userCartModel = UserCartModel.fromJson(response.data);
+        UserCartModel userCartModel = UserCartModel.fromJson(_decodeBody(response.data));
 
         _log(userCartModel.toString());
         return userCartModel;
@@ -969,7 +978,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         DeleteCartModel deleteCartModel =
-            DeleteCartModel.fromJson(response.data);
+            DeleteCartModel.fromJson(_decodeBody(response.data));
         _log(deleteCartModel.toString());
         return deleteCartModel;
       } else {
@@ -998,7 +1007,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         DeleteCartAttributeModel deleteCartAttributeModel =
-            DeleteCartAttributeModel.fromJson(response.data);
+            DeleteCartAttributeModel.fromJson(_decodeBody(response.data));
         _log(deleteCartAttributeModel.toString());
         return deleteCartAttributeModel;
       } else {
@@ -1026,7 +1035,7 @@ class CreatorApiServices {
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
-        EmptyCartModel emptyCartModel = EmptyCartModel.fromJson(response.data);
+        EmptyCartModel emptyCartModel = EmptyCartModel.fromJson(_decodeBody(response.data));
         _log(emptyCartModel.toString());
         return emptyCartModel;
       } else {
@@ -1060,7 +1069,7 @@ class CreatorApiServices {
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
-        AddToCartModel addToCartModel = AddToCartModel.fromJson(response.data);
+        AddToCartModel addToCartModel = AddToCartModel.fromJson(_decodeBody(response.data));
         _log(addToCartModel.toString());
         return addToCartModel;
       } else {
@@ -1089,7 +1098,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         IncreaseCartQtyModel increaseCartQtyModel =
-            IncreaseCartQtyModel.fromJson(response.data);
+            IncreaseCartQtyModel.fromJson(_decodeBody(response.data));
         _log(increaseCartQtyModel.toString());
         return increaseCartQtyModel;
       } else {
@@ -1112,7 +1121,7 @@ class CreatorApiServices {
 
       _log("Get Faq response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         GetFaqModel getFaqModel = GetFaqModel.fromJson(data);
@@ -1142,7 +1151,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         GetCouponListModel getCouponListModel =
-            GetCouponListModel.fromJson(response.data);
+            GetCouponListModel.fromJson(_decodeBody(response.data));
         _log(getCouponListModel.toString());
         return getCouponListModel;
       } else {
@@ -1171,7 +1180,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         ApplyCouponModel applyCouponModel =
-            ApplyCouponModel.fromJson(response.data);
+            ApplyCouponModel.fromJson(_decodeBody(response.data));
         _log(applyCouponModel.toString());
         return applyCouponModel;
       } else {
@@ -1201,7 +1210,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         GetAddressListModel getAddressListModel =
-            GetAddressListModel.fromJson(response.data);
+            GetAddressListModel.fromJson(_decodeBody(response.data));
 
         return getAddressListModel;
       } else {
@@ -1249,7 +1258,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         AddAddressModel addAddressModel =
-            AddAddressModel.fromJson(response.data);
+            AddAddressModel.fromJson(_decodeBody(response.data));
 
         return addAddressModel;
       } else {
@@ -1298,7 +1307,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         UpdateAddressModel updateAddressModel =
-            UpdateAddressModel.fromJson(response.data);
+            UpdateAddressModel.fromJson(_decodeBody(response.data));
 
         return updateAddressModel;
       } else {
@@ -1324,7 +1333,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         GetAddressDetailModel getAddressDetailModel =
-            GetAddressDetailModel.fromJson(response.data);
+            GetAddressDetailModel.fromJson(_decodeBody(response.data));
 
         return getAddressDetailModel;
       } else {
@@ -1349,7 +1358,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         DeleteAddressModel deleteAddressModel =
-            DeleteAddressModel.fromJson(response.data);
+            DeleteAddressModel.fromJson(_decodeBody(response.data));
 
         return deleteAddressModel;
       } else {
@@ -1380,7 +1389,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         UpdateCartAddressModel updateCartAddressModel =
-            UpdateCartAddressModel.fromJson(response.data);
+            UpdateCartAddressModel.fromJson(_decodeBody(response.data));
 
         return updateCartAddressModel;
       } else {
@@ -1406,7 +1415,7 @@ class CreatorApiServices {
 
       _log("Get State List is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         StateModel stateModel = StateModel.fromJson(data);
@@ -1431,7 +1440,7 @@ class CreatorApiServices {
 
       _log("Get City List is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         CityListModel cityListModel = CityListModel.fromJson(data);
@@ -1456,7 +1465,7 @@ class CreatorApiServices {
 
       _log("Get Pincode List is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         PincodeListModel pincodeListModel = PincodeListModel.fromJson(data);
@@ -1488,7 +1497,7 @@ class CreatorApiServices {
 
       if (response.statusCode == 200) {
         CheckAddressAvailabilityModel checkAddressAvailabilityModel =
-            CheckAddressAvailabilityModel.fromJson(response.data);
+            CheckAddressAvailabilityModel.fromJson(_decodeBody(response.data));
 
         return checkAddressAvailabilityModel;
       } else {
@@ -1517,7 +1526,7 @@ class CreatorApiServices {
       // var data = json.decode(response.data);
 
       if (response.statusCode == 200) {
-        OrderModel orderModel = OrderModel.fromJson(response.data);
+        OrderModel orderModel = OrderModel.fromJson(_decodeBody(response.data));
 
         return orderModel;
       } else {
@@ -1548,7 +1557,7 @@ _log("message");
 
       if (response.statusCode == 200) {
         SingleOrderDetailModel singleOrderDetailModel =
-            SingleOrderDetailModel.fromJson(response.data);
+            SingleOrderDetailModel.fromJson(_decodeBody(response.data));
 
         return singleOrderDetailModel;
       } else {
@@ -1574,7 +1583,7 @@ _log("message");
 
       _log("Brand Detail response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         BrandDetailModel brandDetailModel = BrandDetailModel.fromJson(data);
@@ -1606,7 +1615,7 @@ _log("message");
 
       if (response.statusCode == 200) {
         OrderHistoryModel orderHistoryModel =
-            OrderHistoryModel.fromJson(response.data);
+            OrderHistoryModel.fromJson(_decodeBody(response.data));
 
         return orderHistoryModel;
       } else {
@@ -1665,7 +1674,7 @@ _log("message");
 
       if (response.statusCode == 200) {
         RelatedProductModel relatedProductModel =
-            RelatedProductModel.fromJson(response.data);
+            RelatedProductModel.fromJson(_decodeBody(response.data));
         _log(relatedProductModel.toString());
         return relatedProductModel;
       } else {
@@ -1688,7 +1697,7 @@ _log("message");
 
       _log("Admin app pages response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         AdminAppPagesModel adminAppPagesModel =
@@ -1718,7 +1727,7 @@ _log("message");
 
       _log("Gst Verification response is ${response.data.toString()}");
 
-      var data = json.decode(response.data);
+      var data = _decodeBody(response.data);
 
       if (response.statusCode == 200) {
         GstVerificationModel gstVerificationModel =

@@ -41,11 +41,12 @@ class CategoryScreenProvider extends ChangeNotifier {
         advertisement = categoryScreenModel?.data?.advertisement;
         notifyListeners();
       } else {
-        loadingCategoryScreen = true;
+        loadingCategoryScreen = false;
         notifyListeners();
       }
       // }
     } catch (e) {
+      loadingCategoryScreen = false;
       log("category error: ${e.toString()}");
     }
     notifyListeners();

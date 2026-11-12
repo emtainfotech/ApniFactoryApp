@@ -1,5 +1,12 @@
+import 'dart:typed_data';
+
+import 'package:apni_factory/api_services/api_client.dart';
 import 'package:apni_factory/api_services/hash_service';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:apni_factory/model/order_histort_model.dart';
 import 'package:apni_factory/model/product_category_list_model.dart';
+import 'package:apni_factory/model/single_order_detail_model.dart';
 import 'package:apni_factory/provider/brand_screen_provider.dart';
 import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/provider/category_screen_provider.dart';
@@ -9,9 +16,12 @@ import 'package:apni_factory/provider/feedback_provider.dart';
 import 'package:apni_factory/provider/forgot_password_provider.dart';
 import 'package:apni_factory/provider/homeScreen_provider.dart';
 import 'package:apni_factory/provider/login_provider.dart';
+import 'package:apni_factory/provider/order_history_provider.dart';
 import 'package:apni_factory/provider/product_category_list_screen_provider.dart';
 import 'package:apni_factory/provider/product_detail_provider.dart';
 import 'package:apni_factory/provider/sign_up_provider.dart';
+import 'package:apni_factory/provider/single_order_detail_provider.dart';
+import 'package:apni_factory/provider/ticket_provider.dart';
 import 'package:apni_factory/provider/your_profile_screen_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -164,5 +174,147 @@ void main() {
       p.dispose();
     });
   });
+
+  group('Order decimal JSON parsing & spinner termination', () {
+    test('OrderHistoryModel parses stringified MySQL decimals cleanly', () {
+      final model = OrderHistoryModel.fromJson({
+        'status': true,
+        'code': 100,
+        'msg': 'Orders fetched',
+        'data': [
+          {
+            'id': 1,
+            'orderno': 'ORD-2026-IND-0105',
+            'sellercouponamount': '0.00',
+            'admincouponamount': '100.50',
+            'netamount': '38000.00',
+            'taxamount': '6840.00',
+            'grandtotal': '44840.00',
+          }
+        ],
+      });
+
+      expect(model.code, 100);
+      expect(model.data, hasLength(1));
+      expect(model.data!.first.netamount, 38000.0);
+      expect(model.data!.first.taxamount, 6840.0);
+      expect(model.data!.first.grandtotal, 44840.0);
+      expect(model.data!.first.admincouponamount, 100.5);
+    });
+
+    test('SingleOrderDetailModel parses stringified decimals and attribute ints',
+        () {
+      final model = SingleOrderDetailModel.fromJson({
+        'status': true,
+        'code': 100,
+        'msg': 'OK',
+        'data': {
+          'id': 5,
+          'orderno': 'ORD-2026-IND-0105',
+          'sellercouponamount': '0',
+          'admincouponamount': '',
+          'netamount': '38000.00',
+          'taxamount': '6840.00',
+          'grandtotal': '44840.00',
+          'orderdetail': [
+            {
+              'id': 10,
+              'prname': 'Industrial Enamel',
+              'attribute': [
+                {
+                  'boxpacking': '20L Drum',
+                  'color': 'White',
+                  'qty': '2',
+                  'boxpcs': '1',
+                  'prprice': '19000.00',
+                  'coupon': '0.00',
+                  'amntaftrcoupn': '38000.00',
+                  'unitprice': '19000.00',
+                  'totalprice': '38000.00',
+                  'tax': '18%',
+                  'taxamount': '6840.00',
+                }
+              ],
+            }
+          ],
+          'track': {'id': 1, 'status': 1, 'creditamnt': '250.25'},
+        },
+      });
+
+      expect(model.data!.grandtotal, 44840.0);
+      expect(model.data!.admincouponamount, isNull);
+      final attr = model.data!.orderdetail!.first.attribute!.first;
+      expect(attr.qty, 2);
+      expect(attr.boxpcs, 1);
+      expect(attr.prprice, 19000.0);
+      expect(attr.totalprice, 38000.0);
+      expect(model.data!.track!.creditamnt, 250.25);
+    });
+
+    testWidgets(
+        'Providers clear loading flags when backend fails instead of spinning forever',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({'userLoginId': '31'});
+      final previousAdapter = ApiClient.instance.dio.httpClientAdapter;
+      ApiClient.instance.dio.httpClientAdapter = _FailingAdapter();
+      try {
+        late BuildContext capturedContext;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) {
+                capturedContext = context;
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        );
+
+        await tester.runAsync(() async {
+          final orderProvider = OrderHistoryProvider();
+          await orderProvider.orderHistory(context: capturedContext);
+          expect(orderProvider.loadingOrderHistory, isFalse);
+
+          final detailProvider = SingleOrderDetailProvider();
+          await detailProvider.singleOrderDetail(
+            context: capturedContext,
+            orderno: 'ORD-INVALID',
+          );
+          expect(detailProvider.loadingSingleOrderDetail, isFalse);
+
+          final feedbackProvider = FeedbackProvider();
+          await feedbackProvider.getFeedbackList(context: capturedContext);
+          expect(feedbackProvider.loadingGetFeedbackList, isFalse);
+          feedbackProvider.dispose();
+
+          final ticketProvider = TicketProvider();
+          await ticketProvider.helpNoForAppDetails(context: capturedContext);
+          expect(ticketProvider.loadingHelpNoForApp, isFalse);
+        });
+      } finally {
+        ApiClient.instance.dio.httpClientAdapter = previousAdapter;
+      }
+    });
+  });
+}
+
+class _FailingAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    return ResponseBody.fromString(
+      '{"status":false,"code":500,"msg":"Simulated server error"}',
+      500,
+      headers: {
+        Headers.contentTypeHeader: ['application/json']
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }
 

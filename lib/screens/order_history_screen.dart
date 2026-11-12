@@ -37,8 +37,61 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       builder: (context, provider, child) {
         return provider.loadingOrderHistory
             ? CircularProgressIndicatorWidget()
-            : provider.orderHistoryModel?.data == null ||
-                    provider.orderHistoryModel!.data!.isEmpty
+            : provider.orderHistoryModel == null
+                ? Padding(
+                    padding: EdgeInsets.symmetric(horizontal: width / 20),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: height / 26.6,
+                        ),
+                        Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: width / 16.2),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.pop(context);
+                            },
+                            child: BackButtonWidget(
+                              title: "Order History",
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: height / 3.5,
+                        ),
+                        Text(
+                          "Unable to load orders",
+                          style: AppTextStyle.poppinsMedium20(
+                              context: context, fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(
+                          height: height / 90,
+                        ),
+                        Text(
+                          "Please check your connection and try again",
+                          style: AppTextStyle.poppinsMedium15(
+                              context: context,
+                              color: AppColors.secondaryColor),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(
+                          height: height / 35,
+                        ),
+                        SizedBox(
+                          width: width / 2.2,
+                          child: RoundButton(
+                            title: "Retry",
+                            onPressed: () {
+                              provider.orderHistory(context: context);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : provider.orderHistoryModel?.data == null ||
+                        provider.orderHistoryModel!.data!.isEmpty
                 ? Padding(
                     padding: EdgeInsets.symmetric(horizontal: width / 20),
                     child: Column(

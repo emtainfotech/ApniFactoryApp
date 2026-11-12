@@ -22,10 +22,11 @@ class OrderHistoryProvider extends ChangeNotifier{
 
         notifyListeners();
       } else {
-        loadingOrderHistory = true;
+        loadingOrderHistory = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingOrderHistory = false;
       log("order history error: ${e.toString()}");
     }
     notifyListeners();

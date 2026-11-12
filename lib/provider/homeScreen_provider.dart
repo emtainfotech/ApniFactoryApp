@@ -169,10 +169,11 @@ class HomeScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingAdminAppPages = true;
+        loadingAdminAppPages = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingAdminAppPages = false;
       log("admin app pages error: ${e.toString()}");
     }
     notifyListeners();
@@ -192,10 +193,11 @@ class HomeScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingGetPages = true;
+        loadingGetPages = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingGetPages = false;
       log("get pages error: ${e.toString()}");
     }
     notifyListeners();
@@ -498,10 +500,11 @@ class HomeScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingGetAddressDetail = true;
+        loadingGetAddressDetail = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingGetAddressDetail = false;
       log("get id address error: ${e.toString()}");
     }
     notifyListeners();
@@ -586,7 +589,7 @@ class HomeScreenProvider extends ChangeNotifier {
 
           notifyListeners();
         } else {
-          loadingUpdateAddress = true;
+          loadingUpdateAddress = false;
           notifyListeners();
         }
       } else {
@@ -595,6 +598,7 @@ class HomeScreenProvider extends ChangeNotifier {
             height: height, message: "Enter all details");
       }
     } catch (e) {
+      loadingUpdateAddress = false;
       log("update address error: ${e.toString()}");
     }
     notifyListeners();

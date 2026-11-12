@@ -55,10 +55,11 @@ class ProductDetailProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingproductDetail = true;
+        loadingproductDetail = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingproductDetail = false;
       log("product detail error: ${e.toString()}");
     }
     notifyListeners();
@@ -95,7 +96,7 @@ class ProductDetailProvider extends ChangeNotifier {
           Utils.commonSnackBar(context,
               height: height,
               message: productReviewModel?.msg.toString() ?? "");
-          loadingProductReview = true;
+          loadingProductReview = false;
           notifyListeners();
         }
       } else {
@@ -103,6 +104,7 @@ class ProductDetailProvider extends ChangeNotifier {
             height: height, message: "Enter All Details");
       }
     } catch (e) {
+      loadingProductReview = false;
       log("product review error: ${e.toString()}");
     }
     notifyListeners();
@@ -166,10 +168,11 @@ log(attributes.toString());
         Utils.commonSnackBar(globalContext,
             height: height, message: addToCartModel!.msg.toString());
       } else {
-        loadingAddToCart = true;
+        loadingAddToCart = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingAddToCart = false;
       log("add to cart error: ${e.toString()}");
     }
     notifyListeners();

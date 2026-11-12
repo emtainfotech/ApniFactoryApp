@@ -20,10 +20,11 @@ class BrandNotificationScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingBrandDetail = true;
+        loadingBrandDetail = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingBrandDetail = false;
       log("brand detail error: ${e.toString()}");
     }
     notifyListeners();

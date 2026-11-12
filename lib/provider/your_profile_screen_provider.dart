@@ -68,10 +68,11 @@ class YourProfileScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingGetProfile = true;
+        loadingGetProfile = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingGetProfile = false;
       log("get profile error: ${e.toString()}");
     }
     notifyListeners();

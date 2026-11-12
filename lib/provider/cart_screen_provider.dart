@@ -232,10 +232,11 @@ class CartScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingGetAddressDetail = true;
+        loadingGetAddressDetail = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingGetAddressDetail = false;
       log("get id address error: ${e.toString()}");
     }
     notifyListeners();
@@ -322,7 +323,7 @@ class CartScreenProvider extends ChangeNotifier {
 
           notifyListeners();
         } else {
-          loadingUpdateAddress = true;
+          loadingUpdateAddress = false;
           notifyListeners();
         }
       } else {
@@ -331,6 +332,7 @@ class CartScreenProvider extends ChangeNotifier {
             height: height, message: "Enter all details");
       }
     } catch (e) {
+      loadingUpdateAddress = false;
       log("update address error: ${e.toString()}");
     }
     notifyListeners();
@@ -367,10 +369,11 @@ class CartScreenProvider extends ChangeNotifier {
             height: height, message: deleteAddressModel.msg.toString());
         notifyListeners();
       } else {
-        loadingDeleteAddress = true;
+        loadingDeleteAddress = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingDeleteAddress = false;
       log("delete address error: ${e.toString()}");
     }
     notifyListeners();
@@ -401,7 +404,7 @@ class CartScreenProvider extends ChangeNotifier {
 
           notifyListeners();
         } else {
-          loadingUpdateCartAddress = true;
+          loadingUpdateCartAddress = false;
           notifyListeners();
         }
       } else {
@@ -411,6 +414,7 @@ class CartScreenProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
+      loadingUpdateCartAddress = false;
       log("update cart address error: ${e.toString()}");
     }
     notifyListeners();
@@ -781,10 +785,11 @@ class CartScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingEmptyCart = true;
+        loadingEmptyCart = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingEmptyCart = false;
       log("empty cart error: ${e.toString()}");
     }
     notifyListeners();
@@ -808,10 +813,11 @@ class CartScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingRelatedProduct = true;
+        loadingRelatedProduct = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingRelatedProduct = false;
       log("related product error: ${e.toString()}");
     }
     notifyListeners();

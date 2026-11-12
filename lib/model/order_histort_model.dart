@@ -1,3 +1,9 @@
+num? _parseNum(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value;
+  return num.tryParse(value.toString());
+}
+
 class OrderHistoryModel {
   bool? status;
   int? code;
@@ -74,13 +80,13 @@ class Data {
     customerId = json['customer_id'];
     userId = json['user_id'];
     address = json['address'];
-    sellercouponamount = json['sellercouponamount'];
-    admincouponamount = json['admincouponamount'];
-    admincoupondetail = json['admincoupondetail'];
-    netamount = json['netamount'];
-    taxdetail = json['taxdetail'];
-    taxamount = json['taxamount'];
-    grandtotal = json['grandtotal'];
+    sellercouponamount = _parseNum(json['sellercouponamount']);
+    admincouponamount = _parseNum(json['admincouponamount']);
+    admincoupondetail = json['admincoupondetail']?.toString();
+    netamount = _parseNum(json['netamount']);
+    taxdetail = json['taxdetail']?.toString();
+    taxamount = _parseNum(json['taxamount']);
+    grandtotal = _parseNum(json['grandtotal']);
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     if (json['orderdetail'] != null) {
@@ -237,7 +243,7 @@ class Ordertrack {
     lrno = json['lrno'];
     status = json['status'];
     orderno = json['orderno'];
-    creditamnt = json['creditamnt'];
+    creditamnt = _parseNum(json['creditamnt']);
     invoiceno = json['invoiceno'];
     billty = json['billty'];
     invoice = json['invoice'];

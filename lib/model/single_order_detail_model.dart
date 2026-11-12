@@ -1,3 +1,16 @@
+num? _parseNum(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value;
+  if (value is String) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    return num.tryParse(trimmed);
+  }
+  return null;
+}
+
+int? _parseInt(dynamic value) => _parseNum(value)?.toInt();
+
 class SingleOrderDetailModel {
   bool? status;
   int? code;
@@ -68,18 +81,18 @@ class Data {
       this.invoiceurl});
 
   Data.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    orderno = json['orderno'];
-    customerId = json['customer_id'];
-    userId = json['user_id'];
+    id = _parseInt(json['id']);
+    orderno = json['orderno']?.toString();
+    customerId = _parseInt(json['customer_id']);
+    userId = _parseInt(json['user_id']);
     address = json['address'];
-    sellercouponamount = json['sellercouponamount'];
-    admincouponamount = json['admincouponamount'];
+    sellercouponamount = _parseNum(json['sellercouponamount']);
+    admincouponamount = _parseNum(json['admincouponamount']);
     admincoupondetail = json['admincoupondetail'];
-    netamount = json['netamount'];
+    netamount = _parseNum(json['netamount']);
     taxdetail = json['taxdetail'];
-    taxamount = json['taxamount'];
-    grandtotal = json['grandtotal'];
+    taxamount = _parseNum(json['taxamount']);
+    grandtotal = _parseNum(json['grandtotal']);
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     if (json['orderdetail'] != null) {
@@ -187,11 +200,11 @@ class Attribute {
   String? color;
   int? qty;
   int? boxpcs;
-  int? prprice;
-  int? coupon;
-  int? amntaftrcoupn;
-  int? unitprice;
-  int? totalprice;
+  num? prprice;
+  num? coupon;
+  num? amntaftrcoupn;
+  num? unitprice;
+  num? totalprice;
   int? tax;
   num? taxamount;
 
@@ -211,15 +224,15 @@ class Attribute {
   Attribute.fromJson(Map<String, dynamic> json) {
     boxpacking = json['boxpacking'];
     color = json['color'];
-    qty = json['qty'];
-    boxpcs = json['boxpcs'];
-    prprice = json['prprice'];
-    coupon = json['coupon'];
-    amntaftrcoupn = json['amntaftrcoupn'];
-    unitprice = json['unitprice'];
-    totalprice = json['totalprice'];
-    tax = json['tax'];
-    taxamount = json['taxamount'];
+    qty = _parseInt(json['qty']);
+    boxpcs = _parseInt(json['boxpcs']);
+    prprice = _parseNum(json['prprice']);
+    coupon = _parseNum(json['coupon']);
+    amntaftrcoupn = _parseNum(json['amntaftrcoupn']);
+    unitprice = _parseNum(json['unitprice']);
+    totalprice = _parseNum(json['totalprice']);
+    tax = _parseInt(json['tax']?.toString().replaceAll('%', ''));
+    taxamount = _parseNum(json['taxamount']);
   }
 
   Map<String, dynamic> toJson() {
@@ -294,17 +307,17 @@ class Track {
       this.invoice});
 
   Track.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    orderId = json['order_id'];
+    id = _parseInt(json['id']);
+    orderId = _parseInt(json['order_id']);
     transname = json['transname'];
     text = json['text'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     transcontact = json['transcontact'];
     lrno = json['lrno'];
-    status = json['status'];
+    status = _parseInt(json['status']);
     orderno = json['orderno'];
-    creditamnt = json['creditamnt'];
+    creditamnt = _parseNum(json['creditamnt']);
     invoiceno = json['invoiceno'];
     billty = json['billty'];
     invoice = json['invoice'];

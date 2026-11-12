@@ -40,10 +40,11 @@ class CouponScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingGetCouponList = true;
+        loadingGetCouponList = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingGetCouponList = false;
       log("get coupon list error: ${e.toString()}");
     }
     notifyListeners();
@@ -74,10 +75,11 @@ class CouponScreenProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingApplyCoupon = true;
+        loadingApplyCoupon = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingApplyCoupon = false;
       log("apply coupon error: ${e.toString()}");
     }
     notifyListeners();

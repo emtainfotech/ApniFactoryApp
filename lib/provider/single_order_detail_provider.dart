@@ -49,10 +49,11 @@ class SingleOrderDetailProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        loadingSingleOrderDetail = true;
+        loadingSingleOrderDetail = false;
         notifyListeners();
       }
     } catch (e) {
+      loadingSingleOrderDetail = false;
       log("single order detail error: ${e.toString()}");
     }
     notifyListeners();

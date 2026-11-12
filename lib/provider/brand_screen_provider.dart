@@ -28,11 +28,12 @@ class BrandScreenProvider extends ChangeNotifier{
         // slider =companyScreenModel?.data?.;
         notifyListeners();
       } else {
-        loadingBrandScreen = true;
+        loadingBrandScreen = false;
         notifyListeners();
       }
       // }
     } catch (e) {
+      loadingBrandScreen = false;
       log("brand error: ${e.toString()}");
     }
     notifyListeners();
