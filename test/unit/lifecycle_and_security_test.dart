@@ -4,9 +4,11 @@ import 'package:apni_factory/api_services/api_client.dart';
 import 'package:apni_factory/api_services/hash_service';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:apni_factory/model/add_to_cart_model.dart';
 import 'package:apni_factory/model/home_screen_model.dart';
 import 'package:apni_factory/model/order_histort_model.dart';
 import 'package:apni_factory/model/product_category_list_model.dart';
+import 'package:apni_factory/model/product_detail_model.dart';
 import 'package:apni_factory/model/single_order_detail_model.dart';
 import 'package:apni_factory/provider/brand_screen_provider.dart';
 import 'package:apni_factory/provider/cart_screen_provider.dart';
@@ -320,6 +322,61 @@ void main() {
       expect(catSub.cid, 113);
       expect(catSub.scid, 4);
       expect(catSub.highlight, isTrue);
+    });
+
+    test(
+        'Swiggy single-company storefront and cart conflict models parse cleanly',
+        () {
+      final conflictCart = AddToCartModel.fromJson({
+        'status': false,
+        'code': 409,
+        'conflict': true,
+        'existing_company_name': 'HomeCoat (opc) Private Limited',
+        'new_company_name': 'CREATION PAINTS',
+        'msg': 'Replace cart?',
+        'grandtotal': 0,
+        'counter': 1,
+      });
+      expect(conflictCart.code, 409);
+      expect(conflictCart.conflict, isTrue);
+      expect(conflictCart.existingCompanyName, 'HomeCoat (opc) Private Limited');
+      expect(conflictCart.newCompanyName, 'CREATION PAINTS');
+
+      final seller = Sellerdetail.fromJson({
+        'company_id': 15,
+        'name': 'HomeCoat (opc) Private Limited',
+        'city': 'Pune',
+        'photo': 'logo.png',
+      });
+      expect(seller.companyId, 15);
+      expect(seller.name, 'HomeCoat (opc) Private Limited');
+
+      final catList = ProductCategoryListScreenModel.fromJson({
+        'status': true,
+        'code': 100,
+        'msg': 'Successfully Show',
+        'data': {
+          'product': [],
+          'subcategory': [
+            {
+              'highlight': true,
+              'name': 'Wall Putty',
+              'image': 'putty.png',
+              'cid': 39,
+              'scid': 0,
+              'bid': 235,
+              'cmpid': 15,
+            }
+          ],
+          'bannerimage': '',
+          'brandname': 'HomeCoat',
+          'company_id': 15,
+          'company_name': 'HomeCoat (opc) Private Limited',
+        },
+      });
+      expect(catList.data?.companyId, 15);
+      expect(catList.data?.companyName, 'HomeCoat (opc) Private Limited');
+      expect(catList.data?.subcategory?.first.cmpid, 15);
     });
   });
 }

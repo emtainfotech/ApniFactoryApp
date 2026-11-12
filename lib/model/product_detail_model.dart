@@ -198,15 +198,17 @@ class Attributes {
 }
 
 class Sellerdetail {
+  int? companyId;
   String? name;
   String? email;
   String? mobile;
   String? city;
   String? photo;
 
-  Sellerdetail({this.name, this.email, this.mobile, this.city, this.photo});
+  Sellerdetail({this.companyId, this.name, this.email, this.mobile, this.city, this.photo});
 
   Sellerdetail.fromJson(Map<String, dynamic> json) {
+    companyId = int.tryParse(json['company_id']?.toString() ?? '');
     name = json['name'];
     email = json['email'];
     mobile = json['mobile'];
@@ -216,6 +218,7 @@ class Sellerdetail {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['company_id'] = this.companyId;
     data['name'] = this.name;
     data['email'] = this.email;
     data['mobile'] = this.mobile;

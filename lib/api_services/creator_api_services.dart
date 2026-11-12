@@ -646,16 +646,18 @@ class CreatorApiServices {
   static Future<CompanyScreenModel?> companyScreenDetails(
     BuildContext context, {
     required int cid,
+    int scid = 0,
   }) async {
     _log(cid.toString());
     final Dio dio = ApiClient.instance.dio;
     FormData formData = FormData.fromMap({
       "cid": cid,
+      "scid": scid,
     });
 
     try {
       Response response = await dio.get(
-        ApiEndPoint.companyScreenApi + "cid=${cid}",
+        ApiEndPoint.companyScreenApi + "cid=${cid}&scid=${scid}",
       );
 
       _log("Company response is ${response.data.toString()}");
@@ -707,15 +709,15 @@ class CreatorApiServices {
 
   static Future<ProductCategoryListScreenModel?>
       productCategoryListScreenDetails(BuildContext context,
-          {required int bid, required int cid, int scid = 0}) async {
+          {required int bid, required int cid, int scid = 0, int cmpid = 0}) async {
     _log(bid.toString());
     _log(cid.toString());
     final Dio dio = ApiClient.instance.dio;
-    FormData formData = FormData.fromMap({"bid": bid, "cid": cid, "scid": scid});
+    FormData formData = FormData.fromMap({"bid": bid, "cid": cid, "scid": scid, "cmpid": cmpid});
     try {
-      _log(ApiEndPoint.productCategoryListScreenApi + "bid=${bid}&cid=${cid}&scid=${scid}");
+      _log(ApiEndPoint.productCategoryListScreenApi + "bid=${bid}&cid=${cid}&scid=${scid}&cmpid=${cmpid}");
       Response response = await dio.get(
-        ApiEndPoint.productCategoryListScreenApi + "bid=${bid}&cid=${cid}&scid=${scid}",
+        ApiEndPoint.productCategoryListScreenApi + "bid=${bid}&cid=${cid}&scid=${scid}&cmpid=${cmpid}",
       );
 
       _log("Product Category List response is ${response.data.toString()}");
@@ -741,15 +743,16 @@ class CreatorApiServices {
     required int sid,
     required int bid,
     int scid = 0,
+    int cmpid = 0,
   }) async {
     final Dio dio = ApiClient.instance.dio;
-    FormData formData = FormData.fromMap({"bid": bid, "sid": sid, "scid": scid});
+    FormData formData = FormData.fromMap({"bid": bid, "sid": sid, "scid": scid, "cmpid": cmpid});
 
     try {
       _log("sid is ${sid}");
       _log("bid is ${bid}");
       Response response = await dio.get(
-        ApiEndPoint.productListBySubCategoryScreenApi + "sid=${sid}&bid=${bid}&scid=${scid}",
+        ApiEndPoint.productListBySubCategoryScreenApi + "sid=${sid}&bid=${bid}&scid=${scid}&cmpid=${cmpid}",
       );
 
       _log("Product List By Subcategory response is ${response.data.toString()}");
@@ -1050,14 +1053,16 @@ class CreatorApiServices {
   static Future<AddToCartModel?> addToCartDetails(BuildContext context,
       {required String productid,
       required String brandid,
-      required List attributes}) async {
+      required List attributes,
+      bool replaceCart = false}) async {
     final Dio dio = ApiClient.instance.dio;
     String userid = await SharedPref.getUserLoginId();
     final Map<String, dynamic> body = {
       "productid": productid,
       "userid": userid,
       "brandid": brandid,
-      "attributes": attributes
+      "attributes": attributes,
+      "replace_cart": replaceCart
     };
 
     // FormData formData = FormData.fromMap(

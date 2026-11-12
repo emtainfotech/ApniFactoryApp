@@ -137,7 +137,8 @@ class ProductDetailProvider extends ChangeNotifier {
       required double width,
       required String productid,
       required List attributes,
-      required int brandid}) async {
+      required int brandid,
+      bool replaceCart = false}) async {
     try {
       loadingAddToCart = true;
       notifyListeners();
@@ -147,10 +148,10 @@ class ProductDetailProvider extends ChangeNotifier {
       addToCartModel = await CreatorApiServices.addToCartDetails(context,
           productid: productid,
           attributes: attributes,
-          brandid: brandid.toString());
-log(attributes.toString());
+          brandid: brandid.toString(),
+          replaceCart: replaceCart);
+      log(attributes.toString());
       notifyListeners();
-      // if (!context.mounted) return;
       if (addToCartModel != null && addToCartModel?.code == 100) {
         loadingAddToCart = false;
         Navigator.push(globalContext, MaterialPageRoute(
@@ -162,6 +163,30 @@ log(attributes.toString());
             height: height, message: addToCartModel?.msg.toString() ?? "");
 
         notifyListeners();
+      } else if (addToCartModel != null && addToCartModel?.code == 409) {
+        loadingAddToCart = false;
+        notifyListeners();
+        if (context.mounted) {
+          final confirmed = await Utils.showReplaceCartDialog(
+            context,
+            existingCompanyName: addToCartModel?.existingCompanyName ?? '',
+            newCompanyName: addToCartModel?.newCompanyName ?? '',
+            message: addToCartModel?.msg,
+          );
+          if (confirmed && context.mounted) {
+            await addToCart(
+              context: context,
+              globalContext: globalContext,
+              height: height,
+              width: width,
+              productid: productid,
+              attributes: attributes,
+              brandid: brandid,
+              replaceCart: true,
+            );
+            return;
+          }
+        }
       } else if (addToCartModel != null && addToCartModel?.code == 500) {
         loadingAddToCart = false;
 

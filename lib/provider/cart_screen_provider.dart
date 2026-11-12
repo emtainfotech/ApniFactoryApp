@@ -22,6 +22,7 @@ import 'package:apni_factory/screens/payment_successful_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:payu_checkoutpro_flutter/PayUConstantKeys.dart';
 import 'package:payu_checkoutpro_flutter/payu_checkoutpro_flutter.dart';
+import 'package:apni_factory/utils.dart';
 import '../api_services/creator_api_services.dart';
 import '../utils.dart';
 
@@ -621,6 +622,7 @@ class CartScreenProvider extends ChangeNotifier {
     required String productId,
     required String brandId,
     String? attributeId,
+    bool replaceCart = false,
   }) async {
     try {
       List attrs = [];
@@ -651,11 +653,30 @@ class CartScreenProvider extends ChangeNotifier {
         productid: productId,
         brandid: (brandId.isNotEmpty && brandId != "0") ? brandId : "1",
         attributes: attrs,
+        replaceCart: replaceCart,
       );
 
       if (res != null && res.code == 100) {
         await userCart(context: context, isSilent: true);
         return true;
+      }
+
+      if (res != null && res.code == 409 && context.mounted) {
+        final confirmed = await Utils.showReplaceCartDialog(
+          context,
+          existingCompanyName: res.existingCompanyName ?? '',
+          newCompanyName: res.newCompanyName ?? '',
+          message: res.msg,
+        );
+        if (confirmed && context.mounted) {
+          return await quickAddToCart(
+            context: context,
+            productId: productId,
+            brandId: brandId,
+            attributeId: attributeId,
+            replaceCart: true,
+          );
+        }
       }
     } catch (e) {
       log("quickAddToCart error: $e");

@@ -17,11 +17,13 @@ class ProductCategoryPageScreen extends StatefulWidget {
   final int bid;
   final int cid;
   final int scid;
+  final int cmpid;
   const ProductCategoryPageScreen({
     super.key,
     required this.bid,
     required this.cid,
     this.scid = 0,
+    this.cmpid = 0,
   });
 
   @override
@@ -70,6 +72,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
       bid: widget.bid,
       cid: widget.cid,
       scid: widget.scid,
+      cmpid: widget.cmpid,
     );
     await cartProvider.userCart(context: context, isSilent: true);
   }
@@ -92,6 +95,11 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
     );
 
     if (mounted) {
+      if (!success) {
+        setState(() {
+          _addedProductIds.remove(productId);
+        });
+      }
       if (success) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -171,11 +179,22 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
         ),
         title: Consumer<ProductCategoryListScreenProvider>(
           builder: (context, provider, child) {
+            final String companyName =
+                provider.productListBySubCategoryScreenModel?.data?.companyName ??
+                    provider.productCategoryListScreenModel?.data?.companyName ??
+                    "";
             final String brandName =
                 provider.productCategoryListScreenModel?.data?.brandname ?? "";
-            final String title = brandName.isNotEmpty
-                ? brandName
-                : (provider.selectedCategory ?? "Products");
+            final String title = companyName.isNotEmpty
+                ? companyName
+                : (brandName.isNotEmpty
+                    ? brandName
+                    : (provider.selectedCategory ?? "Products"));
+            final String subtitle = companyName.isNotEmpty && brandName.isNotEmpty
+                ? "$brandName • Single Company Store"
+                : (companyName.isNotEmpty
+                    ? "Verified Company Store"
+                    : "Wholesale Factory Direct");
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -191,12 +210,14 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  "Wholesale Factory Direct",
+                  subtitle,
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF16A34A),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             );

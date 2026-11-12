@@ -30,8 +30,16 @@ class Data {
   List<Subcategory>? subcategory;
   String? bannerimage;
   String? brandname;
+  int? companyId;
+  String? companyName;
 
-  Data({this.product, this.subcategory, this.bannerimage, this.brandname});
+  Data(
+      {this.product,
+      this.subcategory,
+      this.bannerimage,
+      this.brandname,
+      this.companyId,
+      this.companyName});
 
   Data.fromJson(Map<String, dynamic> json) {
     if (json['product'] != null) {
@@ -48,6 +56,8 @@ class Data {
     }
     bannerimage = json['bannerimage'];
     brandname = json['brandname'];
+    companyId = int.tryParse(json['company_id']?.toString() ?? '');
+    companyName = json['company_name']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -60,6 +70,8 @@ class Data {
     }
     data['bannerimage'] = this.bannerimage;
     data['brandname'] = this.brandname;
+    data['company_id'] = this.companyId;
+    data['company_name'] = this.companyName;
     return data;
   }
 }
@@ -124,8 +136,9 @@ class Subcategory {
   int? cid;
   int? scid;
   int? bid;
+  int? cmpid;
 
-  Subcategory({this.highlight, this.name, this.image, this.cid, this.scid, this.bid});
+  Subcategory({this.highlight, this.name, this.image, this.cid, this.scid, this.bid, this.cmpid});
 
   Subcategory.fromJson(Map<String, dynamic> json) {
     highlight = json['highlight'];
@@ -134,6 +147,7 @@ class Subcategory {
     cid = json['cid'];
     scid = json['scid'];
     bid = json['bid'];
+    cmpid = int.tryParse(json['cmpid']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {
@@ -144,6 +158,7 @@ class Subcategory {
     data['cid'] = this.cid;
     data['scid'] = this.scid;
     data['bid'] = this.bid;
+    data['cmpid'] = this.cmpid;
     return data;
   }
 }

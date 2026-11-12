@@ -523,4 +523,76 @@ class Utils {
       ),
     );
   }
+
+  static Future<bool> showReplaceCartDialog(
+    BuildContext context, {
+    required String existingCompanyName,
+    required String newCompanyName,
+    String? message,
+  }) async {
+    final fromName =
+        existingCompanyName.trim().isNotEmpty ? existingCompanyName.trim() : 'another company';
+    final toName =
+        newCompanyName.trim().isNotEmpty ? newCompanyName.trim() : 'this company';
+    final body = (message != null && message.trim().isNotEmpty)
+        ? message.trim()
+        : 'Your cart contains items from $fromName. You can only order from one company at a time. Discard existing items and start a new cart from $toName?';
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.storefront_rounded, color: AppColors.primaryColor, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Replace cart items?',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.secondaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          body,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: AppColors.greyColor,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'No, Keep',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: AppColors.greyColor,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              'Replace Cart',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+    return result == true;
+  }
 }

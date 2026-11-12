@@ -5,6 +5,7 @@ import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
 import 'package:apni_factory/res/widgets/frequently_brought_together_widget.dart';
 import 'package:apni_factory/res/widgets/global_cart_container.dart';
+import 'package:apni_factory/screens/brand_page_screen.dart';
 import 'package:apni_factory/res/widgets/rating_review_widget.dart';
 import 'package:apni_factory/utils.dart';
 import 'package:apni_factory/model/user_cart_model.dart';
@@ -1146,94 +1147,139 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
     double height,
     double width,
   ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xffECEEF1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 52,
-            width: 52,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFFED7AA)),
+    final int? companyId = seller.companyId is int
+        ? seller.companyId
+        : int.tryParse(seller.companyId?.toString() ?? '');
+    final bool canVisitStore = companyId != null && companyId > 0;
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: canVisitStore
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BrandPageScreen(cmpid: companyId, cid: 0),
+                ),
+              );
+            }
+          : null,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xffECEEF1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: seller.photo != null && seller.photo.isNotEmpty
-                  ? Image.network(
-                      "${AppAssetImage.imageBaseUrl}storage/app/public/${seller.photo}",
-                      fit: BoxFit.cover,
-                      cacheWidth: 150,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 52,
+              width: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFFED7AA)),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: seller.photo != null && seller.photo.isNotEmpty
+                    ? Image.network(
+                        "${AppAssetImage.imageBaseUrl}storage/app/public/${seller.photo}",
+                        fit: BoxFit.cover,
+                        cacheWidth: 150,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.factory_outlined,
+                          color: Color(0xFFEA580C),
+                          size: 26,
+                        ),
+                      )
+                    : const Icon(
                         Icons.factory_outlined,
                         color: Color(0xFFEA580C),
                         size: 26,
                       ),
-                    )
-                  : const Icon(
-                      Icons.factory_outlined,
-                      color: Color(0xFFEA580C),
-                      size: 26,
-                    ),
+              ),
             ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        "VERIFIED MANUFACTURER",
+                        style: GoogleFonts.poppins(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF16A34A),
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF16A34A)),
+                    ],
+                  ),
+                  Text(
+                    seller.name ?? "Apni Factory Verified Seller",
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.secondaryColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (seller.city != null && seller.city.isNotEmpty)
                     Text(
-                      "VERIFIED MANUFACTURER",
+                      "Factory Site: ${seller.city}",
                       style: GoogleFonts.poppins(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF16A34A),
-                        letterSpacing: 0.4,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.lightText,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF16A34A)),
+                ],
+              ),
+            ),
+            if (canVisitStore)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFED7AA)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Store",
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFEA580C),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 11,
+                      color: Color(0xFFEA580C),
+                    ),
                   ],
                 ),
-                Text(
-                  seller.name ?? "Apni Factory Verified Seller",
-                  style: GoogleFonts.poppins(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.secondaryColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (seller.city != null && seller.city.isNotEmpty)
-                  Text(
-                    "Factory Site: ${seller.city}",
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.lightText,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -1744,13 +1744,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         HapticFeedback.mediumImpact();
         setState(() => _addedProductIds.add(pId));
         final cartProv = Provider.of<CartScreenProvider>(context, listen: false);
-        await cartProv.quickAddToCart(
+        final added = await cartProv.quickAddToCart(
           context: context,
           productId: pId.toString(),
           brandId: product.brandId?.toString() ?? "0",
           attributeId: product.attributeId?.toString(),
         );
-        if (mounted) {
+        if (!mounted) return;
+        if (added) {
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1784,6 +1785,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               setState(() => _addedProductIds.remove(pId));
             }
           });
+        } else {
+          setState(() => _addedProductIds.remove(pId));
         }
       },
       borderRadius: BorderRadius.circular(8),
@@ -2533,8 +2536,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ProductCategoryPageScreen(
-                            bid: 0,
+                          builder: (context) => CompanyPageScreen(
                             cid: sub.id ?? 0,
                             scid: sub.scid ?? 0,
                           ),
@@ -2694,59 +2696,73 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         itemCount: allCompanies.length,
                         itemBuilder: (context, index) {
                           final comp = allCompanies[index];
-                          return Container(
-                            width: 170,
-                            margin: const EdgeInsets.only(right: 10),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFFED7AA)),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  height: 40,
-                                  width: 40,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF7ED),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.factory_outlined,
-                                    color: Color(0xFFEA580C),
-                                    size: 22,
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BrandPageScreen(
+                                    cmpid: comp.id ?? 0,
+                                    cid: 0,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        comp.name ?? "Factory Direct",
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.secondaryColor,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        comp.city != null ? "${comp.city}, ${comp.state ?? ''}" : "Verified Seller",
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 9,
-                                          color: AppColors.lightText,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
+                              );
+                            },
+                            child: Container(
+                              width: 170,
+                              margin: const EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFFED7AA)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    height: 40,
+                                    width: 40,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF7ED),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.factory_outlined,
+                                      color: Color(0xFFEA580C),
+                                      size: 22,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          comp.name ?? "Factory Direct",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.secondaryColor,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          comp.city != null ? "${comp.city}, ${comp.state ?? ''}" : "Verified Seller",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 9,
+                                            color: AppColors.lightText,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },

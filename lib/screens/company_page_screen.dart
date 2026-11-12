@@ -20,9 +20,11 @@ import '../utils.dart';
 
 class CompanyPageScreen extends StatefulWidget {
   final int cid;
+  final int scid;
   const CompanyPageScreen({
     super.key,
     required this.cid,
+    this.scid = 0,
   });
 
   @override
@@ -34,7 +36,7 @@ class _CompanyPageScreenState extends State<CompanyPageScreen> {
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       await Provider.of<CompanyScreenProvider>(context, listen: false)
-          .companyScreen(context: context, cid: widget.cid);
+          .companyScreen(context: context, cid: widget.cid, scid: widget.scid);
       await Provider.of<CartScreenProvider>(context, listen: false)
           .userCart(context: context);
     });
@@ -359,7 +361,8 @@ class _CompanyPageScreenState extends State<CompanyPageScreen> {
                                                                       index]
                                                                   .id ??
                                                               0,
-                                                          cid: widget.cid);
+                                                          cid: widget.cid,
+                                                          scid: widget.scid);
                                                     },
                                                   ));
                                                 },

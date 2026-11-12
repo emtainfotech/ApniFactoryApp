@@ -19,7 +19,8 @@ import '../res/textstyle.dart';
 class BrandPageScreen extends StatefulWidget {
   final int cmpid;
   final int cid;
-  const BrandPageScreen({super.key, required this.cmpid, required this.cid});
+  final int scid;
+  const BrandPageScreen({super.key, required this.cmpid, required this.cid, this.scid = 0});
 
   @override
   State<BrandPageScreen> createState() => _BrandPageScreenState();
@@ -187,6 +188,8 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                                                                 ?.brand?[index]
                                                                 .categoryId ??
                                                             0,
+                                                        scid: widget.scid,
+                                                        cmpid: widget.cmpid,
                                                       );
                                                     },
                                                   ));

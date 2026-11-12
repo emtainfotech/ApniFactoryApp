@@ -341,13 +341,20 @@ class _WishlistScreenState extends State<WishlistScreen> {
                               setState(() => _addedToCartPids.add(pId));
 
                               final cartProv = Provider.of<CartScreenProvider>(context, listen: false);
-                              await cartProv.quickAddToCart(
+                              final added = await cartProv.quickAddToCart(
                                 context: context,
                                 productId: pId.toString(),
                                 brandId: item.brandid?.toString() ?? "0",
                                 attributeId: attrId?.toString(),
                               );
 
+                              if (!context.mounted) return;
+                              if (!added) {
+                                if (mounted) {
+                                  setState(() => _addedToCartPids.remove(pId));
+                                }
+                                return;
+                              }
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).clearSnackBars();
                                 ScaffoldMessenger.of(context).showSnackBar(

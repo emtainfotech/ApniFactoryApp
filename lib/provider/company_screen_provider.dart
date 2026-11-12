@@ -19,6 +19,7 @@ class CompanyScreenProvider extends ChangeNotifier {
   Future<void> companyScreen({
     required BuildContext context,
     required int cid,
+    int scid = 0,
   }) async {
     try {
       companyScreenModel = null;
@@ -26,7 +27,7 @@ class CompanyScreenProvider extends ChangeNotifier {
 
       loadingCompanyScreen = true;
       companyScreenModel =
-          await CreatorApiServices.companyScreenDetails(context, cid: cid);
+          await CreatorApiServices.companyScreenDetails(context, cid: cid, scid: scid);
       notifyListeners();
       if (companyScreenModel != null && companyScreenModel!.code == 100) {
         slider = companyScreenModel?.data?.slider;

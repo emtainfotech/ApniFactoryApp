@@ -16,6 +16,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
   int? selectedBid;
   int? selectedSid;
   int? selectedScid;
+  int? selectedCmpid;
 
   List? productDetails;
   List? subCategoryDetails;
@@ -47,17 +48,19 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
     required int bid,
     required int cid,
     int scid = 0,
+    int cmpid = 0,
   }) async {
     try {
       productCategoryListScreenModel = null;
       errorMessage = null;
       loadingProductCategoryListScreen = true;
+      selectedCmpid = cmpid;
       _visibleProductCount = pageSize;
       notifyListeners();
 
       productCategoryListScreenModel =
           await CreatorApiServices.productCategoryListScreenDetails(context,
-              bid: bid, cid: cid, scid: scid);
+              bid: bid, cid: cid, scid: scid, cmpid: cmpid);
 
       if (productCategoryListScreenModel != null &&
           productCategoryListScreenModel!.code == 100) {
@@ -78,18 +81,23 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
           selectedBid = subcats[matchedIdx].bid ?? 0;
           selectedSid = subcats[matchedIdx].cid ?? 0;
           selectedScid = subcats[matchedIdx].scid ?? 0;
+          selectedCmpid = subcats[matchedIdx].cmpid ??
+              productCategoryListScreenModel?.data?.companyId ??
+              cmpid;
         } else if (prods != null && prods.isNotEmpty) {
           selectedCategoryIndex = 0;
           selectedCategory = prods[0].categoryname;
           selectedBid = bid;
           selectedSid = cid;
           selectedScid = scid;
+          selectedCmpid = productCategoryListScreenModel?.data?.companyId ?? cmpid;
         } else {
           selectedCategoryIndex = 0;
           selectedCategory = "Products";
           selectedBid = bid;
           selectedSid = cid;
           selectedScid = scid;
+          selectedCmpid = productCategoryListScreenModel?.data?.companyId ?? cmpid;
         }
 
         subCategoryDetails = subcats;
@@ -116,6 +124,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
     required int bid,
     required int sid,
     int scid = 0,
+    int cmpid = 0,
   }) async {
     try {
       loadingProductListBySubcategory = true;
@@ -125,7 +134,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
 
       productListBySubCategoryScreenModel =
           await CreatorApiServices.productListByCategoryScreenDetails(context,
-              sid: sid, bid: bid, scid: scid);
+              sid: sid, bid: bid, scid: scid, cmpid: cmpid);
       if (productListBySubCategoryScreenModel != null &&
           productListBySubCategoryScreenModel!.code == 100) {
         loadingProductListBySubcategory = false;
@@ -178,12 +187,18 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
     selectedBid = subcat?.bid ?? 0;
     selectedSid = subcat?.cid ?? 0;
     selectedScid = subcat?.scid ?? 0;
+    final int cmpid = subcat?.cmpid ??
+        selectedCmpid ??
+        productCategoryListScreenModel?.data?.companyId ??
+        0;
+    selectedCmpid = cmpid;
 
     productListBySubCategoryScreen(
       context: context,
       bid: selectedBid ?? 0,
       sid: selectedSid ?? 0,
       scid: selectedScid ?? 0,
+      cmpid: cmpid,
     );
 
     notifyListeners();
@@ -193,6 +208,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
     selectedCategoryIndex = 0;
     selectedCategory = null;
     selectedScid = 0;
+    selectedCmpid = 0;
     errorMessage = null;
     _visibleProductCount = pageSize;
     productDetails = null;
