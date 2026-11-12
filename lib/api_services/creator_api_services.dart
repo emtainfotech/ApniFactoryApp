@@ -1543,6 +1543,52 @@ class CreatorApiServices {
     }
   }
 
+  static Future<Map<String, dynamic>?> generatePayuHash(
+    Map hashParams,
+  ) async {
+    final Dio dio = ApiClient.instance.dio;
+    try {
+      final body = <String, dynamic>{};
+      hashParams.forEach((k, v) {
+        body[k.toString()] = v;
+      });
+      final Response response = await dio.post(
+        ApiEndPoint.payuHashApi,
+        data: body,
+      );
+      if (response.statusCode == 200) {
+        final data = _decodeBody(response.data);
+        final String hashName =
+            (hashParams['hashName'] ?? 'payment_hash').toString();
+        final String? hash =
+            (data[hashName] ?? data['hash'])?.toString();
+        if (hash != null && hash.isNotEmpty) {
+          return {hashName: hash};
+        }
+      }
+    } catch (e) {
+      _log('generatePayuHash error: $e');
+    }
+    return null;
+  }
+
+  static Future<void> recordPayuCallback({
+    required bool success,
+    required Map<String, dynamic> payload,
+  }) async {
+    final Dio dio = ApiClient.instance.dio;
+    try {
+      await dio.post(
+        success
+            ? ApiEndPoint.orderTransectionSuccessApi
+            : ApiEndPoint.orderTransectionFailedApi,
+        data: payload,
+      );
+    } catch (e) {
+      _log('recordPayuCallback error: $e');
+    }
+  }
+
   static Future<SingleOrderDetailModel?> singleOrderDetail(
     BuildContext context, {
     required String orderno,

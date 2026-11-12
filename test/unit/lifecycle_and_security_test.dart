@@ -5,7 +5,9 @@ import 'package:apni_factory/api_services/hash_service';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apni_factory/model/add_to_cart_model.dart';
+import 'package:apni_factory/config/api_config.dart';
 import 'package:apni_factory/model/home_screen_model.dart';
+import 'package:apni_factory/model/order_model.dart';
 import 'package:apni_factory/model/order_histort_model.dart';
 import 'package:apni_factory/model/product_category_list_model.dart';
 import 'package:apni_factory/model/product_detail_model.dart';
@@ -377,6 +379,45 @@ void main() {
       expect(catList.data?.companyId, 15);
       expect(catList.data?.companyName, 'HomeCoat (opc) Private Limited');
       expect(catList.data?.subcategory?.first.cmpid, 15);
+    });
+
+    test('OrderModel parses stringified orderno, txnid, and dynamic PayU UAT/Prod flags',
+        () {
+      expect(ApiConfig.payuEnvironment, '1');
+      final order = OrderModel.fromJson({
+        'status': true,
+        'code': 100,
+        'msg': 'Successfully Placed',
+        'payu_environment': '1',
+        'is_uat': true,
+        'payu_mode': 'uat',
+        'surl': 'https://cyan-eagle-893359.hostingersite.com/api/order/transection/success',
+        'furl': 'https://cyan-eagle-893359.hostingersite.com/api/order/transection/failed',
+        'data': {
+          'orderno': 'AF20261112-9012',
+          'customer_id': 42,
+          'user_id': 15,
+          'grandtotal': 1250.5,
+        },
+        'hashparameter': {
+          'key': 'gtKFFx',
+          'txnid': 'AF20261112-9012',
+          'amount': '1250.50',
+          'productinfo': 'HSN3208',
+          'firstname': 'Ramesh',
+          'email': 'buyer@example.com',
+          'udf1': 15,
+          'udf2': 88,
+          'udf3': 19,
+        },
+      });
+      expect(order.data?.orderno, 'AF20261112-9012');
+      expect(order.data?.customerId, '42');
+      expect(order.hashparameter?.txnid, 'AF20261112-9012');
+      expect(order.hashparameter?.udf2, '88');
+      expect(order.payuEnvironment, '1');
+      expect(order.isUat, isTrue);
+      expect(order.payuMode, 'uat');
     });
   });
 }

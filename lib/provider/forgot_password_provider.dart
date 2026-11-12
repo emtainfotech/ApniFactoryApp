@@ -74,11 +74,14 @@ class ForgotPasswordProvider extends ChangeNotifier {
     try {
       if (email != null && email.isNotEmpty) {
         loadingGetOtp = true;
-        log(email.toString());
+        final trimmed = email.trim();
+        final bool isMobile = RegExp(r'^\d{10,12}$').hasMatch(trimmed);
+        final String sendon = isMobile ? "mobile" : "email";
+        log(trimmed);
         GetOtpModel? getOtpModel = await CreatorApiServices.getOtpDetails(
             context,
-            email: email,
-            sendon: "email");
+            email: trimmed,
+            sendon: sendon);
         notifyListeners();
 
         if (getOtpModel != null && getOtpModel.code == 100) {

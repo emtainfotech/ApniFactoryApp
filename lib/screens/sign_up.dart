@@ -369,7 +369,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: const Color(0xFFFED7AA)),
                             ),
-                            child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "WhatsApp OTP sent to +91 ${provider.mobileNumberController.text.trim()}",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF9A3412),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () => provider.getMobileOtp(
+                                        height,
+                                        context: context,
+                                        mobile: provider.mobileNumberController.text.trim(),
+                                      ),
+                                      child: Text(
+                                        "Resend",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: const Color(0xFFEA580C),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
                               children: [
                                 Expanded(
                                   child: _buildTextField(
@@ -408,6 +440,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                           ),
                                         ),
                                       ),
+                              ],
+                            ),
                               ],
                             ),
                           ),

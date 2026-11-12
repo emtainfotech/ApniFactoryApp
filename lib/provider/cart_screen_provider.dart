@@ -967,42 +967,38 @@ class CartScreenProvider extends ChangeNotifier {
     try {
       if (addressId.isNotEmpty) {
         loadingorder = true;
+        notifyListeners();
         orderModel = await CreatorApiServices.orderDetails(
           context,
           addressid: addressId,
         );
-        notifyListeners();
         if (orderModel != null && orderModel!.code == 100) {
           loadingorder = false;
           Utils.commonSnackBar(context,
               height: height, message: orderModel!.msg.toString());
-          // Navigator.push(context, MaterialPageRoute(
-          //   builder: (context) {
-          //     return PaymentSuccessfulScreen();
-          //   },
-          // ));
           notifyListeners();
         } else {
           loadingorder = false;
-          // if (orderModel == null ||
-          //     orderModel.data == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    orderModel?.msg.toString() ?? "Order creation failed")),
-          );
-          //   return;
-          // }
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      orderModel?.msg?.toString() ?? "Order creation failed")),
+            );
+          }
           notifyListeners();
         }
       } else {
         Utils.commonSnackBar(context,
-            height: height, message: "Select payment");
+            height: height, message: "Please select a delivery address");
       }
     } catch (e) {
+      loadingorder = false;
       log("order error: ${e.toString()}");
+    } finally {
+      loadingorder = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   @override

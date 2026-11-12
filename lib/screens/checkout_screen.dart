@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:apni_factory/api_services/api_client.dart';
+import 'package:apni_factory/api_services/creator_api_services.dart';
 import 'package:apni_factory/api_services/hash_service';
 import 'package:apni_factory/config/api_config.dart';
 import 'package:apni_factory/provider/cart_screen_provider.dart';
@@ -144,14 +145,35 @@ class _CheckOutScreenState extends State<CheckOutScreen>
                                           SizedBox(
                                             width: width / 20,
                                           ),
-                                          Text(
-                                            provider.paymentList[index],
-                                            style: AppTextStyle.poppinsBold13(
-                                                context: context,
-                                                color:
-                                                    AppColors.secondaryColor),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  provider.paymentList[index],
+                                                  style: AppTextStyle.poppinsBold13(
+                                                      context: context,
+                                                      color: AppColors
+                                                          .secondaryColor),
+                                                ),
+                                                Text(
+                                                  (provider.orderModel?.payuMode == 'production')
+                                                      ? "PayU Live Production Gateway"
+                                                      : "PayU UAT Gateway (Auto-switches to Live with production keys)",
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    color: Color(0xFF6B7280),
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          Spacer(),
+                                          const SizedBox(width: 8),
                                           Radio(
                                             activeColor: AppColors.primaryColor,
                                             value: provider.paymentList[index],
@@ -219,15 +241,19 @@ class _CheckOutScreenState extends State<CheckOutScreen>
                                       }
                                     }
                                     final String txnId =
-                                        hashParameter.txnid.toString();
+                                        hashParameter.txnid?.toString() ?? "";
                                     final String amount =
-                                        hashParameter.amount.toString();
+                                        hashParameter.amount?.toString() ?? "0.00";
                                     final String productInfo =
-                                        hashParameter.productinfo.toString();
+                                        hashParameter.productinfo?.toString() ?? "Order";
                                     final String firstName =
-                                        hashParameter.firstname.toString();
+                                        hashParameter.firstname?.toString() ?? "Buyer";
                                     final String email =
-                                        hashParameter.email.toString();
+                                        hashParameter.email?.toString() ?? "";
+                                    final String resolvedEnv =
+                                        (orderModel.payuEnvironment ?? '').isNotEmpty
+                                            ? orderModel.payuEnvironment!
+                                            : ApiConfig.payuEnvironment;
 
                                     provider.checkoutPro.openCheckoutScreen(
                                       payUPaymentParams: {
@@ -253,7 +279,15 @@ class _CheckOutScreenState extends State<CheckOutScreen>
                                         PayUPaymentParamKey.android_furl:
                                             orderModel.furl,
                                         PayUPaymentParamKey.environment:
-                                            ApiConfig.payuEnvironment,
+                                            resolvedEnv,
+                                        PayUPaymentParamKey.additionalParam: {
+                                          PayUAdditionalParamKeys.udf1:
+                                              hashParameter.udf1 ?? "",
+                                          PayUAdditionalParamKeys.udf2:
+                                              hashParameter.udf2 ?? "",
+                                          PayUAdditionalParamKeys.udf3:
+                                              hashParameter.udf3 ?? "",
+                                        },
                                       },
                                       payUCheckoutProConfig: {
                                         "showExitConfirmationOnPaymentScreen":
@@ -283,11 +317,23 @@ class _CheckOutScreenState extends State<CheckOutScreen>
 
   @override
   generateHash(Map response) {
+    _generateAndDeliverHash(response);
+  }
+
+  Future<void> _generateAndDeliverHash(Map response) async {
     try {
-      final Map hashResponse = HashService.generateHash(response);
-      Provider.of<CartScreenProvider>(context, listen: false)
-          .checkoutPro
-          .hashGenerated(hash: hashResponse);
+      Map? hashResponse = await CreatorApiServices.generatePayuHash(response);
+      if (hashResponse == null && HashService.hasLocalHashConfig) {
+        hashResponse = HashService.generateHash(response);
+      }
+      if (hashResponse != null) {
+        if (!mounted) return;
+        Provider.of<CartScreenProvider>(context, listen: false)
+            .checkoutPro
+            .hashGenerated(hash: hashResponse);
+        return;
+      }
+      throw StateError('Unable to obtain PayU hash from server.');
     } catch (e) {
       ApiClient.safeLog('CheckOutScreen', 'PayU hash error: $e');
       if (mounted) {
@@ -334,9 +380,39 @@ class _CheckOutScreenState extends State<CheckOutScreen>
     });
   }
 
+  Map<String, dynamic> _extractPayuResponseMap(dynamic response, String fallbackStatus) {
+    final provider = Provider.of<CartScreenProvider>(context, listen: false);
+    final hp = provider.orderModel?.hashparameter;
+    final Map<String, dynamic> payload = {
+      'status': fallbackStatus,
+      'txnid': hp?.txnid ?? '',
+      'udf3': hp?.udf3 ?? '',
+    };
+    if (response is Map) {
+      response.forEach((k, v) {
+        payload[k.toString()] = v;
+      });
+      final inner = response['payuResponse'];
+      if (inner is String && inner.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(inner);
+          if (decoded is Map) {
+            final result = decoded['result'] is Map ? decoded['result'] : decoded;
+            (result as Map).forEach((k, v) {
+              payload[k.toString()] = v;
+            });
+          }
+        } catch (_) {}
+      }
+    }
+    return payload;
+  }
+
   @override
   onPaymentFailure(response) {
     ApiClient.safeLog('CheckOutScreen', 'Payment Failure: $response');
+    final payload = _extractPayuResponseMap(response, 'failure');
+    CreatorApiServices.recordPayuCallback(success: false, payload: payload);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -355,8 +431,14 @@ class _CheckOutScreenState extends State<CheckOutScreen>
   @override
   onPaymentSuccess(response) {
     ApiClient.safeLog('CheckOutScreen', 'Payment Success: $response');
+    final payload = _extractPayuResponseMap(response, 'success');
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await CreatorApiServices.recordPayuCallback(
+          success: true, payload: payload);
+      if (!mounted) return;
+      await Provider.of<CartScreenProvider>(context, listen: false)
+          .userCart(context: context, isSilent: true);
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,

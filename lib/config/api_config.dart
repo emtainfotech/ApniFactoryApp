@@ -35,8 +35,19 @@ class ApiConfig {
     return apiUrl.endsWith('/') ? apiUrl : '$apiUrl/';
   }
 
-  /// PayU environment flag ('1' test/staging, '0' production).
-  static String get payuEnvironment =>
-      environment == 'prod' ? '0' : '1';
+  static const String _overridePayuEnv =
+      String.fromEnvironment('PAYU_ENV', defaultValue: '');
+
+  /// Fallback PayU environment flag ('1' UAT/test, '0' production).
+  /// Live CheckOutScreen prefers `orderModel.payuEnvironment` returned by Backend,
+  /// so Backend credentials auto-switch UAT -> Production without rebuilding the APK.
+  static String get payuEnvironment {
+    if (_overridePayuEnv.isNotEmpty) {
+      return (_overridePayuEnv == '0' || _overridePayuEnv.toLowerCase() == 'production')
+          ? '0'
+          : '1';
+    }
+    return '1';
+  }
 }
 

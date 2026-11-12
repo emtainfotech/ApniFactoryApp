@@ -101,14 +101,19 @@ class SignUpProvider extends ChangeNotifier {
   // }
 
 
-  void onMobileChanged() {
-  // Reset everything when number changes
-  isMobileOtpVerified = false;
-  isMobileOtpReceived = false;
-  mobileOtpController.clear();
+  String _lastMobileText = '';
 
-  notifyListeners();
-}
+  void onMobileChanged() {
+    final current = mobileNumberController.text.trim();
+    if (current == _lastMobileText) {
+      return;
+    }
+    _lastMobileText = current;
+    isMobileOtpVerified = false;
+    isMobileOtpReceived = false;
+    mobileOtpController.clear();
+    notifyListeners();
+  }
 
   void passwordVisibility() {
     isPasswordVisible = !isPasswordVisible;

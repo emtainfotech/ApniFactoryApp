@@ -48,6 +48,10 @@ class ApiEndPoint {
   static String get stateCityPincodeApi => '${baseUrl}statecitypincode';
   static String get checkAvailabilityApi => '${baseUrl}checkavailability';
   static String get payuHashApi => '${baseUrl}payuhash';
+  static String get orderTransectionSuccessApi =>
+      '${baseUrl}order/transection/success';
+  static String get orderTransectionFailedApi =>
+      '${baseUrl}order/transection/failed';
   static String get singleOrderDetailApi => '${baseUrl}orderdetail';
   static String get brandDetailApi => '${baseUrl}branddetail';
   static String get notificationApi => '${baseUrl}notification?';

@@ -7,6 +7,10 @@ class OrderModel {
   String? furl;
   String? surl;
   Hashparameter? hashparameter;
+  String? payuEnvironment;
+  bool? isUat;
+  String? payuMode;
+  String? checkoutUrl;
 
   OrderModel(
       {this.status,
@@ -16,41 +20,53 @@ class OrderModel {
       this.hash,
       this.furl,
       this.surl,
-      this.hashparameter});
+      this.hashparameter,
+      this.payuEnvironment,
+      this.isUat,
+      this.payuMode,
+      this.checkoutUrl});
 
   OrderModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     code = json['code'];
     msg = json['msg'];
-    data = json['data'] != null ? new Data.fromJson(json['data']) : null;
-    hash = json['hash'];
-    furl = json['furl'];
-    surl = json['surl'];
+    data = json['data'] != null ? Data.fromJson(json['data']) : null;
+    hash = json['hash']?.toString();
+    furl = json['furl']?.toString();
+    surl = json['surl']?.toString();
+    payuEnvironment = json['payu_environment']?.toString();
+    isUat = json['is_uat'] is bool ? json['is_uat'] : null;
+    payuMode = json['payu_mode']?.toString();
+    checkoutUrl = json['checkout_url']?.toString();
     hashparameter = json['hashparameter'] != null
-        ? new Hashparameter.fromJson(json['hashparameter'])
+        ? Hashparameter.fromJson(json['hashparameter'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['status'] = this.status;
-    data['code'] = this.code;
-    data['msg'] = this.msg;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['code'] = code;
+    data['msg'] = msg;
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    data['hash'] = this.hash;
-    data['furl'] = this.furl;
-    data['surl'] = this.surl;
-    if (this.hashparameter != null) {
-      data['hashparameter'] = this.hashparameter!.toJson();
+    data['hash'] = hash;
+    data['furl'] = furl;
+    data['surl'] = surl;
+    data['payu_environment'] = payuEnvironment;
+    data['is_uat'] = isUat;
+    data['payu_mode'] = payuMode;
+    data['checkout_url'] = checkoutUrl;
+    if (hashparameter != null) {
+      data['hashparameter'] = hashparameter!.toJson();
     }
     return data;
   }
 }
 
 class Data {
-  int? orderno;
+  String? orderno;
   String? customerId;
   int? userId;
   String? address;
@@ -76,15 +92,15 @@ class Data {
       this.grandtotal});
 
   Data.fromJson(Map<String, dynamic> json) {
-    orderno = json['orderno'];
-    customerId = json['customer_id'];
-    userId = json['user_id'];
-    address = json['address'];
+    orderno = json['orderno']?.toString();
+    customerId = json['customer_id']?.toString();
+    userId = int.tryParse(json['user_id']?.toString() ?? '');
+    address = json['address']?.toString();
     sellercouponamount = json['sellercouponamount'];
     admincouponamount = json['admincouponamount'];
-    admincoupondetail = json['admincoupondetail'];
+    admincoupondetail = json['admincoupondetail']?.toString();
     netamount = json['netamount'];
-    taxdetail = json['taxdetail'];
+    taxdetail = json['taxdetail']?.toString();
     taxamount = json['taxamount'];
     grandtotal = json['grandtotal'];
   }
@@ -108,13 +124,14 @@ class Data {
 
 class Hashparameter {
   String? key;
-  int? txnid;
-  num? amount;
+  String? txnid;
+  String? amount;
   String? productinfo;
   String? firstname;
   String? email;
-  int? udf1;
-  bool? udf2;
+  String? udf1;
+  String? udf2;
+  String? udf3;
 
   Hashparameter(
       {this.key,
@@ -124,29 +141,32 @@ class Hashparameter {
       this.firstname,
       this.email,
       this.udf1,
-      this.udf2});
+      this.udf2,
+      this.udf3});
 
   Hashparameter.fromJson(Map<String, dynamic> json) {
-    key = json['key'];
-    txnid = json['txnid'];
-    amount = json['amount'];
-    productinfo = json['productinfo'];
-    firstname = json['firstname'];
-    email = json['email'];
-    udf1 = json['udf1'];
-    udf2 = json['udf2'];
+    key = json['key']?.toString();
+    txnid = json['txnid']?.toString();
+    amount = json['amount']?.toString();
+    productinfo = json['productinfo']?.toString();
+    firstname = json['firstname']?.toString();
+    email = json['email']?.toString();
+    udf1 = json['udf1']?.toString();
+    udf2 = json['udf2']?.toString();
+    udf3 = json['udf3']?.toString();
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['key'] = this.key;
-    data['txnid'] = this.txnid;
-    data['amount'] = this.amount;
-    data['productinfo'] = this.productinfo;
-    data['firstname'] = this.firstname;
-    data['email'] = this.email;
-    data['udf1'] = this.udf1;
-    data['udf2'] = this.udf2;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['key'] = key;
+    data['txnid'] = txnid;
+    data['amount'] = amount;
+    data['productinfo'] = productinfo;
+    data['firstname'] = firstname;
+    data['email'] = email;
+    data['udf1'] = udf1;
+    data['udf2'] = udf2;
+    data['udf3'] = udf3;
     return data;
   }
 }

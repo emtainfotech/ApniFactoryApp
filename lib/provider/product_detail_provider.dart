@@ -6,11 +6,13 @@ import 'package:apni_factory/model/product_detail_model.dart';
 import 'package:apni_factory/model/product_review_model.dart';
 import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/textstyle.dart';
+import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/screens/cart_screen.dart';
 import 'package:apni_factory/screens/wishlist_screen.dart';
 import 'package:apni_factory/utils.dart';
 import 'package:carousel_slider/carousel_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../api_services/creator_api_services.dart';
 import '../res/widgets/round_button.dart';
 
@@ -154,6 +156,10 @@ class ProductDetailProvider extends ChangeNotifier {
       notifyListeners();
       if (addToCartModel != null && addToCartModel?.code == 100) {
         loadingAddToCart = false;
+        if (globalContext.mounted) {
+          Provider.of<CartScreenProvider>(globalContext, listen: false)
+              .userCart(context: globalContext, isSilent: true);
+        }
         Navigator.push(globalContext, MaterialPageRoute(
           builder: (context) {
             return CartScreen();
