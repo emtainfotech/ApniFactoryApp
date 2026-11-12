@@ -26,6 +26,15 @@ class ApiConfig {
     }
   }
 
+  /// Resolved web/asset root URL matching [baseUrl] (with trailing slash).
+  static String get webBaseUrl {
+    final apiUrl = baseUrl;
+    if (apiUrl.endsWith('/api/')) {
+      return apiUrl.substring(0, apiUrl.length - 4);
+    }
+    return apiUrl.endsWith('/') ? apiUrl : '$apiUrl/';
+  }
+
   /// PayU environment flag ('1' test/staging, '0' production).
   static String get payuEnvironment =>
       environment == 'prod' ? '0' : '1';

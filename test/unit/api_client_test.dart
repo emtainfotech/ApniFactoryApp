@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:apni_factory/api_services/api_client.dart';
 import 'package:apni_factory/api_services/api_end_point.dart';
 import 'package:apni_factory/config/api_config.dart';
+import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/shared_pref.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,6 +44,12 @@ void main() {
       expect(ApiConfig.receiveTimeout, const Duration(seconds: 20));
       expect(ApiConfig.sendTimeout, const Duration(seconds: 15));
       expect(ApiEndPoint.baseUrl, ApiConfig.baseUrl);
+      expect(ApiConfig.baseUrl,
+          'https://cyan-eagle-893359.hostingersite.com/api/');
+      expect(ApiConfig.webBaseUrl,
+          'https://cyan-eagle-893359.hostingersite.com/');
+      expect(AppAssetImage.imageBaseUrl,
+          'https://cyan-eagle-893359.hostingersite.com/');
       expect(ApiEndPoint.loginApi, '${ApiConfig.baseUrl}login');
       expect(ApiEndPoint.v2ProductsApi, '${ApiConfig.baseUrl}v2/products');
     });
