@@ -4,6 +4,7 @@ import 'package:apni_factory/api_services/api_client.dart';
 import 'package:apni_factory/api_services/hash_service';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:apni_factory/model/home_screen_model.dart';
 import 'package:apni_factory/model/order_histort_model.dart';
 import 'package:apni_factory/model/product_category_list_model.dart';
 import 'package:apni_factory/model/single_order_detail_model.dart';
@@ -294,6 +295,31 @@ void main() {
       } finally {
         ApiClient.instance.dio.httpClientAdapter = previousAdapter;
       }
+    });
+
+    test('HomeSubcategory and Subcategory preserve scid for 4th-tier filtering',
+        () {
+      final homeSub = HomeSubcategory.fromJson({
+        'id': 113,
+        'scid': 4,
+        'name': 'N. C. Paints',
+        'image': 'sub.png',
+        'maincategory_id': 2,
+      });
+      expect(homeSub.id, 113);
+      expect(homeSub.scid, 4);
+
+      final catSub = Subcategory.fromJson({
+        'highlight': true,
+        'name': 'N. C. Paints',
+        'image': 'sub.png',
+        'cid': 113,
+        'scid': 4,
+        'bid': 0,
+      });
+      expect(catSub.cid, 113);
+      expect(catSub.scid, 4);
+      expect(catSub.highlight, isTrue);
     });
   });
 }

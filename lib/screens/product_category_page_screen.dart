@@ -16,10 +16,12 @@ import 'package:provider/provider.dart';
 class ProductCategoryPageScreen extends StatefulWidget {
   final int bid;
   final int cid;
+  final int scid;
   const ProductCategoryPageScreen({
     super.key,
     required this.bid,
     required this.cid,
+    this.scid = 0,
   });
 
   @override
@@ -67,6 +69,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
       context: context,
       bid: widget.bid,
       cid: widget.cid,
+      scid: widget.scid,
     );
     await cartProvider.userCart(context: context, isSilent: true);
   }

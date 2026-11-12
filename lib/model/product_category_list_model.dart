@@ -122,15 +122,17 @@ class Subcategory {
   String? name;
   String? image;
   int? cid;
+  int? scid;
   int? bid;
 
-  Subcategory({this.highlight, this.name, this.image, this.cid, this.bid});
+  Subcategory({this.highlight, this.name, this.image, this.cid, this.scid, this.bid});
 
   Subcategory.fromJson(Map<String, dynamic> json) {
     highlight = json['highlight'];
     name = json['name'];
     image = json['image'];
     cid = json['cid'];
+    scid = json['scid'];
     bid = json['bid'];
   }
 
@@ -140,6 +142,7 @@ class Subcategory {
     data['name'] = this.name;
     data['image'] = this.image;
     data['cid'] = this.cid;
+    data['scid'] = this.scid;
     data['bid'] = this.bid;
     return data;
   }

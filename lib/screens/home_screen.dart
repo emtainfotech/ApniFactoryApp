@@ -2536,6 +2536,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           builder: (context) => ProductCategoryPageScreen(
                             bid: 0,
                             cid: sub.id ?? 0,
+                            scid: sub.scid ?? 0,
                           ),
                         ),
                       );

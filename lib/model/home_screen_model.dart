@@ -337,14 +337,16 @@ class HomeCompany {
 
 class HomeSubcategory {
   int? id;
+  int? scid;
   String? name;
   String? image;
   int? maincategoryId;
 
-  HomeSubcategory({this.id, this.name, this.image, this.maincategoryId});
+  HomeSubcategory({this.id, this.scid, this.name, this.image, this.maincategoryId});
 
   HomeSubcategory.fromJson(Map<String, dynamic> json) {
     id = json['id'];
+    scid = json['scid'];
     name = json['name'];
     image = json['image'];
     maincategoryId = json['maincategory_id'];
@@ -353,6 +355,7 @@ class HomeSubcategory {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'scid': scid,
       'name': name,
       'image': image,
       'maincategory_id': maincategoryId,

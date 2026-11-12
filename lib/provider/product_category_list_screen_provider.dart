@@ -15,6 +15,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
   String? selectedCategory;
   int? selectedBid;
   int? selectedSid;
+  int? selectedScid;
 
   List? productDetails;
   List? subCategoryDetails;
@@ -45,6 +46,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
     required BuildContext context,
     required int bid,
     required int cid,
+    int scid = 0,
   }) async {
     try {
       productCategoryListScreenModel = null;
@@ -55,7 +57,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
 
       productCategoryListScreenModel =
           await CreatorApiServices.productCategoryListScreenDetails(context,
-              bid: bid, cid: cid);
+              bid: bid, cid: cid, scid: scid);
 
       if (productCategoryListScreenModel != null &&
           productCategoryListScreenModel!.code == 100) {
@@ -65,17 +67,29 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
         final prods = productCategoryListScreenModel?.data?.product;
 
         if (subcats != null && subcats.isNotEmpty) {
-          selectedCategory = subcats[0].name;
-          selectedBid = subcats[0].bid ?? 0;
-          selectedSid = subcats[0].cid ?? 0;
+          int matchedIdx = subcats.indexWhere((s) =>
+              s.highlight == true ||
+              (scid > 0
+                  ? (s.scid ?? 0) == scid
+                  : (s.cid == cid && (s.scid ?? 0) == 0)));
+          if (matchedIdx < 0) matchedIdx = 0;
+          selectedCategoryIndex = matchedIdx;
+          selectedCategory = subcats[matchedIdx].name;
+          selectedBid = subcats[matchedIdx].bid ?? 0;
+          selectedSid = subcats[matchedIdx].cid ?? 0;
+          selectedScid = subcats[matchedIdx].scid ?? 0;
         } else if (prods != null && prods.isNotEmpty) {
+          selectedCategoryIndex = 0;
           selectedCategory = prods[0].categoryname;
           selectedBid = bid;
           selectedSid = cid;
+          selectedScid = scid;
         } else {
+          selectedCategoryIndex = 0;
           selectedCategory = "Products";
           selectedBid = bid;
           selectedSid = cid;
+          selectedScid = scid;
         }
 
         subCategoryDetails = subcats;
@@ -101,6 +115,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
     required BuildContext context,
     required int bid,
     required int sid,
+    int scid = 0,
   }) async {
     try {
       loadingProductListBySubcategory = true;
@@ -110,7 +125,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
 
       productListBySubCategoryScreenModel =
           await CreatorApiServices.productListByCategoryScreenDetails(context,
-              sid: sid, bid: bid);
+              sid: sid, bid: bid, scid: scid);
       if (productListBySubCategoryScreenModel != null &&
           productListBySubCategoryScreenModel!.code == 100) {
         loadingProductListBySubcategory = false;
@@ -118,8 +133,14 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
         // Preserve existing subCategoryDetails if new response has null or empty subcategories
         if (productListBySubCategoryScreenModel?.data?.subcategory != null &&
             productListBySubCategoryScreenModel!.data!.subcategory!.isNotEmpty) {
-          subCategoryDetails =
-              productListBySubCategoryScreenModel?.data?.subcategory;
+          final updatedList = productListBySubCategoryScreenModel!.data!.subcategory!;
+          subCategoryDetails = updatedList;
+          final newIdx = updatedList.indexWhere((s) =>
+              s.highlight == true ||
+              (scid > 0 ? (s.scid ?? 0) == scid : (s.cid == sid && (s.scid ?? 0) == 0)));
+          if (newIdx >= 0) {
+            selectedCategoryIndex = newIdx;
+          }
         }
         notifyListeners();
       } else {
@@ -156,11 +177,13 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
     selectedCategory = subcat?.name ?? "Products";
     selectedBid = subcat?.bid ?? 0;
     selectedSid = subcat?.cid ?? 0;
+    selectedScid = subcat?.scid ?? 0;
 
     productListBySubCategoryScreen(
       context: context,
       bid: selectedBid ?? 0,
       sid: selectedSid ?? 0,
+      scid: selectedScid ?? 0,
     );
 
     notifyListeners();
@@ -169,6 +192,7 @@ class ProductCategoryListScreenProvider extends ChangeNotifier {
   void resetState() {
     selectedCategoryIndex = 0;
     selectedCategory = null;
+    selectedScid = 0;
     errorMessage = null;
     _visibleProductCount = pageSize;
     productDetails = null;
