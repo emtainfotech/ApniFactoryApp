@@ -5,6 +5,7 @@ import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/widgets/add_address_widget.dart';
 import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
 import 'package:apni_factory/screens/Coupon_offer_screen.dart';
+import 'package:apni_factory/screens/brand_page_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
 import 'package:apni_factory/utils.dart';
 import 'package:flutter/material.dart';
@@ -149,6 +150,10 @@ class _CartScreenState extends State<CartScreen> {
                 children: [
                   // 1. Delivery Destination Address Card
                   _buildDeliveryAddressBanner(context, provider, width),
+
+                  // 1a. Active Cart Company Store Card with Go-to-Company CTA
+                  if ((provider.userCartModel?.activeCompanyId ?? 0) > 0)
+                    _buildActiveStoreBanner(context, provider.userCartModel!),
 
                   // 1b. Seller Minimum Order Value (MOV) & Multi-Seller Compliance
                   if (provider.userCartModel?.sellerGroups != null &&
@@ -891,14 +896,144 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  // 3. Related Products Section
+  void _openActiveCompanyStore(BuildContext context, int companyId) {
+    if (companyId <= 0) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BrandPageScreen(cmpid: companyId, cid: 0),
+      ),
+    );
+  }
+
+  Widget _buildActiveStoreBanner(BuildContext context, UserCartModel cartModel) {
+    final int companyId = cartModel.activeCompanyId;
+    final String companyName = cartModel.activeCompanyName.isNotEmpty
+        ? cartModel.activeCompanyName
+        : 'Factory Store';
+    final String city = (cartModel.companyCity ?? '').trim();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFED7AA)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFED7AA)),
+            ),
+            child: const Icon(
+              Icons.storefront_rounded,
+              color: Color(0xFFEA580C),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Ordering from",
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF9A3412),
+                  ),
+                ),
+                Text(
+                  companyName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.secondaryColor,
+                  ),
+                ),
+                if (city.isNotEmpty)
+                  Text(
+                    "$city • Single-Company Cart Lock",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: const Color(0xFF7C2D12),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => _openActiveCompanyStore(context, companyId),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEA580C),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Go to Store",
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 3. Related Products Section (strictly scoped to the active cart company)
   Widget _buildRelatedProductsSection(
     BuildContext context,
     CartScreenProvider provider,
     double width,
     double height,
   ) {
-    final relatedList = provider.relatedProductModel?.data ?? [];
+    final int activeCompanyId = provider.userCartModel?.activeCompanyId ?? 0;
+    final String activeCompanyName =
+        provider.userCartModel?.activeCompanyName ?? '';
+    final rawRelated = provider.relatedProductModel?.data ?? [];
+    final relatedList = rawRelated.where((item) {
+      if (activeCompanyId <= 0 || item.companyId == null || item.companyId == 0) {
+        return true;
+      }
+      return item.companyId == activeCompanyId;
+    }).toList();
+
+    if (relatedList.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -915,14 +1050,47 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               const Icon(Icons.flash_on_rounded, color: Color(0xFFEA580C), size: 18),
               const SizedBox(width: 6),
-              Text(
-                "Frequently Added Together",
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.secondaryColor,
+              Expanded(
+                child: Text(
+                  activeCompanyName.isNotEmpty
+                      ? "More from $activeCompanyName"
+                      : "More from This Factory",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.secondaryColor,
+                  ),
                 ),
               ),
+              if (activeCompanyId > 0)
+                InkWell(
+                  onTap: () => _openActiveCompanyStore(context, activeCompanyId),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Visit Store",
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFEA580C),
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 13,
+                          color: Color(0xFFEA580C),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),

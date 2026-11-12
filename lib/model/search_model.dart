@@ -35,25 +35,39 @@ class Data {
   String? name;
   String? image;
   int? relatedid;
+  int? companyId;
+  String? companyName;
   String? screen;
 
-  Data({this.id, this.name, this.image, this.relatedid, this.screen});
+  Data({
+    this.id,
+    this.name,
+    this.image,
+    this.relatedid,
+    this.companyId,
+    this.companyName,
+    this.screen,
+  });
 
   Data.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
+    id = int.tryParse('${json['id'] ?? ''}');
     name = json['name'];
     image = json['image'];
-    relatedid = json['relatedid'];
+    relatedid = int.tryParse('${json['relatedid'] ?? ''}');
+    companyId = int.tryParse('${json['company_id'] ?? ''}');
+    companyName = json['company_name']?.toString();
     screen = json['screen'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['name'] = this.name;
-    data['image'] = this.image;
-    data['relatedid'] = this.relatedid;
-    data['screen'] = this.screen;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['image'] = image;
+    data['relatedid'] = relatedid;
+    data['company_id'] = companyId;
+    data['company_name'] = companyName;
+    data['screen'] = screen;
     return data;
   }
 }

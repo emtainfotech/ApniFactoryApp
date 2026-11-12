@@ -34,29 +34,44 @@ class Data {
   int? id;
   String? name;
   String? image;
+  int? companyId;
+  String? companyName;
   String? color;
   String? colorid;
   String? price;
 
-  Data({this.id, this.name, this.image, this.color, this.colorid, this.price});
+  Data({
+    this.id,
+    this.name,
+    this.image,
+    this.companyId,
+    this.companyName,
+    this.color,
+    this.colorid,
+    this.price,
+  });
 
   Data.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
+    id = int.tryParse('${json['id'] ?? ''}');
     name = json['name'];
     image = json['image'];
+    companyId = int.tryParse('${json['company_id'] ?? ''}');
+    companyName = json['company_name']?.toString();
     color = json['color'];
-    colorid = json['colorid'];
+    colorid = json['colorid']?.toString();
     price = json['price'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['name'] = this.name;
-    data['image'] = this.image;
-    data['color'] = this.color;
-    data['colorid'] = this.colorid;
-    data['price'] = this.price;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['image'] = image;
+    data['company_id'] = companyId;
+    data['company_name'] = companyName;
+    data['color'] = color;
+    data['colorid'] = colorid;
+    data['price'] = price;
     return data;
   }
 }

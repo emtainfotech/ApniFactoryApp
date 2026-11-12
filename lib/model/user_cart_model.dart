@@ -10,6 +10,10 @@ class UserCartModel {
   num igst;
   num? couponbyadmin;
   String combinecoupon;
+  int? companyId;
+  String? companyName;
+  String? companyPhoto;
+  String? companyCity;
   List<SellerGroupModel>? sellerGroups;
   bool? allSellersCanCheckout;
 
@@ -27,10 +31,32 @@ class UserCartModel {
     required this.igst,
     required this.couponbyadmin,
     required this.combinecoupon,
+    this.companyId,
+    this.companyName,
+    this.companyPhoto,
+    this.companyCity,
     this.sellerGroups,
     this.allSellersCanCheckout,
     required this.data,
   });
+
+  int get activeCompanyId {
+    if (companyId != null && companyId! > 0) return companyId!;
+    if (sellerGroups != null && sellerGroups!.isNotEmpty) {
+      return sellerGroups!.first.companyId;
+    }
+    return 0;
+  }
+
+  String get activeCompanyName {
+    if (companyName != null && companyName!.trim().isNotEmpty) {
+      return companyName!.trim();
+    }
+    if (sellerGroups != null && sellerGroups!.isNotEmpty) {
+      return sellerGroups!.first.companyName;
+    }
+    return '';
+  }
 
   // Factory method to parse JSON into UserCartModel
   factory UserCartModel.fromJson(Map<String, dynamic> json) {
@@ -46,6 +72,10 @@ class UserCartModel {
       igst: json['igst'],
       couponbyadmin: json['couponbyadmin'],
       combinecoupon: json['combinecoupon'],
+      companyId: int.tryParse('${json['company_id'] ?? ''}'),
+      companyName: json['company_name']?.toString(),
+      companyPhoto: json['company_photo']?.toString(),
+      companyCity: json['company_city']?.toString(),
       sellerGroups: json['seller_groups'] != null
           ? (json['seller_groups'] as List)
               .map((item) => SellerGroupModel.fromJson(item))

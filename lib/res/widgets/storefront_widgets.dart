@@ -3,9 +3,9 @@ import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/widgets/app_network_image.dart';
+import 'package:apni_factory/screens/brand_page_screen.dart';
 import 'package:apni_factory/screens/cart_screen.dart';
 import 'package:apni_factory/screens/category_screen.dart';
-import 'package:apni_factory/screens/company_page_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
 import 'package:apni_factory/utils.dart';
 import 'package:flutter/material.dart';
@@ -248,19 +248,35 @@ class StorefrontSearchResults extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CompanyPageScreen(cid: item.relatedid ?? 0),
-                ),
-              );
-            } else if (screen == 'product') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DescriptionPageScreen(
-                    productId: item.id ?? 0,
-                    colorId: item.relatedid?.toString() ?? '0',
+                  builder: (_) => BrandPageScreen(
+                    cmpid: item.id ?? 0,
+                    cid: item.relatedid ?? 0,
                   ),
                 ),
               );
+            } else if (screen == 'product') {
+              if ((item.companyId ?? 0) > 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BrandPageScreen(
+                      cmpid: item.companyId!,
+                      cid: 0,
+                      highlightProductId: item.id,
+                    ),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DescriptionPageScreen(
+                      productId: item.id ?? 0,
+                      colorId: item.relatedid?.toString() ?? '0',
+                    ),
+                  ),
+                );
+              }
             } else {
               Utils.commonSnackBar(
                 context,

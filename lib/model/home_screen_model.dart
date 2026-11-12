@@ -174,6 +174,10 @@ class HomeProduct {
   String? categoryName;
   int? brandId;
   String? brandName;
+  int? companyId;
+  String? companyName;
+  String? companyCity;
+  String? companyPhoto;
   num? price;
   num? oldprice;
   String? colorId;
@@ -188,6 +192,10 @@ class HomeProduct {
     this.categoryName,
     this.brandId,
     this.brandName,
+    this.companyId,
+    this.companyName,
+    this.companyCity,
+    this.companyPhoto,
     this.price,
     this.oldprice,
     this.colorId,
@@ -196,18 +204,22 @@ class HomeProduct {
   });
 
   HomeProduct.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
+    id = int.tryParse('${json['id'] ?? ''}');
     name = json['name'];
     image = json['image'];
-    categoryId = json['category_id'];
+    categoryId = int.tryParse('${json['category_id'] ?? ''}');
     categoryName = json['category_name'];
-    brandId = json['brand_id'];
+    brandId = int.tryParse('${json['brand_id'] ?? ''}');
     brandName = json['brand_name'];
-    price = json['price'];
-    oldprice = json['oldprice'];
+    companyId = int.tryParse('${json['company_id'] ?? ''}');
+    companyName = json['company_name'];
+    companyCity = json['company_city'];
+    companyPhoto = json['company_photo'];
+    price = num.tryParse('${json['price'] ?? ''}') ?? json['price'];
+    oldprice = num.tryParse('${json['oldprice'] ?? ''}') ?? json['oldprice'];
     colorId = json['color_id']?.toString() ?? '0';
     packSize = json['pack_size'];
-    attributeId = json['attribute_id'];
+    attributeId = int.tryParse('${json['attribute_id'] ?? ''}');
   }
 
   Map<String, dynamic> toJson() {
@@ -219,6 +231,10 @@ class HomeProduct {
     data['category_name'] = categoryName;
     data['brand_id'] = brandId;
     data['brand_name'] = brandName;
+    data['company_id'] = companyId;
+    data['company_name'] = companyName;
+    data['company_city'] = companyCity;
+    data['company_photo'] = companyPhoto;
     data['price'] = price;
     data['oldprice'] = oldprice;
     data['color_id'] = colorId;
@@ -313,15 +329,24 @@ class HomeCompany {
   String? photo;
   String? city;
   String? state;
+  num? minordervalue;
 
-  HomeCompany({this.id, this.name, this.photo, this.city, this.state});
+  HomeCompany({
+    this.id,
+    this.name,
+    this.photo,
+    this.city,
+    this.state,
+    this.minordervalue,
+  });
 
   HomeCompany.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
+    id = int.tryParse('${json['id'] ?? ''}');
     name = json['name'];
     photo = json['photo'];
     city = json['city'];
     state = json['state'];
+    minordervalue = num.tryParse('${json['minordervalue'] ?? ''}');
   }
 
   Map<String, dynamic> toJson() {
@@ -331,6 +356,7 @@ class HomeCompany {
       'photo': photo,
       'city': city,
       'state': state,
+      'minordervalue': minordervalue,
     };
   }
 }
