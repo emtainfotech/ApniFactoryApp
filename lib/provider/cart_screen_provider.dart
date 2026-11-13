@@ -617,6 +617,73 @@ class CartScreenProvider extends ChangeNotifier {
     }
   }
 
+  /// Returns the total quantity of a product currently in the cart across all its pack sizes.
+  int getProductCartQty(int productId) {
+    if (userCartModel == null || productId <= 0) return 0;
+    int total = 0;
+    for (var catLists in userCartModel!.data.values) {
+      for (var group in catLists) {
+        for (var prod in group) {
+          if (prod.productid == productId) {
+            for (var attr in prod.attributeData) {
+              total += (attr.qty ?? 0);
+            }
+          }
+        }
+      }
+    }
+    return total;
+  }
+
+  /// Returns the specific quantity of a product with a particular attribute ID in cart.
+  int getProductAttributeCartQty(int productId, {int? attributeId}) {
+    if (userCartModel == null || productId <= 0) return 0;
+    int total = 0;
+    for (var catLists in userCartModel!.data.values) {
+      for (var group in catLists) {
+        for (var prod in group) {
+          if (prod.productid == productId) {
+            for (var attr in prod.attributeData) {
+              if (attributeId == null ||
+                  attr.attributeid == attributeId ||
+                  attr.productattributeid == attributeId) {
+                total += (attr.qty ?? 0);
+              }
+            }
+          }
+        }
+      }
+    }
+    return total;
+  }
+
+  /// Returns the first cart attribute ID (for increase/decrease API calls) for the given product.
+  int? getProductFirstCartAttributeId(int productId, {int? attributeId}) {
+    if (userCartModel == null || productId <= 0) return null;
+    for (var catLists in userCartModel!.data.values) {
+      for (var group in catLists) {
+        for (var prod in group) {
+          if (prod.productid == productId) {
+            for (var attr in prod.attributeData) {
+              if (attributeId == null ||
+                  attr.attributeid == attributeId ||
+                  attr.productattributeid == attributeId) {
+                if (attr.attributeid != null && attr.attributeid! > 0) {
+                  return attr.attributeid;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  final Set<String> _addingProductIds = {};
+  bool isProductAdding(dynamic productId) =>
+      _addingProductIds.contains(productId.toString());
+
   Future<bool> quickAddToCart({
     required BuildContext context,
     required String productId,
@@ -624,6 +691,8 @@ class CartScreenProvider extends ChangeNotifier {
     String? attributeId,
     bool replaceCart = false,
   }) async {
+    _addingProductIds.add(productId.toString());
+    notifyListeners();
     try {
       List attrs = [];
       if (attributeId != null && attributeId.isNotEmpty && attributeId != "0") {
@@ -656,7 +725,7 @@ class CartScreenProvider extends ChangeNotifier {
         replaceCart: replaceCart,
       );
 
-      if (res != null && res.code == 100) {
+      if (res != null && (res.code == 100 || (res.msg != null && res.msg!.toLowerCase().contains('already in cart')))) {
         await userCart(context: context, isSilent: true);
         return true;
       }
@@ -680,6 +749,9 @@ class CartScreenProvider extends ChangeNotifier {
       }
     } catch (e) {
       log("quickAddToCart error: $e");
+    } finally {
+      _addingProductIds.remove(productId.toString());
+      notifyListeners();
     }
     return false;
   }

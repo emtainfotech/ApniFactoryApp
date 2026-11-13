@@ -72,12 +72,36 @@ class AppNetworkImage extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      color: AppColors.greyColor.withOpacity(0.2),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
+        ),
+      ),
       alignment: Alignment.center,
-      child: Icon(
-        fallbackIcon,
-        color: Colors.grey.shade500,
-        size: 24,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            fallbackIcon,
+            color: const Color(0xFF94A3B8),
+            size: (width != null && width! < 70) ? 20 : 28,
+          ),
+          if (width != null && width! >= 90) ...[
+            const SizedBox(height: 3),
+            const Text(
+              'APNI FACTORY',
+              style: TextStyle(
+                fontSize: 7.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF94A3B8),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

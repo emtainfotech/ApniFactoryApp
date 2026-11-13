@@ -61,17 +61,19 @@ class UserCartModel {
   // Factory method to parse JSON into UserCartModel
   factory UserCartModel.fromJson(Map<String, dynamic> json) {
     return UserCartModel(
-      status: json['status'],
-      code: json['code'],
-      msg: json['msg'],
-      grandTotal: json['grandtotal'],
-      netamount: json['netamount'],
-      counter: json['counter'],
-      cgst: json['cgst'],
-      sgst: json['sgst'],
-      igst: json['igst'],
-      couponbyadmin: json['couponbyadmin'],
-      combinecoupon: json['combinecoupon'],
+      status: json['status'] is bool
+          ? json['status']
+          : (json['status'] == 1 || json['status'] == 200 || json['status'] == 'true'),
+      code: json['code'] is int ? json['code'] : int.tryParse('') ?? 200,
+      msg: json['msg']?.toString() ?? '',
+      grandTotal: json['grandtotal'] is num ? json['grandtotal'] : num.tryParse(''),
+      netamount: json['netamount'] is num ? json['netamount'] : num.tryParse(''),
+      counter: json['counter'] is int ? json['counter'] : int.tryParse('') ?? 0,
+      cgst: (json['cgst'] is num ? json['cgst'] : num.tryParse('')) ?? 0,
+      sgst: (json['sgst'] is num ? json['sgst'] : num.tryParse('')) ?? 0,
+      igst: (json['igst'] is num ? json['igst'] : num.tryParse('')) ?? 0,
+      couponbyadmin: json['couponbyadmin'] is num ? json['couponbyadmin'] : num.tryParse(''),
+      combinecoupon: json['combinecoupon']?.toString() ?? '', 
       companyId: int.tryParse('${json['company_id'] ?? ''}'),
       companyName: json['company_name']?.toString(),
       companyPhoto: json['company_photo']?.toString(),
@@ -213,7 +215,7 @@ class AttributeData {
   num? totalPrice;
   int? qty;
   final int? attributeid;
-  final int? prprice;
+  final num? prprice;
   final int? boxpcs;
   num? unitprice;
   final int? productattributeid;
@@ -234,16 +236,32 @@ class AttributeData {
   // Factory method to parse JSON into AttributeData
   factory AttributeData.fromJson(Map<String, dynamic> json) {
     return AttributeData(
-        boxPacking: json['boxpacking'],
-        color: json['color'],
-        totalPrice: json['totalprice'],
-        qty: json['qty'],
-        attributeid: json['attributeid'],
-        prprice: json['prprice'],
-        boxpcs: json['boxpcs'],
-        unitprice: json['unitprice'],
-        productattributeid: json['productattributeid'],
-        couponamount: json['couponamount']);
+        boxPacking: json['boxpacking']?.toString() ?? '',
+        color: json['color']?.toString() ?? '',
+        totalPrice: json['totalprice'] is num
+            ? json['totalprice']
+            : num.tryParse('${json['totalprice'] ?? ''}'),
+        qty: json['qty'] is int
+            ? json['qty']
+            : int.tryParse('${json['qty'] ?? ''}'),
+        attributeid: json['attributeid'] is int
+            ? json['attributeid']
+            : int.tryParse('${json['attributeid'] ?? ''}'),
+        prprice: json['prprice'] is num
+            ? json['prprice']
+            : num.tryParse('${json['prprice'] ?? ''}'),
+        boxpcs: json['boxpcs'] is int
+            ? json['boxpcs']
+            : int.tryParse('${json['boxpcs'] ?? ''}'),
+        unitprice: json['unitprice'] is num
+            ? json['unitprice']
+            : num.tryParse('${json['unitprice'] ?? ''}'),
+        productattributeid: json['productattributeid'] is int
+            ? json['productattributeid']
+            : int.tryParse('${json['productattributeid'] ?? ''}'),
+        couponamount: json['couponamount'] is num
+            ? json['couponamount']
+            : num.tryParse('${json['couponamount'] ?? ''}'));
   }
 
   // Method to convert AttributeData to JSON

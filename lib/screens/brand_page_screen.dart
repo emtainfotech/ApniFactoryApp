@@ -8,6 +8,7 @@ import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/widgets/app_network_image.dart';
 import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
 import 'package:apni_factory/res/widgets/global_cart_container.dart';
+import 'package:apni_factory/res/widgets/product_cart_stepper_button.dart';
 import 'package:apni_factory/res/widgets/storefront_widgets.dart';
 import 'package:apni_factory/res/widgets/swiggy_home_widgets.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
@@ -967,87 +968,10 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
 
   Widget _buildMenuAddButton(BuildContext context, HomeProduct product) {
     final int pId = product.id ?? 0;
-    final String itemKey = '${pId}_${product.attributeId ?? 0}';
-    final bool isAdded = _addedItemKeys.contains(itemKey);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: () async {
-        if (isAdded || pId <= 0) return;
-        HapticFeedback.mediumImpact();
-        setState(() => _addedItemKeys.add(itemKey));
-        final cartProv =
-            Provider.of<CartScreenProvider>(context, listen: false);
-        final bool added = await cartProv.quickAddToCart(
-          context: context,
-          productId: pId.toString(),
-          brandId: (product.brandId ?? 0).toString(),
-          attributeId: product.attributeId?.toString(),
-        );
-        if (!mounted) return;
-        if (added) {
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: const Color(0xFF16A34A),
-              duration: const Duration(milliseconds: 1400),
-              margin: const EdgeInsets.only(bottom: 70, left: 16, right: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              content: Text(
-                '${product.name ?? 'Item'} added to cart',
-                style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white),
-              ),
-            ),
-          );
-          Future.delayed(const Duration(milliseconds: 1500), () {
-            if (mounted) setState(() => _addedItemKeys.remove(itemKey));
-          });
-        } else {
-          setState(() => _addedItemKeys.remove(itemKey));
-        }
-      },
-      child: Container(
-        width: 92,
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        decoration: BoxDecoration(
-          color: isAdded ? const Color(0xFF16A34A) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF16A34A), width: 1.4),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (isAdded) ...[
-              const Icon(Icons.check_rounded, size: 13, color: Colors.white),
-              const SizedBox(width: 3),
-              Text(
-                'ADDED',
-                style: GoogleFonts.poppins(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-            ] else ...[
-              Text(
-                'ADD',
-                style: GoogleFonts.poppins(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF16A34A),
-                ),
-              ),
-              const SizedBox(width: 2),
-              const Icon(Icons.add_rounded, size: 14, color: Color(0xFF16A34A)),
-            ],
-          ],
-        ),
-      ),
+    return ProductCartStepperButton(
+      productId: pId,
+      brandId: (product.brandId ?? 0).toString(),
+      attributeId: product.attributeId?.toString(),
     );
   }
 

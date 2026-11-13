@@ -1,7 +1,9 @@
+import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/model/home_screen_model.dart';
 import 'package:apni_factory/provider/wishlist_screen_provider.dart';
 import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/widgets/app_network_image.dart';
+import 'package:apni_factory/res/widgets/product_cart_stepper_button.dart';
 import 'package:apni_factory/screens/brand_page_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
 import 'package:flutter/material.dart';
@@ -86,6 +88,36 @@ Future<void> toggleProductWishlist(
   );
 }
 
+/// Resolves an illustrative icon based on category keywords.
+IconData getCategoryIcon(String? name) {
+  final lower = (name ?? '').toLowerCase();
+  if (lower.contains('paint') || lower.contains('distemper')) {
+    return Icons.format_paint_rounded;
+  }
+  if (lower.contains('putty') || lower.contains('gypsum')) {
+    return Icons.handyman_rounded;
+  }
+  if (lower.contains('primer')) return Icons.brush_rounded;
+  if (lower.contains('auto') || lower.contains('car')) {
+    return Icons.directions_car_rounded;
+  }
+  if (lower.contains('tarpine') ||
+      lower.contains('thinner') ||
+      lower.contains('solvent')) {
+    return Icons.science_rounded;
+  }
+  if (lower.contains('water') || lower.contains('proof')) {
+    return Icons.water_drop_rounded;
+  }
+  if (lower.contains('enamel') || lower.contains('coat')) {
+    return Icons.layers_rounded;
+  }
+  if (lower.contains('clean') || lower.contains('home')) {
+    return Icons.cleaning_services_rounded;
+  }
+  return Icons.palette_outlined;
+}
+
 /// Swiggy-style circular platter category tile with active orange ring and check badge.
 class SwiggyCategoryPlatterChip extends StatelessWidget {
   final String label;
@@ -164,7 +196,7 @@ class SwiggyCategoryPlatterChip extends StatelessWidget {
                             width: 56,
                             height: 56,
                             fit: BoxFit.cover,
-                            fallbackIcon: Icons.category_outlined,
+                            fallbackIcon: getCategoryIcon(label),
                           ),
                   ),
                 ),
@@ -499,6 +531,49 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      // In-Cart ADDED Badge Top Left
+                      Consumer<CartScreenProvider>(
+                        builder: (context, cProv, _) {
+                          final int cQty = cProv.getProductCartQty(product.id ?? 0);
+                          if (cQty <= 0) return const SizedBox.shrink();
+                          return Positioned(
+                            top: 6,
+                            left: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF15803D),
+                                borderRadius: BorderRadius.circular(6),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.check_circle_rounded,
+                                      color: Colors.white, size: 10),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    "ADDED ($cQty)",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                       // Wishlist Heart Icon Top Right
                       Positioned(
                         top: 6,
@@ -691,15 +766,50 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    // Swiggy Footer Pill ("FREE / WHOLESALE" + "Visit Store")
+                    // Price and Stepper Button Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (hasDiscount)
+                              Text(
+                                '₹${oldPrice.toStringAsFixed(2)}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  decoration: TextDecoration.lineThrough,
+                                  color: const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            Text(
+                              price > 0 ? '₹${price.toStringAsFixed(2)}' : 'Factory Rate',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                          ],
+                        ),
+                        ProductCartStepperButton(
+                          productId: product.id ?? 0,
+                          brandId: product.brandId?.toString() ?? '1',
+                          attributeId: product.attributeId?.toString(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Swiggy Footer Pill ("FREE DELIVERY" + "Visit Factory")
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFFFFF5F5), Color(0xFFFFFFFF)],
                         ),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFFFEE2E2)),
                       ),
                       child: Row(
@@ -709,9 +819,9 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                             child: Text(
                               hasDiscount && (oldPrice - price) > 0
                                   ? 'SAVE ₹${(oldPrice - price).toStringAsFixed(2)} DIRECT'
-                                  : 'FACTORY WHOLESALE',
+                                  : 'FREE DELIVERY • FACTORY DIRECT',
                               style: GoogleFonts.poppins(
-                                fontSize: 10,
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFFDC2626),
                                 letterSpacing: 0.2,
@@ -727,7 +837,7 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                               Text(
                                 'Visit Factory',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFFEA580C),
                                 ),
@@ -735,7 +845,7 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                               const SizedBox(width: 2),
                               const Icon(
                                 Icons.arrow_forward_rounded,
-                                size: 12,
+                                size: 11,
                                 color: Color(0xFFEA580C),
                               ),
                             ],
@@ -748,6 +858,288 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Swiggy "Top Offers" portrait card showcasing top discounted products matching screenshots.
+class SwiggyTopOfferProductCard extends StatelessWidget {
+  final HomeProduct product;
+  final VoidCallback onTap;
+
+  const SwiggyTopOfferProductCard({
+    super.key,
+    required this.product,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final num price = product.price ?? 0;
+    final num oldPrice = product.oldprice ?? 0;
+    final bool hasDiscount = oldPrice > price && price > 0;
+    final int discountPct =
+        hasDiscount ? (((oldPrice - price) / oldPrice) * 100).round() : 0;
+
+    final String img = (product.image ?? '').trim();
+    final String imgUrl = img.isNotEmpty && img != 'default.png'
+        ? '${AppAssetImage.imageBaseUrl}storage/app/public/$img'
+        : '';
+
+    final String companyLabel = (product.companyName ?? '').trim().isNotEmpty
+        ? product.companyName!.trim()
+        : 'Factory Direct';
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 156,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Image with Scrim, Discount Overlay, Heart, and Pink Pill
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: SizedBox(
+                height: 125,
+                width: 156,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    AppNetworkImage(
+                      imageUrl: imgUrl.isNotEmpty ? imgUrl : null,
+                      width: 156,
+                      height: 125,
+                      fit: BoxFit.cover,
+                      fallbackIcon: Icons.format_paint_outlined,
+                    ),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.12),
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.85),
+                            ],
+                            stops: const [0.0, 0.45, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // In-Cart ADDED or Pink Offer badge at top left
+                    Consumer<CartScreenProvider>(
+                      builder: (context, cProv, _) {
+                        final int cQty = cProv.getProductCartQty(product.id ?? 0);
+                        if (cQty > 0) {
+                          return Positioned(
+                            top: 6,
+                            left: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF15803D),
+                                borderRadius: BorderRadius.circular(6),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 9),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    "ADDED ($cQty)",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        return Positioned(
+                          top: 6,
+                          left: 6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFB7185), Color(0xFFE11D48)],
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              hasDiscount && discountPct > 0 ? '$discountPct% OFF' : 'SPECIAL DEAL',
+                              style: GoogleFonts.poppins(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Heart icon top right
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Consumer<WishlistProvider>(
+                        builder: (context, wishProv, _) {
+                          final bool isWishlisted = wishProv.isWishlisted(product.id);
+                          return InkWell(
+                            onTap: () => toggleProductWishlist(
+                              context,
+                              productId: product.id ?? 0,
+                              colorId: product.colorId ?? '0',
+                            ),
+                            customBorder: const CircleBorder(),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.35),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isWishlisted
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                size: 14,
+                                color: isWishlisted ? const Color(0xFFEF4444) : Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    // Big Discount Banner at bottom of image (matching "70% OFF UPTO ₹140")
+                    Positioned(
+                      bottom: 6,
+                      left: 8,
+                      right: 8,
+                      child: Text(
+                        hasDiscount && discountPct > 0
+                            ? '$discountPct% OFF'
+                            : 'ITEMS AT ₹${price.toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1.05,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Details
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name ?? 'Factory Product',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                      height: 1.15,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF15803D),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.star_rounded, size: 8, color: Colors.white),
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          '4.2 • 24-48 hrs',
+                          style: GoogleFonts.poppins(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    companyLabel,
+                    style: GoogleFonts.poppins(
+                      fontSize: 9.5,
+                      color: const Color(0xFF6B7280),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '₹${price.toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      ProductCartStepperButton(
+                        productId: product.id ?? 0,
+                        brandId: product.brandId?.toString() ?? '1',
+                        attributeId: product.attributeId?.toString(),
+                        isCompact: true,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,7 +1,9 @@
 import 'package:apni_factory/model/brand_screen_model.dart';
 import 'package:apni_factory/model/home_screen_model.dart';
 import 'package:apni_factory/model/user_cart_model.dart';
+import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/provider/wishlist_screen_provider.dart';
+import 'package:apni_factory/res/widgets/product_cart_stepper_button.dart';
 import 'package:apni_factory/res/widgets/swiggy_home_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -132,8 +134,11 @@ void main() {
       );
 
       await tester.pumpWidget(
-        ChangeNotifierProvider<WishlistProvider>(
-          create: (_) => WishlistProvider(),
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<WishlistProvider>(create: (_) => WishlistProvider()),
+            ChangeNotifierProvider<CartScreenProvider>(create: (_) => CartScreenProvider()),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: SwiggyHorizontalFeedCard(
@@ -182,6 +187,88 @@ void main() {
       await tester.tap(find.text('SKY PRODUCTS'));
       await tester.pump();
       expect(tapped, isTrue);
+    });
+
+    testWidgets('ProductCartStepperButton renders ADD button and handles tap',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<CartScreenProvider>(
+          create: (_) => CartScreenProvider(),
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ProductCartStepperButton(
+                productId: 77,
+                brandId: '1',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('ADD'), findsOneWidget);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+    });
+    testWidgets('SwiggyHorizontalFeedCard displays ADDED (2) badge and stepper when product in cart',
+        (WidgetTester tester) async {
+      final cartProv = CartScreenProvider();
+      final sampleCartJson = {
+        "status": 200,
+        "message": "Cart Details",
+        "data": {
+          "Paint": [
+            [
+              {
+                "cartid": 10,
+                "productid": 88,
+                "productname": "Weather Shield Exterior",
+                "productimage": "sample.png",
+                "company_id": 1,
+                "company_name": "CHOUDHARY CHEMICALS",
+                "attributedata": [
+                  {
+                    "attributeid": 101,
+                    "productattributeid": 55,
+                    "qty": 2,
+                    "prprice": 750.00,
+                    "totalprice": 1500.00,
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      };
+      cartProv.userCartModel = UserCartModel.fromJson(sampleCartJson);
+
+      final product = HomeProduct(
+        id: 88,
+        name: 'Weather Shield Exterior',
+        price: 750.00,
+        companyId: 1,
+        companyName: 'CHOUDHARY CHEMICALS',
+      );
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<CartScreenProvider>.value(value: cartProv),
+            ChangeNotifierProvider<WishlistProvider>(create: (_) => WishlistProvider()),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: SwiggyHorizontalFeedCard(
+                product: product,
+                onTap: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('ADDED (2)'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.byIcon(Icons.remove_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
     });
   });
 }

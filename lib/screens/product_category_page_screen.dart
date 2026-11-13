@@ -5,6 +5,7 @@ import 'package:apni_factory/res/colors.dart';
 import 'package:apni_factory/res/widgets/app_network_image.dart';
 import 'package:apni_factory/res/widgets/app_state_views.dart';
 import 'package:apni_factory/res/widgets/global_cart_container.dart';
+import 'package:apni_factory/res/widgets/product_cart_stepper_button.dart';
 import 'package:apni_factory/screens/cart_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
 import 'package:flutter/material.dart';
@@ -710,55 +711,11 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                           ),
                         ),
 
-                        // Quick Add Button with Animation (Zero Navigation!)
-                        InkWell(
-                          onTap: () {
-                            _handleQuickAdd(
-                              context,
-                              itemKey,
-                              pId,
-                              widget.bid.toString(),
-                              prod.name ?? "Product",
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(6),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isAdded
-                                  ? const Color(0xFF16A34A)
-                                  : AppColors.primaryColor.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: isAdded
-                                    ? const Color(0xFF16A34A)
-                                    : AppColors.primaryColor.withOpacity(0.4),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (isAdded) ...[
-                                  const Icon(Icons.check_rounded,
-                                      size: 11, color: Colors.white),
-                                  const SizedBox(width: 2),
-                                ],
-                                Text(
-                                  isAdded ? "ADDED" : "ADD",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: isAdded
-                                        ? Colors.white
-                                        : AppColors.primaryColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        // Quick Add / Stepper Button
+                        ProductCartStepperButton(
+                          productId: pId,
+                          brandId: widget.bid.toString(),
+                          isCompact: true,
                         ),
                       ],
                     ),
