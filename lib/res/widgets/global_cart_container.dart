@@ -83,7 +83,7 @@ class GlobalCartContainer extends StatelessWidget {
                           ),
                           if (totalAmount > 0)
                             Text(
-                              "\u20B9${totalAmount.toStringAsFixed(0)}",
+                              "\u20B9${totalAmount.toStringAsFixed(2)}",
                               style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontSize: 15,

@@ -599,7 +599,7 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
                         textBaseline: TextBaseline.alphabetic,
                         children: [
                           Text(
-                            "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
+                            "₹${currentPrice?.toStringAsFixed(2) ?? "0.00"}",
                             style: GoogleFonts.poppins(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -618,7 +618,7 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
                           if (hasDiscount) ...[
                             const SizedBox(width: 8),
                             Text(
-                              "₹${oldPrice?.toStringAsFixed(0)}",
+                              "₹${oldPrice?.toStringAsFixed(2) ?? "0.00"}",
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
                                 decoration: TextDecoration.lineThrough,
@@ -1334,7 +1334,7 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      "₹${currentPrice?.toStringAsFixed(0) ?? "0"}",
+                      "₹${currentPrice?.toStringAsFixed(2) ?? "0.00"}",
                       style: GoogleFonts.poppins(
                         fontSize: 19,
                         fontWeight: FontWeight.w800,

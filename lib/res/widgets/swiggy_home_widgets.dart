@@ -558,7 +558,7 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                             ),
                             Text(
                               price > 0
-                                  ? 'AT ₹${price.toStringAsFixed(0)}'
+                                  ? 'AT ₹${price.toStringAsFixed(2)}'
                                   : 'FACTORY RATE',
                               style: GoogleFonts.poppins(
                                 fontSize: 15,
@@ -708,7 +708,7 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                           Flexible(
                             child: Text(
                               hasDiscount && (oldPrice - price) > 0
-                                  ? 'SAVE ₹${(oldPrice - price).toStringAsFixed(0)} DIRECT'
+                                  ? 'SAVE ₹${(oldPrice - price).toStringAsFixed(2)} DIRECT'
                                   : 'FACTORY WHOLESALE',
                               style: GoogleFonts.poppins(
                                 fontSize: 10,

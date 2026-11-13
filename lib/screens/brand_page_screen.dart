@@ -450,7 +450,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                     const SizedBox(height: 3),
                     Text(
                       price > 0
-                          ? '₹${price.toStringAsFixed(0)}'
+                          ? '₹${price.toStringAsFixed(2)}'
                           : 'View Wholesale Price',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
@@ -868,7 +868,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                       children: [
                         Text(
                           price > 0
-                              ? '₹${price.toStringAsFixed(0)}'
+                              ? '₹${price.toStringAsFixed(2)}'
                               : 'View Rate',
                           style: GoogleFonts.poppins(
                             fontSize: 15,
@@ -879,7 +879,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                         if (hasDiscount) ...[
                           const SizedBox(width: 6),
                           Text(
-                            '₹${oldPrice.toStringAsFixed(0)}',
+                            '₹${oldPrice.toStringAsFixed(2)}',
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               decoration: TextDecoration.lineThrough,

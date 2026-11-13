@@ -146,7 +146,7 @@ void main() {
       );
 
       expect(find.text('Weather Shield Exterior'), findsOneWidget);
-      expect(find.text('AT ₹750'), findsOneWidget);
+      expect(find.text('AT ₹750.00'), findsOneWidget);
       expect(find.text('CHOUDHARY CHEMICALS • Jaipur'), findsOneWidget);
       expect(find.text('Visit Factory'), findsOneWidget);
 

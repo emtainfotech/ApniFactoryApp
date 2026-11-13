@@ -702,7 +702,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          "₹${price is int ? price.toString() : (price.toDouble() == price.toInt() ? price.toInt().toString() : price.toStringAsFixed(1))}",
+                          "₹${price.toStringAsFixed(2)}",
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,

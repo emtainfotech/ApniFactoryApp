@@ -47,15 +47,12 @@ class AppNetworkImage extends StatelessWidget {
         placeholder: (context, _) => Container(
           width: width,
           height: height,
-          color: AppColors.greyColor.withOpacity(0.25),
+          color: const Color(0xFFF3F4F6),
           alignment: Alignment.center,
-          child: const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: AppColors.primaryColor,
-            ),
+          child: Icon(
+            fallbackIcon,
+            color: const Color(0xFFD1D5DB),
+            size: (width != null && width! < 60) ? 20 : 28,
           ),
         ),
         errorWidget: (context, _, __) => _fallbackBox(),

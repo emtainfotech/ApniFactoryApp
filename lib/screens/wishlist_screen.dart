@@ -315,7 +315,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             children: [
                               if (hasDiscount)
                                 Text(
-                                  "\u20B9${oldPrice.toStringAsFixed(0)}",
+                                  "\u20B9${oldPrice.toStringAsFixed(2)}",
                                   style: GoogleFonts.poppins(
                                     fontSize: 9.5,
                                     decoration: TextDecoration.lineThrough,
@@ -323,7 +323,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                   ),
                                 ),
                               Text(
-                                "\u20B9${price.toStringAsFixed(0)}",
+                                "\u20B9${price.toStringAsFixed(2)}",
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,

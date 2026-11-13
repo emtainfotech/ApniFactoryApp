@@ -740,7 +740,7 @@ class _CartScreenState extends State<CartScreen> {
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: otherSizes.map((attr) {
-                final String priceText = '₹${attr.price.toInt()}';
+                final String priceText = '₹${attr.price.toStringAsFixed(2)}';
                 final String label = attr.color.isNotEmpty && attr.color != 'Standard'
                     ? '${attr.packSize} (${attr.color})'
                     : attr.packSize;
@@ -922,7 +922,7 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "₹${unitPrice is int ? unitPrice.toString() : (unitPrice.toDouble() == unitPrice.toInt() ? unitPrice.toInt().toString() : unitPrice.toStringAsFixed(2))} / pcs",
+                  "₹${unitPrice.toStringAsFixed(2)} / pcs",
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -1039,7 +1039,7 @@ class _CartScreenState extends State<CartScreen> {
           // Total Row Price
           Expanded(
             child: Text(
-              "₹${rowTotal is int ? rowTotal.toString() : (rowTotal.toDouble() == rowTotal.toInt() ? rowTotal.toInt().toString() : rowTotal.toStringAsFixed(2))}",
+              "₹${rowTotal.toStringAsFixed(2)}",
               textAlign: TextAlign.right,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1314,7 +1314,7 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         Text(
-                          "₹${item.price ?? ""}",
+                          _formatPriceTwoDecimals(item.price),
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -1870,6 +1870,28 @@ class _CartScreenState extends State<CartScreen> {
         ),
       ),
     );
+  }
+
+  String _formatPriceTwoDecimals(dynamic raw) {
+    if (raw == null) return '₹0.00';
+    final String str = raw.toString().trim();
+    if (str.isEmpty) return '₹0.00';
+
+    final match = RegExp(r'^(?:Rs\.?|₹|\$)?\s*([0-9]+(?:\.[0-9]+)?)\s*(.*)$', caseSensitive: false).firstMatch(str);
+    if (match != null) {
+      final numVal = num.tryParse(match.group(1) ?? '');
+      final suffix = (match.group(2) ?? '').trim();
+      if (numVal != null) {
+        final formatted = numVal.toStringAsFixed(2);
+        return suffix.isNotEmpty ? '₹$formatted $suffix' : '₹$formatted';
+      }
+    }
+
+    final parsed = num.tryParse(str.replaceAll(RegExp(r'[^\d.]'), ''));
+    if (parsed != null) {
+      return '₹${parsed.toStringAsFixed(2)}';
+    }
+    return str.startsWith('₹') ? str : '₹$str';
   }
 
   Widget _buildImageFallback() {
