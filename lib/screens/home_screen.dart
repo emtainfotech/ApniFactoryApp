@@ -306,10 +306,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       selectedTier1Tab: _selectedTier1Tab,
                                       onSelectTier1Tab: (idx) {
                                         setState(() => _selectedTier1Tab = idx);
-                                        provider.selectCategory(0);
+                                        provider.selectCategory(0, context: context);
                                       },
                                       onSelectCategory: (catId) {
-                                        provider.selectCategory(catId);
+                                        provider.selectCategory(catId, context: context);
                                       },
                                     ),
                                   ),
@@ -900,14 +900,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const SizedBox(width: 8),
             _buildQuickFilterChip(
               icon: Icons.storefront_rounded,
-              label: "99 Store",
+              label: "99 Factory",
               hasDropdown: false,
               badge: "HOT",
               badgeColor: const Color(0xFFEA580C),
-              isSelected: _activeQuickFilter == '99 Store',
+              isSelected: _activeQuickFilter == '99 Factory',
               onTap: () {
                 setState(() {
-                  _activeQuickFilter = _activeQuickFilter == '99 Store' ? 'All' : '99 Store';
+                  _activeQuickFilter = _activeQuickFilter == '99 Factory' ? 'All' : '99 Factory';
                 });
               },
             ),
@@ -1996,8 +1996,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       }).toList();
     }
 
-    // Dynamic filtering based on Quick Filter Chips (99 Store, Bolt, Factory Direct, Sort)
-    if (_activeQuickFilter == '99 Store') {
+    // Dynamic filtering based on Quick Filter Chips (99 Factory, Bolt, Factory Direct, Sort)
+    if (_activeQuickFilter == '99 Factory') {
       tierFiltered = tierFiltered.where((p) => (p.price?.toDouble() ?? 0.0) <= 999).toList();
     } else if (_activeQuickFilter == 'Bolt') {
       tierFiltered = tierFiltered.where((p) => p.name != null && p.name!.isNotEmpty).toList();
@@ -2017,7 +2017,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         .toList();
     final subcategoriesToShow = (matchingSubcategories.isNotEmpty && selectedId != 0)
         ? matchingSubcategories
-        : allSubcategories.take(10).toList();
+        : allSubcategories;
 
     final brandsToShow = allBrands.take(8).toList();
 

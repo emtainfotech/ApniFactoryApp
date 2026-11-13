@@ -41,7 +41,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
   late BrandScreenProvider _brandProvider;
   int _selectedBrandId = 0; // 0 = All Company Brands
   int _selectedCategoryId = 0; // 0 = All Company Categories
-  final Set<int> _addedProductIds = {};
+  final Set<String> _addedItemKeys = {};
 
   @override
   void initState() {
@@ -90,6 +90,17 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
           final List<BrandCategory> categories = data?.categories ?? [];
           final List<HomeProduct> allProducts = data?.products ?? [];
 
+          final Set<int> brandCategoryIds = _selectedBrandId == 0
+              ? categories.map((c) => c.id ?? 0).toSet()
+              : allProducts
+                  .where((p) => p.brandId == _selectedBrandId && (p.categoryId ?? 0) > 0)
+                  .map((p) => p.categoryId!)
+                  .toSet();
+
+          final List<BrandCategory> visibleCategories = _selectedBrandId == 0
+              ? categories
+              : categories.where((c) => brandCategoryIds.contains(c.id)).toList();
+
           final HomeProduct? spotlightProduct = _resolveSpotlightProduct(
             allProducts: allProducts,
           );
@@ -105,8 +116,8 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
           return Scaffold(
             backgroundColor: const Color(0xFFF8F9FA),
             appBar: StorefrontAppBar(
-              title: companyName.isNotEmpty ? companyName : 'Company Store',
-              subtitle: 'All Brands, Categories & Products • Single Store Order',
+              title: companyName.isNotEmpty ? companyName : 'Company Factory',
+              subtitle: 'All Brands, Categories & Products • Single Factory Order',
               onBack: () {
                 _brandProvider.clearSearch();
                 Navigator.pop(context);
@@ -149,9 +160,9 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                               if (spotlightProduct != null)
                                 _buildSpotlightProductCard(
                                     context, spotlightProduct),
-                              _buildBrandsStrip(context, companyName, brands),
-                              if (categories.isNotEmpty)
-                                _buildCategoriesStrip(categories),
+                              _buildBrandsStrip(context, companyName, brands, allProducts),
+                              if (visibleCategories.isNotEmpty)
+                                _buildCategoriesStrip(visibleCategories),
                               _buildCompanyProductsSection(
                                 context: context,
                                 companyName: companyName,
@@ -274,7 +285,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                                 color: Colors.white, size: 12),
                             const SizedBox(width: 4),
                             Text(
-                              'FACTORY DIRECT STORE',
+                              'FACTORY DIRECT',
                               style: GoogleFonts.poppins(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
@@ -485,7 +496,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
   }
 
   Widget _buildBrandsStrip(
-      BuildContext context, String companyName, List<Brand> brands) {
+      BuildContext context, String companyName, List<Brand> brands, List<HomeProduct> allProducts) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
@@ -541,6 +552,15 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                     isSelected: isSelected,
                     onTap: () => setState(() {
                       _selectedBrandId = isSelected ? 0 : bId;
+                      if (_selectedBrandId != 0) {
+                        final brandCatIds = allProducts
+                            .where((p) => p.brandId == _selectedBrandId && (p.categoryId ?? 0) > 0)
+                            .map((p) => p.categoryId!)
+                            .toSet();
+                        if (!brandCatIds.contains(_selectedCategoryId)) {
+                          _selectedCategoryId = 0;
+                        }
+                      }
                     }),
                     onOpenCatalog: () {
                       Navigator.push(
@@ -947,14 +967,15 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
 
   Widget _buildMenuAddButton(BuildContext context, HomeProduct product) {
     final int pId = product.id ?? 0;
-    final bool isAdded = _addedProductIds.contains(pId);
+    final String itemKey = '${pId}_${product.attributeId ?? 0}';
+    final bool isAdded = _addedItemKeys.contains(itemKey);
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () async {
         if (isAdded || pId <= 0) return;
         HapticFeedback.mediumImpact();
-        setState(() => _addedProductIds.add(pId));
+        setState(() => _addedItemKeys.add(itemKey));
         final cartProv =
             Provider.of<CartScreenProvider>(context, listen: false);
         final bool added = await cartProv.quickAddToCart(
@@ -984,10 +1005,10 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
             ),
           );
           Future.delayed(const Duration(milliseconds: 1500), () {
-            if (mounted) setState(() => _addedProductIds.remove(pId));
+            if (mounted) setState(() => _addedItemKeys.remove(itemKey));
           });
         } else {
-          setState(() => _addedProductIds.remove(pId));
+          setState(() => _addedItemKeys.remove(itemKey));
         }
       },
       child: Container(

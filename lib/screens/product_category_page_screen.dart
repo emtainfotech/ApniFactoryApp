@@ -30,7 +30,7 @@ class ProductCategoryPageScreen extends StatefulWidget {
 }
 
 class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
-  final Set<int> _addedProductIds = {};
+  final Set<String> _addedItemKeys = {};
   final ScrollController _gridScrollController = ScrollController();
 
   @override
@@ -77,13 +77,14 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
 
   void _handleQuickAdd(
     BuildContext context,
+    String itemKey,
     int productId,
     String brandId,
     String productName,
   ) async {
     final cartProvider = Provider.of<CartScreenProvider>(context, listen: false);
     setState(() {
-      _addedProductIds.add(productId);
+      _addedItemKeys.add(itemKey);
     });
 
     final success = await cartProvider.quickAddToCart(
@@ -95,7 +96,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
     if (mounted) {
       if (!success) {
         setState(() {
-          _addedProductIds.remove(productId);
+          _addedItemKeys.remove(itemKey);
         });
       }
       if (success) {
@@ -141,7 +142,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
       Future.delayed(const Duration(milliseconds: 1800), () {
         if (mounted) {
           setState(() {
-            _addedProductIds.remove(productId);
+            _addedItemKeys.remove(itemKey);
           });
         }
       });
@@ -189,9 +190,9 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                     ? brandName
                     : (provider.selectedCategory ?? "Products"));
             final String subtitle = companyName.isNotEmpty && brandName.isNotEmpty
-                ? "$brandName • Single Company Store"
+                ? "$brandName • Single Company Factory"
                 : (companyName.isNotEmpty
-                    ? "Verified Company Store"
+                    ? "Verified Company Factory"
                     : "Wholesale Factory Direct");
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,13 +530,16 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                                       itemBuilder: (context, index) {
                                         final prod = visibleProducts[index];
                                         final int pId = prod.pid ?? 0;
+                                        final String colorId = prod.colorid?.toString() ?? "0";
+                                        final String itemKey = '${pId}_${colorId}_${prod.name ?? ''}';
                                         final bool isAdded =
-                                            _addedProductIds.contains(pId);
+                                            _addedItemKeys.contains(itemKey);
 
                                         return _buildProductCard(
                                           context,
                                           prod,
                                           isAdded,
+                                          itemKey,
                                         );
                                       },
                                     ),
@@ -576,6 +580,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
     BuildContext context,
     dynamic prod,
     bool isAdded,
+    String itemKey,
   ) {
     final int pId = prod.pid ?? 0;
     final String colorId = prod.colorid?.toString() ?? "0";
@@ -710,6 +715,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                           onTap: () {
                             _handleQuickAdd(
                               context,
+                              itemKey,
                               pId,
                               widget.bid.toString(),
                               prod.name ?? "Product",

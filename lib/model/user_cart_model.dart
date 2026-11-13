@@ -128,6 +128,7 @@ class ProductCategory {
   final String productName;
   final String productImage;
   final List<AttributeData> attributeData;
+  final List<AvailableAttribute>? otherAttributes;
 
   ProductCategory({
     required this.cartid,
@@ -135,18 +136,24 @@ class ProductCategory {
     required this.productName,
     required this.productImage,
     required this.attributeData,
+    this.otherAttributes,
   });
 
   // Factory method to parse JSON into ProductCategory
   factory ProductCategory.fromJson(Map<String, dynamic> json) {
     return ProductCategory(
-      cartid: json['cartid'],
-      productid: json['productid'],
-      productName: json['productname'],
-      productImage: json['productimage'],
-      attributeData: (json['attributedata'] as List)
+      cartid: json['cartid'] is int ? json['cartid'] : int.tryParse('${json['cartid'] ?? ''}') ?? 0,
+      productid: json['productid'] is int ? json['productid'] : int.tryParse('${json['productid'] ?? ''}') ?? 0,
+      productName: json['productname'] ?? '',
+      productImage: json['productimage'] ?? '',
+      attributeData: (json['attributedata'] as List? ?? [])
           .map((item) => AttributeData.fromJson(item))
           .toList(),
+      otherAttributes: json['other_attributes'] != null
+          ? (json['other_attributes'] as List)
+              .map((item) => AvailableAttribute.fromJson(item))
+              .toList()
+          : null,
     );
   }
 
@@ -158,6 +165,44 @@ class ProductCategory {
       'productname': productName,
       'productimage': productImage,
       'attributedata': attributeData.map((item) => item.toJson()).toList(),
+      if (otherAttributes != null)
+        'other_attributes': otherAttributes!.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class AvailableAttribute {
+  final int id;
+  final int productId;
+  final String packSize;
+  final num price;
+  final String color;
+
+  AvailableAttribute({
+    required this.id,
+    required this.productId,
+    required this.packSize,
+    required this.price,
+    required this.color,
+  });
+
+  factory AvailableAttribute.fromJson(Map<String, dynamic> json) {
+    return AvailableAttribute(
+      id: json['id'] is int ? json['id'] : int.tryParse('${json['id'] ?? ''}') ?? 0,
+      productId: json['product_id'] is int ? json['product_id'] : int.tryParse('${json['product_id'] ?? ''}') ?? 0,
+      packSize: json['pack_size']?.toString() ?? '1 Unit',
+      price: num.tryParse('${json['price'] ?? ''}') ?? (json['price'] is num ? json['price'] : 0),
+      color: json['color']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'product_id': productId,
+      'pack_size': packSize,
+      'price': price,
+      'color': color,
     };
   }
 }

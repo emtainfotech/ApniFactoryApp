@@ -38,9 +38,16 @@ class HomeScreenProvider extends ChangeNotifier {
   int moreProductsPage = 1;
   int selectedMainCategoryId = 0; // 0 for "All"
 
-  void selectCategory(int id) {
-    selectedMainCategoryId = id;
+  void selectCategory(int id, {BuildContext? context}) {
+    if (selectedMainCategoryId == id && id != 0) {
+      selectedMainCategoryId = 0;
+    } else {
+      selectedMainCategoryId = id;
+    }
     notifyListeners();
+    if (context != null && context.mounted) {
+      homeScreen(context: context, maincategoryId: selectedMainCategoryId, isSilent: true);
+    }
   }
 
   int current = 0;
@@ -53,11 +60,16 @@ class HomeScreenProvider extends ChangeNotifier {
   String? userEmail;
   Future<void> homeScreen({
     required BuildContext context,
+    int? maincategoryId,
+    bool isSilent = false,
   }) async {
+    final int targetCatId = maincategoryId ?? selectedMainCategoryId;
     try {
-      loadingHomeScreen = true;
-      notifyListeners();
-      homeScreenModel = await CreatorApiServices.homeScreenDetails(context);
+      if (!isSilent) {
+        loadingHomeScreen = true;
+        notifyListeners();
+      }
+      homeScreenModel = await CreatorApiServices.homeScreenDetails(context, maincategoryId: targetCatId);
 
       if (homeScreenModel != null && homeScreenModel!.code == 100) {
         slider = homeScreenModel?.data?.slider;

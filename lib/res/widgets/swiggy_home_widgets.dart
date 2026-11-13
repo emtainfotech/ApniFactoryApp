@@ -725,7 +725,7 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Visit Store',
+                                'Visit Factory',
                                 style: GoogleFonts.poppins(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,

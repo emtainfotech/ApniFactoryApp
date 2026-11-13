@@ -291,14 +291,17 @@ class CreatorApiServices {
   }
 
   static Future<HomescreenModel?> homeScreenDetails(
-    BuildContext context,
-  ) async {
+    BuildContext context, {
+    int maincategoryId = 0,
+  }) async {
     final Dio dio = ApiClient.instance.dio;
     String userId = await SharedPref.getUserLoginId();
     try {
-      Response response = await dio.get(
-        "${ApiEndPoint.homeScreenApi}?userid=${userId}",
-      );
+      String url = "${ApiEndPoint.homeScreenApi}?userid=${userId}";
+      if (maincategoryId > 0) {
+        url += "&maincategory_id=$maincategoryId";
+      }
+      Response response = await dio.get(url);
 
       _log("HomeScreen response is ${response.data.toString()}");
 

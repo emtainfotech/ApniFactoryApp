@@ -148,7 +148,7 @@ void main() {
       expect(find.text('Weather Shield Exterior'), findsOneWidget);
       expect(find.text('AT ₹750'), findsOneWidget);
       expect(find.text('CHOUDHARY CHEMICALS • Jaipur'), findsOneWidget);
-      expect(find.text('Visit Store'), findsOneWidget);
+      expect(find.text('Visit Factory'), findsOneWidget);
 
       await tester.tap(find.text('Weather Shield Exterior'));
       await tester.pump();
@@ -185,3 +185,4 @@ void main() {
     });
   });
 }
+

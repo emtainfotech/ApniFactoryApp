@@ -29,12 +29,13 @@ class Data {
   List<String>? advertisement;
   List<Company>? company;
   List<Category>? category;
+  List<CategoryScreenSubcategory>? subcategory;
   List<String>? slider;
 
-  Data({this.advertisement, this.company, this.category, this.slider});
+  Data({this.advertisement, this.company, this.category, this.subcategory, this.slider});
 
   Data.fromJson(Map<String, dynamic> json) {
-    advertisement = json['advertisement'].cast<String>();
+    advertisement = json['advertisement'] != null ? json['advertisement'].cast<String>() : [];
     if (json['company'] != null) {
       company = <Company>[];
       json['company'].forEach((v) {
@@ -47,7 +48,13 @@ class Data {
         category!.add(new Category.fromJson(v));
       });
     }
-    slider = json['slider'].cast<String>();
+    if (json['subcategory'] != null) {
+      subcategory = <CategoryScreenSubcategory>[];
+      json['subcategory'].forEach((v) {
+        subcategory!.add(CategoryScreenSubcategory.fromJson(v));
+      });
+    }
+    slider = json['slider'] != null ? json['slider'].cast<String>() : [];
   }
 
   Map<String, dynamic> toJson() {
@@ -59,7 +66,38 @@ class Data {
     if (this.category != null) {
       data['category'] = this.category!.map((v) => v.toJson()).toList();
     }
+    if (this.subcategory != null) {
+      data['subcategory'] = this.subcategory!.map((v) => v.toJson()).toList();
+    }
     data['slider'] = this.slider;
+    return data;
+  }
+}
+
+class CategoryScreenSubcategory {
+  String? name;
+  String? image;
+  int? cid;
+  int? scid;
+  int? mid;
+
+  CategoryScreenSubcategory({this.name, this.image, this.cid, this.scid, this.mid});
+
+  CategoryScreenSubcategory.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    image = json['image'];
+    cid = json['cid'];
+    scid = json['scid'];
+    mid = json['mid'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['name'] = name;
+    data['image'] = image;
+    data['cid'] = cid;
+    data['scid'] = scid;
+    data['mid'] = mid;
     return data;
   }
 }

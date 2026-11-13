@@ -204,7 +204,7 @@ class HomeProduct {
   });
 
   HomeProduct.fromJson(Map<String, dynamic> json) {
-    id = int.tryParse('${json['id'] ?? ''}');
+    id = int.tryParse('${json['id'] ?? json['product_id'] ?? json['pid'] ?? ''}');
     name = json['name'];
     image = json['image'];
     categoryId = int.tryParse('${json['category_id'] ?? ''}');

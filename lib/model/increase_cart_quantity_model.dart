@@ -2,7 +2,7 @@ class IncreaseCartQtyModel {
   bool? status;
   int? code;
   String? msg;
-  int? grandtotal;
+  num? grandtotal;
 
   IncreaseCartQtyModel({this.status, this.code, this.msg, this.grandtotal});
 
@@ -10,11 +10,12 @@ class IncreaseCartQtyModel {
     status = json['status'];
     code = json['code'];
     msg = json['msg'];
-    grandtotal = json['grandtotal'];
+    grandtotal = num.tryParse('${json['grandtotal'] ?? ''}') ??
+        (json['grandtotal'] is num ? json['grandtotal'] : null);
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     data['status'] = this.status;
     data['code'] = this.code;
     data['msg'] = this.msg;

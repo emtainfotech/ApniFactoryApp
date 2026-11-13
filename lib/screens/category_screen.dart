@@ -1,7 +1,9 @@
+import 'package:apni_factory/model/category_screen_model.dart';
 import 'package:apni_factory/provider/cart_screen_provider.dart';
 import 'package:apni_factory/provider/category_screen_provider.dart';
 import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/colors.dart';
+import 'package:apni_factory/res/widgets/app_network_image.dart';
 import 'package:apni_factory/res/widgets/circular_progress_indicator_widget.dart';
 import 'package:apni_factory/res/widgets/global_cart_container.dart';
 import 'package:apni_factory/screens/brand_page_screen.dart';
@@ -156,6 +158,10 @@ class _CategoryScreenState extends State<CategoryScreen>
 
                           // 3. Subcategories Grid Section ("We Deal Into" sub-items)
                           _buildCategoriesSection(context, categories, height, width),
+
+                          // 3b. Popular Subcategories Strip
+                          if (data?.subcategory != null && data!.subcategory!.isNotEmpty)
+                            _buildSubcategoriesSection(context, data.subcategory!, width),
 
                           // 4. Verified Companies / Manufacturers Section
                           _buildCompaniesSection(context, companies, height, width),
@@ -506,6 +512,114 @@ class _CategoryScreenState extends State<CategoryScreen>
                 ),
               );
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubcategoriesSection(
+      BuildContext context, List<CategoryScreenSubcategory> subcategories, double width) {
+    if (subcategories.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 15,
+                width: 3.5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEA580C),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "Popular Sub-Categories",
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.secondaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 90,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: subcategories.length,
+              itemBuilder: (context, index) {
+                final sub = subcategories[index];
+                final String img = (sub.image ?? '').trim();
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CompanyPageScreen(
+                          cid: sub.cid ?? 0,
+                          scid: sub.scid ?? 0,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 105,
+                    margin: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: AppNetworkImage(
+                            imageUrl: (img.isNotEmpty && img != 'default.png')
+                                ? '${AppAssetImage.imageBaseUrl}storage/app/public/$img'
+                                : null,
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                            fallbackIcon: Icons.category_rounded,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          sub.name ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

@@ -106,7 +106,7 @@ class Product {
     price = json['price'];
     cid = json['cid'];
     categoryname = json['categoryname'];
-    pid = json['pid'];
+    pid = int.tryParse('${json['pid'] ?? json['id'] ?? json['product_id'] ?? ''}');
     color = json['color'];
     hexcode = json['hexcode'];
     hexcodeImage = json['hexcode_image'];

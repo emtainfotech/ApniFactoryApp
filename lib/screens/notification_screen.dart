@@ -358,7 +358,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       case 'category':
         return 'Explore Category';
       case 'brand':
-        return 'View Brand Store';
+        return 'View Brand Factory';
       case 'coupon':
         return 'View Offers';
       case 'orders':

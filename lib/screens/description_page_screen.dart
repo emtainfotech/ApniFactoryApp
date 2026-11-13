@@ -1262,7 +1262,7 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Store",
+                      "Factory",
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,

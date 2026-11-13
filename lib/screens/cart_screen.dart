@@ -9,6 +9,7 @@ import 'package:apni_factory/screens/brand_page_screen.dart';
 import 'package:apni_factory/screens/description_page_screen.dart';
 import 'package:apni_factory/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'checkout_screen.dart';
@@ -687,6 +688,164 @@ class _CartScreenState extends State<CartScreen> {
               );
             }).toList(),
           ),
+
+          if (product.otherAttributes != null && product.otherAttributes!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _buildOtherSizesSection(context, provider, product),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Horizontal chips displaying other available pack sizes for this product with instant ADD button
+  Widget _buildOtherSizesSection(
+    BuildContext context,
+    CartScreenProvider provider,
+    ProductCategory product,
+  ) {
+    final otherSizes = product.otherAttributes ?? [];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.add_shopping_cart_rounded,
+                size: 13,
+                color: Color(0xFFEA580C),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                "Available Pack Sizes / Add Other Sizes",
+                style: GoogleFonts.poppins(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF334155),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: otherSizes.map((attr) {
+                final String priceText = '₹${attr.price.toInt()}';
+                final String label = attr.color.isNotEmpty && attr.color != 'Standard'
+                    ? '${attr.packSize} (${attr.color})'
+                    : attr.packSize;
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            label,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          Text(
+                            priceText,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF15803D),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () async {
+                          HapticFeedback.mediumImpact();
+                          final success = await provider.quickAddToCart(
+                            context: context,
+                            productId: product.productid.toString(),
+                            brandId: "0",
+                            attributeId: attr.id.toString(),
+                          );
+                          if (success && context.mounted) {
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "${attr.packSize} added to cart",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                backgroundColor: const Color(0xFF16A34A),
+                                duration: const Duration(seconds: 1),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.add, size: 11, color: Colors.white),
+                              Text(
+                                "ADD",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -910,7 +1069,7 @@ class _CartScreenState extends State<CartScreen> {
     final int companyId = cartModel.activeCompanyId;
     final String companyName = cartModel.activeCompanyName.isNotEmpty
         ? cartModel.activeCompanyName
-        : 'Factory Store';
+        : 'Company Factory';
     final String city = (cartModel.companyCity ?? '').trim();
 
     return Container(
@@ -991,7 +1150,7 @@ class _CartScreenState extends State<CartScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "Go to Store",
+                    "Go to Factory",
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -1074,7 +1233,7 @@ class _CartScreenState extends State<CartScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Visit Store",
+                          "Visit Factory",
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,

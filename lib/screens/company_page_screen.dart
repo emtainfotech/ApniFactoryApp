@@ -72,7 +72,7 @@ class _CompanyPageScreenState extends State<CompanyPageScreen> {
             backgroundColor: const Color(0xFFF8F9FA),
             appBar: StorefrontAppBar(
               title: appBarTitle,
-              subtitle: 'Single-Company Storefront • Pick a Factory',
+              subtitle: 'Single-Company Factory • Pick a Factory',
               onBack: () {
                 _companyProvider.clearSearch();
                 Navigator.pop(context);
@@ -239,7 +239,7 @@ class _CompanyPageScreenState extends State<CompanyPageScreen> {
                   border: Border.all(color: const Color(0xFFFED7AA)),
                 ),
                 child: Text(
-                  '${companies.length} ${companies.length == 1 ? 'Store' : 'Stores'}',
+                  '${companies.length} ${companies.length == 1 ? 'Factory' : 'Factories'}',
                   style: GoogleFonts.poppins(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
@@ -367,7 +367,7 @@ class _CompanyPageScreenState extends State<CompanyPageScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    company.name ?? 'Factory Store',
+                    company.name ?? 'Company Factory',
                     style: GoogleFonts.poppins(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
