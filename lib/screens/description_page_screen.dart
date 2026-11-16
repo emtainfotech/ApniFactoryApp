@@ -404,7 +404,7 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
             SizedBox(
               height: 250,
               child: Image.network(
-                "${AppAssetImage.imageBaseUrl}storage/app/public/${images[0]}",
+                AppAssetImage.buildStorageImageUrl(images[0]),
                 fit: BoxFit.contain,
                 cacheWidth: 800,
                 errorBuilder: (context, error, stackTrace) => Image.asset(
@@ -419,7 +419,7 @@ class _DescriptionPageScreenState extends State<DescriptionPageScreen>
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Image.network(
-                    "${AppAssetImage.imageBaseUrl}storage/app/public/$img",
+                    AppAssetImage.buildStorageImageUrl(img),
                     fit: BoxFit.contain,
                     cacheWidth: 800,
                     errorBuilder: (context, error, stackTrace) => Image.asset(

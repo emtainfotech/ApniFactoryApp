@@ -52,8 +52,13 @@ class ProductDetailProvider extends ChangeNotifier {
         //     }).toList() ??
         //     [];
         // log(attributes.toString());
-        imageList =
+        final List<String> fetched =
             List<String>.from(productDetailModel?.data?.multipleimages ?? []);
+        if (fetched.isEmpty && productDetailModel?.data?.image != null && productDetailModel!.data!.image!.trim().isNotEmpty) {
+          imageList = [productDetailModel!.data!.image!.trim()];
+        } else {
+          imageList = fetched;
+        }
 
         notifyListeners();
       } else {

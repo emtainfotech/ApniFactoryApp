@@ -88,7 +88,11 @@ class Data {
     title = json['title'];
     image = json['image'];
     description = json['description'];
-    multipleimages = json['multipleimages'].cast<String>();
+    if (json['multipleimages'] != null && json['multipleimages'] is List) {
+      multipleimages = (json['multipleimages'] as List).map((e) => e.toString()).toList();
+    } else {
+      multipleimages = [];
+    }
     status = json['status'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
