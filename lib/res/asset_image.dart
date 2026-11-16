@@ -10,11 +10,14 @@ class AppAssetImage {
   // Resolves to https://cyan-eagle-893359.hostingersite.com/ in prod
   static String get imageBaseUrl => ApiConfig.webBaseUrl;
 
-  /// Builds a clean, deduplicated storage URL for network images
+  /// Builds a clean, deduplicated, and percent-encoded storage URL for network images
   static String buildStorageImageUrl(String? raw) {
     if (raw == null || raw.trim().isEmpty) return '';
     String clean = raw.trim();
-    if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
+    if (clean == 'default.png' || clean == 'null' || clean == 'NA') return '';
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      return Uri.encodeFull(clean);
+    }
     while (clean.startsWith('/')) {
       clean = clean.substring(1);
     }
@@ -27,6 +30,6 @@ class AppAssetImage {
     }
     String base = imageBaseUrl;
     if (!base.endsWith('/')) base += '/';
-    return "${base}storage/app/public/$clean";
+    return Uri.encodeFull("${base}storage/app/public/$clean");
   }
 }

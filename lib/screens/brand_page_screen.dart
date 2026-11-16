@@ -164,6 +164,12 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                               _buildBrandsStrip(context, companyName, brands, allProducts),
                               if (visibleCategories.isNotEmpty)
                                 _buildCategoriesStrip(visibleCategories),
+                              _buildCatalogMatrixBanner(
+                                context: context,
+                                companyName: companyName,
+                                brandId: _selectedBrandId,
+                                categoryId: _selectedCategoryId,
+                              ),
                               _buildCompanyProductsSection(
                                 context: context,
                                 companyName: companyName,
@@ -244,8 +250,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
           children: [
             if (bannerImage.isNotEmpty)
               AppNetworkImage(
-                imageUrl:
-                    '${AppAssetImage.imageBaseUrl}storage/app/public/$bannerImage',
+                imageUrl: AppAssetImage.buildStorageImageUrl(bannerImage),
                 fit: BoxFit.cover,
                 fallbackIcon: Icons.factory_outlined,
               ),
@@ -409,9 +414,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                   height: 66,
                   color: const Color(0xFFF9FAFB),
                   child: AppNetworkImage(
-                    imageUrl: img.isNotEmpty && img != 'default.png'
-                        ? '${AppAssetImage.imageBaseUrl}storage/app/public/$img'
-                        : null,
+                    imageUrl: AppAssetImage.buildStorageImageUrl(img),
                     width: 66,
                     height: 66,
                     fit: BoxFit.cover,
@@ -624,9 +627,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                     ? const Icon(Icons.layers_rounded,
                         color: Color(0xFFEA580C), size: 24)
                     : AppNetworkImage(
-                        imageUrl: img.isNotEmpty && img != 'default.png'
-                            ? '${AppAssetImage.imageBaseUrl}storage/app/public/$img'
-                            : null,
+                        imageUrl: AppAssetImage.buildStorageImageUrl(img),
                         width: 48,
                         height: 48,
                         fit: BoxFit.contain,
@@ -699,6 +700,122 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCatalogMatrixBanner({
+    required BuildContext context,
+    required String companyName,
+    required int brandId,
+    required int categoryId,
+  }) {
+    final String activeLabel = brandId > 0
+        ? 'Filtered by Selected Brand'
+        : (categoryId > 0 ? 'Filtered by Selected Category' : 'Complete Factory Rate Matrix');
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEA580C), Color(0xFFC2410C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFEA580C).withOpacity(0.28),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProductCategoryPageScreen(
+                  bid: brandId,
+                  cid: categoryId > 0 ? categoryId : widget.cid,
+                  scid: widget.scid,
+                  cmpid: widget.cmpid,
+                ),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.20),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.table_chart_rounded, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Factory Catalogue & Rate Matrix',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.25),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'LIVE',
+                              style: GoogleFonts.poppins(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        brandId > 0 || categoryId > 0
+                            ? '$activeLabel • Tap to view rate matrix'
+                            : 'View catalog matrix & multi-pack rates for ${companyName.isNotEmpty ? companyName : "Factory"}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: Colors.white.withOpacity(0.92),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -909,9 +1026,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                             height: 92,
                             color: const Color(0xFFF9FAFB),
                             child: AppNetworkImage(
-                              imageUrl: img.isNotEmpty && img != 'default.png'
-                                  ? '${AppAssetImage.imageBaseUrl}storage/app/public/$img'
-                                  : null,
+                              imageUrl: AppAssetImage.buildStorageImageUrl(img),
                               width: 100,
                               height: 92,
                               fit: BoxFit.cover,

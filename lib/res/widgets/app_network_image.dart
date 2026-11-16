@@ -1,3 +1,4 @@
+import 'package:apni_factory/res/asset_image.dart';
 import 'package:apni_factory/res/colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +24,7 @@ class AppNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String url = (imageUrl ?? '').trim();
+    final String url = AppAssetImage.buildStorageImageUrl(imageUrl);
     Widget child;
 
     if (url.isEmpty ||

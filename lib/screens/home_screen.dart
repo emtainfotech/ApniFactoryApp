@@ -226,7 +226,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     children: [
                                       _buildTopHeader(context, provider, height, width),
                                       _buildModernSearchBar(context, provider, height, width),
-                                      _buildSearchBarPromoPopup(context, provider, width),
                                       _buildSearchResults(context, provider, height, width),
                                       const SizedBox(height: 160),
                                     ],
@@ -240,7 +239,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     children: [
                                       _buildTopHeader(context, provider, height, width),
                                       _buildModernSearchBar(context, provider, height, width),
-                                      _buildSearchBarPromoPopup(context, provider, width),
                                       _buildHeroBannerSlider(context, provider, height, width),
                                       const SizedBox(height: 6),
                                       // "What's on your mind?" Section Title
@@ -306,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   shadowColor: Colors.black.withOpacity(0.08),
                                   toolbarHeight: 0,
                                   bottom: PreferredSize(
-                                    preferredSize: const Size.fromHeight(136),
+                                    preferredSize: const Size.fromHeight(96),
                                     child: _buildStickyBarContent(
                                       categories: provider.homeScreenModel?.data?.maincategory ?? [],
                                       selectedId: provider.selectedMainCategoryId,
@@ -398,7 +396,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             width: width,
                                             shelfIndex: 3,
                                           ),
-                                        _buildPopularBrandsSection(context, provider, height, width),
                                       ],
                                       const SizedBox(height: 160),
                                     ],
@@ -1117,7 +1114,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
                 ),
                 child: Image.network(
-                  "${AppAssetImage.imageBaseUrl}storage/app/public/$item",
+                  AppAssetImage.buildStorageImageUrl(item),
                   fit: BoxFit.cover,
                   width: double.infinity,
                   cacheWidth: 650,
@@ -1132,7 +1129,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             );
           }).toList(),
           options: CarouselOptions(
-            height: 145,
+            height: 215,
             viewportFraction: 0.90,
             enlargeCenterPage: true,
             enlargeFactor: 0.16,
@@ -1562,7 +1559,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                         child: Image.network(
-                          "${AppAssetImage.imageBaseUrl}storage/app/public/${product.image}",
+                          AppAssetImage.buildStorageImageUrl(product.image),
                           fit: BoxFit.cover,
                           cacheWidth: 380,
                           cacheHeight: 380,
@@ -2048,6 +2045,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const SizedBox(height: 10),
           ],
 
+          // Popular Paint Brands - positioned between Company and Products
+          _buildPopularBrandsSection(context, provider, height, width),
+
           // 2. Section Title & Subtitle + View Toggle (Swiggy Feed vs 2-Column Grid)
           Padding(
             padding: const EdgeInsets.only(bottom: 12, top: 4),
@@ -2238,7 +2238,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               borderRadius: BorderRadius.circular(10),
                               child: (sub.image != null && sub.image!.isNotEmpty)
                                   ? Image.network(
-                                      "${AppAssetImage.imageBaseUrl}storage/app/public/${sub.image}",
+                                      AppAssetImage.buildStorageImageUrl(sub.image),
                                       fit: BoxFit.cover,
                                       cacheWidth: 100,
                                       errorBuilder: (context, error, stackTrace) => const Icon(
@@ -2391,10 +2391,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       width: 44,
                                       color: const Color(0xFFFFF7ED),
                                       child: AppNetworkImage(
-                                        imageUrl: (comp.photo ?? '').trim().isNotEmpty &&
-                                                comp.photo != 'default.png'
-                                            ? '${AppAssetImage.imageBaseUrl}storage/app/public/${comp.photo}'
-                                            : null,
+                                        imageUrl: AppAssetImage.buildStorageImageUrl(comp.photo),
                                         width: 44,
                                         height: 44,
                                         fit: BoxFit.cover,
@@ -2554,7 +2551,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     brand.image!.isNotEmpty &&
                                     brand.image != "default.png")
                                 ? Image.network(
-                                    "${AppAssetImage.imageBaseUrl}storage/app/public/${brand.image}",
+                                    AppAssetImage.buildStorageImageUrl(brand.image),
                                     fit: BoxFit.cover,
                                     cacheWidth: 150,
                                     cacheHeight: 150,
@@ -3226,63 +3223,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     required ValueChanged<int> onSelectCategory,
   }) {
     return Container(
-      height: 136,
+      height: 96,
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
           bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Tier 1: Horizontal tabs (:: ALL, UNDER ₹999 HOT, FACTORY DIRECT, etc.)
-          Container(
-            height: 38,
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1)),
-            ),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              physics: const BouncingScrollPhysics(),
-              children: [
-                _buildStickyTab(Icons.grid_view_rounded, "ALL", 0, selectedTier1Tab, onSelectTier1Tab),
-                _buildStickyTab(Icons.local_offer_outlined, "UNDER \u20B9999", 1, selectedTier1Tab, onSelectTier1Tab, badge: "HOT"),
-                _buildStickyTab(Icons.verified_rounded, "FACTORY DIRECT", 2, selectedTier1Tab, onSelectTier1Tab),
-                _buildStickyTab(Icons.inventory_2_outlined, "BULK PACKS", 3, selectedTier1Tab, onSelectTier1Tab),
-                _buildStickyTab(Icons.local_shipping_outlined, "FAST DISPATCH", 4, selectedTier1Tab, onSelectTier1Tab),
-              ],
-            ),
-          ),
-          // Tier 2: Category Circular Platter Avatars (Swiggy style)
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: categories.length + 1,
-              itemBuilder: (context, index) {
-                final bool isAll = index == 0;
-                final cat = isAll ? null : categories[index - 1];
-                final int catId = isAll ? 0 : (cat.id ?? 0);
-                final bool isSelected = selectedId == catId;
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: categories.length + 1,
+        itemBuilder: (context, index) {
+          final bool isAll = index == 0;
+          final cat = isAll ? null : categories[index - 1];
+          final int catId = isAll ? 0 : (cat.id ?? 0);
+          final bool isSelected = selectedId == catId;
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: SwiggyCategoryPlatterChip(
-                    label: isAll ? 'All Items' : (cat.name ?? ''),
-                    imagePath: isAll ? null : cat.image,
-                    isAll: isAll,
-                    isSelected: isSelected,
-                    onTap: () => onSelectCategory(catId),
-                  ),
-                );
-              },
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: SwiggyCategoryPlatterChip(
+              label: isAll ? 'All Items' : (cat.name ?? ''),
+              imagePath: isAll ? null : cat.image,
+              isAll: isAll,
+              isSelected: isSelected,
+              onTap: () => onSelectCategory(catId),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

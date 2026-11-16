@@ -460,9 +460,7 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
         hasDiscount ? (((oldPrice - price) / oldPrice) * 100).round() : 0;
 
     final String img = (product.image ?? '').trim();
-    final String imgUrl = img.isNotEmpty && img != 'default.png'
-        ? '${AppAssetImage.imageBaseUrl}storage/app/public/$img'
-        : '';
+    final String imgUrl = AppAssetImage.buildStorageImageUrl(img);
 
     final String companyLabel = (product.companyName ?? '').trim().isNotEmpty
         ? product.companyName!.trim()
@@ -706,7 +704,7 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      product.name ?? 'Factory Product',
+                      companyLabel,
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -756,7 +754,7 @@ class SwiggyHorizontalFeedCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     Text(
-                      '$companyLabel • $cityLabel',
+                      '${product.name ?? product.brandName ?? 'Factory Product'} • $cityLabel',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -884,9 +882,7 @@ class SwiggyTopOfferProductCard extends StatelessWidget {
         hasDiscount ? (((oldPrice - price) / oldPrice) * 100).round() : 0;
 
     final String img = (product.image ?? '').trim();
-    final String imgUrl = img.isNotEmpty && img != 'default.png'
-        ? '${AppAssetImage.imageBaseUrl}storage/app/public/$img'
-        : '';
+    final String imgUrl = AppAssetImage.buildStorageImageUrl(img);
 
     final String companyLabel = (product.companyName ?? '').trim().isNotEmpty
         ? product.companyName!.trim()
@@ -1070,7 +1066,7 @@ class SwiggyTopOfferProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.name ?? 'Factory Product',
+                    companyLabel,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1107,7 +1103,7 @@ class SwiggyTopOfferProductCard extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    companyLabel,
+                    product.name ?? product.brandName ?? 'Factory Product',
                     style: GoogleFonts.poppins(
                       fontSize: 9.5,
                       color: const Color(0xFF6B7280),
