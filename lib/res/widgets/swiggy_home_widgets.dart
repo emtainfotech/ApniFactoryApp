@@ -142,8 +142,9 @@ class SwiggyCategoryPlatterChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: SizedBox(
-        width: 74,
+        width: 70,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Stack(
@@ -151,9 +152,9 @@ class SwiggyCategoryPlatterChip extends StatelessWidget {
               children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  width: 60,
-                  height: 60,
-                  padding: const EdgeInsets.all(2.5),
+                  width: 52,
+                  height: 52,
+                  padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white,
@@ -161,14 +162,14 @@ class SwiggyCategoryPlatterChip extends StatelessWidget {
                       color: isSelected
                           ? const Color(0xFFEA580C)
                           : const Color(0xFFE5E7EB),
-                      width: isSelected ? 2.2 : 1.2,
+                      width: isSelected ? 2.0 : 1.2,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: isSelected
                             ? const Color(0xFFEA580C).withOpacity(0.18)
                             : Colors.black.withOpacity(0.05),
-                        blurRadius: 6,
+                        blurRadius: 5,
                         offset: const Offset(0, 2),
                       ),
                     ],
@@ -185,16 +186,14 @@ class SwiggyCategoryPlatterChip extends StatelessWidget {
                             ),
                             child: const Icon(
                               Icons.apps_rounded,
-                              size: 26,
+                              size: 24,
                               color: Color(0xFF78350F),
                             ),
                           )
                         : AppNetworkImage(
-                            imageUrl: img.isNotEmpty && img != 'default.png'
-                                ? '${AppAssetImage.imageBaseUrl}storage/app/public/$img'
-                                : null,
-                            width: 56,
-                            height: 56,
+                            imageUrl: AppAssetImage.buildStorageImageUrl(img),
+                            width: 48,
+                            height: 48,
                             fit: BoxFit.cover,
                             fallbackIcon: getCategoryIcon(label),
                           ),
@@ -205,8 +204,8 @@ class SwiggyCategoryPlatterChip extends StatelessWidget {
                     top: -1,
                     right: -1,
                     child: Container(
-                      width: 18,
-                      height: 18,
+                      width: 17,
+                      height: 17,
                       decoration: BoxDecoration(
                         color: const Color(0xFFEA580C),
                         shape: BoxShape.circle,
@@ -214,25 +213,28 @@ class SwiggyCategoryPlatterChip extends StatelessWidget {
                       ),
                       child: const Icon(
                         Icons.check_rounded,
-                        size: 11,
+                        size: 10,
                         color: Colors.white,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 5),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected
-                    ? const Color(0xFFEA580C)
-                    : const Color(0xFF374151),
+            const SizedBox(height: 3),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? const Color(0xFFEA580C)
+                      : const Color(0xFF374151),
+                ),
               ),
             ),
           ],
@@ -264,9 +266,7 @@ class SwiggyTopOfferCompanyCard extends StatelessWidget {
     final String rawPhoto = (company.photo ?? '').trim().isNotEmpty
         ? company.photo!.trim()
         : (fallbackImage ?? '').trim();
-    final String imgUrl = rawPhoto.isNotEmpty && rawPhoto != 'default.png'
-        ? '${AppAssetImage.imageBaseUrl}storage/app/public/$rawPhoto'
-        : '';
+    final String imgUrl = AppAssetImage.buildStorageImageUrl(rawPhoto);
     final String city = (company.city ?? '').trim().isNotEmpty
         ? company.city!.trim()
         : 'India';

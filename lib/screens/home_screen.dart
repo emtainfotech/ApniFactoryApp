@@ -78,38 +78,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       }
     });
 
-    _heroBannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (mounted && _heroCarouselController.ready) {
-        try {
-          _heroCarouselController.nextPage(
-            duration: const Duration(milliseconds: 650),
-            curve: Curves.easeInOut,
-          );
-        } catch (_) {}
-      }
-    });
-
-    _adSliderTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (mounted) {
-        if (_adSlider1Controller.ready) {
-          try {
-            _adSlider1Controller.nextPage(
-              duration: const Duration(milliseconds: 650),
-              curve: Curves.easeInOut,
-            );
-          } catch (_) {}
-        }
-        if (_adSlider2Controller.ready) {
-          try {
-            _adSlider2Controller.nextPage(
-              duration: const Duration(milliseconds: 650),
-              curve: Curves.easeInOut,
-            );
-          } catch (_) {}
-        }
-      }
-    });
-
     _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -150,8 +118,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _hintTimer?.cancel();
-    _heroBannerTimer?.cancel();
-    _adSliderTimer?.cancel();
     _showGoToTopNotifier.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -304,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   shadowColor: Colors.black.withOpacity(0.08),
                                   toolbarHeight: 0,
                                   bottom: PreferredSize(
-                                    preferredSize: const Size.fromHeight(96),
+                                    preferredSize: const Size.fromHeight(102),
                                     child: _buildStickyBarContent(
                                       categories: provider.homeScreenModel?.data?.maincategory ?? [],
                                       selectedId: provider.selectedMainCategoryId,
@@ -1115,7 +1081,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
                 child: Image.network(
                   AppAssetImage.buildStorageImageUrl(item),
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   width: double.infinity,
                   cacheWidth: 650,
                   errorBuilder: (context, error, stackTrace) => Container(
@@ -1133,7 +1099,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             viewportFraction: 0.90,
             enlargeCenterPage: true,
             enlargeFactor: 0.16,
-            autoPlay: false,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 4),
+            autoPlayAnimationDuration: const Duration(milliseconds: 650),
+            autoPlayCurve: Curves.easeInOut,
             onPageChanged: (index, reason) {
               setState(() {
                 _heroSliderIndex = index;
@@ -1340,8 +1309,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ],
                   ),
                   child: Image.network(
-                    "${AppAssetImage.imageBaseUrl}storage/app/public/$item",
-                    fit: BoxFit.cover,
+                    AppAssetImage.buildStorageImageUrl(item),
+                    fit: BoxFit.contain,
                     width: double.infinity,
                     cacheWidth: 650,
                     errorBuilder: (context, error, stackTrace) => Container(
@@ -1359,7 +1328,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               viewportFraction: 0.90,
               enlargeCenterPage: true,
               enlargeFactor: 0.14,
-              autoPlay: false,
+              autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 4),
+            autoPlayAnimationDuration: const Duration(milliseconds: 650),
+            autoPlayCurve: Curves.easeInOut,
               onPageChanged: (index, reason) => onPageChanged(index),
             ),
           ),
@@ -1716,90 +1688,99 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Title Area (Opens the Product's Company Storefront)
                   InkWell(
                     onTap: () => openCompanyStoreFromProduct(context, product),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (product.brandName != null && product.brandName!.isNotEmpty) ...[
-                          Text(
-                            product.brandName!.toUpperCase(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryColor,
-                              letterSpacing: 0.3,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 1),
-                        ],
                         Text(
-                          product.name ?? "",
+                          (product.companyName ?? '').trim().isNotEmpty
+                              ? product.companyName!.trim()
+                              : 'Factory Direct',
                           style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.secondaryColor,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
                             height: 1.15,
                           ),
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 1.5),
+                        Text(
+                          product.name ?? product.brandName ?? "Factory Product",
+                          style: GoogleFonts.poppins(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF4B5563),
+                            height: 1.15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (product.packSize != null && product.packSize!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: const Color(0xFFE5E7EB)),
+                            ),
+                            child: Text(
+                              product.packSize!,
+                              style: GoogleFonts.poppins(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF4B5563),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  if (product.packSize != null && product.packSize!.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                      margin: const EdgeInsets.only(bottom: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Text(
-                        product.packSize!,
-                        style: GoogleFonts.poppins(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF4B5563),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
                   // Price and ADD Button Row (Completely decoupled from Description navigation)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (hasDiscount)
-                            Text(
-                              "\u20B9${oldPrice.toStringAsFixed(2)}",
-                              style: GoogleFonts.poppins(
-                                fontSize: 9,
-                                decoration: TextDecoration.lineThrough,
-                                color: AppColors.lightText,
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (hasDiscount)
+                              Text(
+                                "₹${oldPrice.toStringAsFixed(2)}",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 8.5,
+                                  decoration: TextDecoration.lineThrough,
+                                  color: AppColors.lightText,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
+                            Text(
+                              "₹${currentPrice?.toStringAsFixed(2) ?? "0.00"}",
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.secondaryColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          Text(
-                            "\u20B9${currentPrice?.toStringAsFixed(2) ?? "0.00"}",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.secondaryColor,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 4),
                       _buildQuickAddButton(context, product),
                     ],
                   ),
@@ -2161,7 +2142,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   crossAxisCount: 2,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  childAspectRatio: 0.63,
+                  childAspectRatio: 0.55,
                 ),
                 itemBuilder: (context, idx) {
                   return _buildBlinkitProductCard(context, productsToShow[idx], isGrid: true);
@@ -2290,7 +2271,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   crossAxisCount: 2,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  childAspectRatio: 0.63,
+                  childAspectRatio: 0.55,
                 ),
                 itemBuilder: (context, idx) {
                   return _buildBlinkitProductCard(context, productsToShow[idx + 2], isGrid: true);
@@ -2453,7 +2434,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   crossAxisCount: 2,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  childAspectRatio: 0.63,
+                  childAspectRatio: 0.55,
                 ),
                 itemBuilder: (context, idx) {
                   return _buildBlinkitProductCard(context, productsToShow[idx + 4], isGrid: true);
@@ -2664,7 +2645,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             itemCount: products.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.63,
+              childAspectRatio: 0.55,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
@@ -3017,7 +2998,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             borderRadius: BorderRadius.circular(11),
                             child: (item.image != null && item.image!.isNotEmpty)
                                 ? Image.network(
-                                    "${AppAssetImage.imageBaseUrl}storage/app/public/${item.image}",
+                                    AppAssetImage.buildStorageImageUrl(item.image),
                                     fit: BoxFit.contain,
                                     errorBuilder: (_, __, ___) => const Center(
                                       child: Icon(Icons.inventory_2_outlined, size: 24, color: Color(0xFFCBD5E1)),
@@ -3223,7 +3204,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     required ValueChanged<int> onSelectCategory,
   }) {
     return Container(
-      height: 96,
+      height: 102,
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -3231,7 +3212,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         itemCount: categories.length + 1,
@@ -3252,62 +3233,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildStickyTab(IconData icon, String label, int index, int selectedIndex, ValueChanged<int> onSelect, {String? badge}) {
-    final bool isSelected = selectedIndex == index;
-    return InkWell(
-      onTap: () => onSelect(index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isSelected ? const Color(0xFFEA580C) : Colors.transparent,
-              width: 2.5,
-            ),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF6B7280),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF4B5563),
-              ),
-            ),
-            if (badge != null) ...[
-              const SizedBox(width: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 3.5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1F2937),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Text(
-                  badge,
-                  style: GoogleFonts.poppins(
-                    fontSize: 7.5,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }

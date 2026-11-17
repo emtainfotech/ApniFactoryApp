@@ -380,7 +380,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                                               subcat.image != "default.png")
                                           ? AppNetworkImage(
                                               imageUrl:
-                                                  "${AppAssetImage.imageBaseUrl}storage/app/public/${subcat.image}",
+                                                  AppAssetImage.buildStorageImageUrl(subcat.image),
                                               width: 48,
                                               height: 48,
                                               fit: BoxFit.cover,
@@ -522,7 +522,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                                       gridDelegate:
                                           const SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount: 2,
-                                        childAspectRatio: 0.58,
+                                        childAspectRatio: 0.54,
                                         crossAxisSpacing: 8,
                                         mainAxisSpacing: 8,
                                       ),
@@ -636,7 +636,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                               prod.image != "default.png")
                           ? AppNetworkImage(
                               imageUrl:
-                                  "${AppAssetImage.imageBaseUrl}storage/app/public/${prod.image}",
+                                  AppAssetImage.buildStorageImageUrl(prod.image),
                               fit: BoxFit.cover,
                               width: 160,
                               fallbackIcon: Icons.format_paint_outlined,
@@ -684,6 +684,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       prod.name ?? "",
@@ -696,21 +697,23 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    const Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          "₹${price.toStringAsFixed(2)}",
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.secondaryColor,
+                        Flexible(
+                          child: Text(
+                            "₹${price.toStringAsFixed(2)}",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.secondaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-
+                        const SizedBox(width: 4),
                         // Quick Add / Stepper Button
                         ProductCartStepperButton(
                           productId: pId,

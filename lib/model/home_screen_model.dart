@@ -181,6 +181,7 @@ class HomeProduct {
   num? price;
   num? oldprice;
   String? colorId;
+  String? colorHex;
   String? packSize;
   int? attributeId;
 
@@ -199,6 +200,7 @@ class HomeProduct {
     this.price,
     this.oldprice,
     this.colorId,
+    this.colorHex,
     this.packSize,
     this.attributeId,
   });
@@ -218,6 +220,7 @@ class HomeProduct {
     price = num.tryParse('${json['price'] ?? ''}') ?? json['price'];
     oldprice = num.tryParse('${json['oldprice'] ?? ''}') ?? json['oldprice'];
     colorId = json['color_id']?.toString() ?? '0';
+    colorHex = json['hexcode'] ?? json['hex_code'] ?? json['color_hex'] ?? json['color'];
     packSize = json['pack_size'];
     attributeId = int.tryParse('${json['attribute_id'] ?? ''}');
   }
@@ -238,6 +241,7 @@ class HomeProduct {
     data['price'] = price;
     data['oldprice'] = oldprice;
     data['color_id'] = colorId;
+    data['color_hex'] = colorHex;
     data['pack_size'] = packSize;
     data['attribute_id'] = attributeId;
     return data;

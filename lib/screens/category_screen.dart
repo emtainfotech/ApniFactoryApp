@@ -449,7 +449,7 @@ class _CategoryScreenState extends State<CategoryScreen>
                             padding: const EdgeInsets.all(8),
                             child: cat.image != null && cat.image!.isNotEmpty
                                 ? Image.network(
-                                    "${AppAssetImage.imageBaseUrl}storage/app/public/${cat.image}",
+                                    AppAssetImage.buildStorageImageUrl(cat.image),
                                     fit: BoxFit.contain,
                                     cacheWidth: 350,
                                     errorBuilder: (context, error, stackTrace) => Image.asset(

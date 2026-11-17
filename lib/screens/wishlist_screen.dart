@@ -113,7 +113,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.65,
+                childAspectRatio: 0.55,
               ),
               itemCount: items.length,
               itemBuilder: (context, index) {
@@ -192,7 +192,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                       color: const Color(0xFFF8FAFC),
                       child: (item.image != null && item.image!.isNotEmpty)
                           ? Image.network(
-                              "${AppAssetImage.imageBaseUrl}storage/app/public/${item.image}",
+                              AppAssetImage.buildStorageImageUrl(item.image),
                               fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) => const Center(
                                 child: Icon(Icons.inventory_2_outlined, size: 36, color: Color(0xFFCBD5E1)),

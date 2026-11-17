@@ -164,17 +164,13 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                               _buildBrandsStrip(context, companyName, brands, allProducts),
                               if (visibleCategories.isNotEmpty)
                                 _buildCategoriesStrip(visibleCategories),
-                              _buildCatalogMatrixBanner(
-                                context: context,
-                                companyName: companyName,
-                                brandId: _selectedBrandId,
-                                categoryId: _selectedCategoryId,
-                              ),
-                              _buildCompanyProductsSection(
+                              _buildFactoryCatalogueMatrixSection(
                                 context: context,
                                 companyName: companyName,
                                 products: filteredProducts,
                                 totalCount: allProducts.length,
+                                brandId: _selectedBrandId,
+                                categoryId: _selectedCategoryId,
                               ),
                               _buildBrowseAllBanner(context, brands),
                             ],
@@ -350,10 +346,12 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                       Text(
                         '$brandCount Brands • $categoryCount Categories • $productCount Products',
                         style: GoogleFonts.poppins(
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFFFDE68A),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -467,7 +465,12 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
               ),
               Column(
                 children: [
-                  _buildMenuAddButton(context, product),
+                  ProductCartStepperButton(
+                    productId: product.id ?? 0,
+                    brandId: (product.brandId ?? widget.cid).toString(),
+                    attributeId: product.attributeId?.toString(),
+                    isCompact: true,
+                  ),
                   const SizedBox(height: 4),
                   InkWell(
                     onTap: () {
@@ -704,390 +707,359 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
     );
   }
 
-  Widget _buildCatalogMatrixBanner({
+  Widget _buildFactoryCatalogueMatrixSection({
     required BuildContext context,
     required String companyName,
+    required List<HomeProduct> products,
+    required int totalCount,
     required int brandId,
     required int categoryId,
   }) {
     final String activeLabel = brandId > 0
         ? 'Filtered by Selected Brand'
-        : (categoryId > 0 ? 'Filtered by Selected Category' : 'Complete Factory Rate Matrix');
+        : (categoryId > 0 ? 'Filtered by Selected Category' : 'All Factory SKUs');
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 2, 16, 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFEA580C), Color(0xFFC2410C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFEA580C).withOpacity(0.28),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProductCategoryPageScreen(
-                  bid: brandId,
-                  cid: categoryId > 0 ? categoryId : widget.cid,
-                  scid: widget.scid,
-                  cmpid: widget.cmpid,
-                ),
-              ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.20),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.table_chart_rounded, color: Colors.white, size: 26),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              'Factory Catalogue & Rate Matrix',
-                              style: GoogleFonts.poppins(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'LIVE',
-                              style: GoogleFonts.poppins(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        brandId > 0 || categoryId > 0
-                            ? '$activeLabel • Tap to view rate matrix'
-                            : 'View catalog matrix & multi-pack rates for ${companyName.isNotEmpty ? companyName : "Factory"}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          color: Colors.white.withOpacity(0.92),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCompanyProductsSection({
-    required BuildContext context,
-    required String companyName,
-    required List<HomeProduct> products,
-    required int totalCount,
-  }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeading(
-            title: 'Products Menu ($totalCount)',
-            badge: _selectedBrandId > 0 || _selectedCategoryId > 0
-                ? 'Filtered: ${products.length}'
-                : 'All Factory SKUs',
-          ),
-          if (_selectedBrandId > 0 || _selectedCategoryId > 0) ...[
-            const SizedBox(height: 6),
-            InkWell(
-              onTap: () => setState(() {
-                _selectedBrandId = 0;
-                _selectedCategoryId = 0;
-              }),
-              child: Text(
-                'Clear active filters • Show all $totalCount products',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFFEA580C),
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 10),
-          if (products.isEmpty)
-            const StorefrontEmptyView(
-              icon: Icons.inventory_2_outlined,
-              title: 'No products match this filter',
-              subtitle: 'Tap "All Brands" or "All" category above to view all company products.',
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: products.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) =>
-                  _buildCompanyProductMenuCard(context, products[index]),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCompanyProductMenuCard(
-      BuildContext context, HomeProduct product) {
-    final num price = product.price ?? 0;
-    final num oldPrice = product.oldprice ?? 0;
-    final bool hasDiscount = oldPrice > price && price > 0;
-    final int discountPct =
-        hasDiscount ? (((oldPrice - price) / oldPrice) * 100).round() : 0;
-    final String img = (product.image ?? '').trim();
-
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DescriptionPageScreen(
-                productId: product.id ?? 0,
-                colorId: product.colorId ?? '0',
-              ),
-            ),
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // Catalogue Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left menu metadata (Swiggy Store Menu Style)
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        if ((product.brandName ?? '').trim().isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF7ED),
-                              borderRadius: BorderRadius.circular(5),
+                        Flexible(
+                          child: Text(
+                            'Factory Catalogue & Rate Matrix',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF111827),
                             ),
-                            child: Text(
-                              product.brandName!.trim().toUpperCase(),
-                              style: GoogleFonts.poppins(
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFEA580C),
-                              ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'LIVE RATES',
+                            style: GoogleFonts.poppins(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF166534),
                             ),
                           ),
-                        if (hasDiscount && discountPct > 0) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFDCFCE7),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              '$discountPct% OFF',
-                              style: GoogleFonts.poppins(
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF15803D),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 5),
                     Text(
-                      product.name ?? 'Product',
+                      '$activeLabel • ${products.length} SKUs',
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF111827),
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      [
-                        if ((product.categoryName ?? '').trim().isNotEmpty)
-                          product.categoryName!.trim(),
-                        if ((product.packSize ?? '').trim().isNotEmpty)
-                          product.packSize!.trim(),
-                      ].join(' • '),
-                      style: GoogleFonts.poppins(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         color: const Color(0xFF6B7280),
+                        fontWeight: FontWeight.w500,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          price > 0
-                              ? '₹${price.toStringAsFixed(2)}'
-                              : 'View Rate',
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF111827),
-                          ),
+                  ],
+                ),
+              ),
+              if (brandId > 0 || categoryId > 0)
+                TextButton(
+                  onPressed: () => setState(() {
+                    _selectedBrandId = 0;
+                    _selectedCategoryId = 0;
+                  }),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'Reset',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFEA580C),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (products.isEmpty)
+            const StorefrontEmptyView(
+              icon: Icons.inventory_2_outlined,
+              title: 'No catalogue SKUs match this filter',
+              subtitle: 'Tap "All Brands" or "All" category above to view all catalogue items.',
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: products.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.54,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemBuilder: (context, index) =>
+                  _buildCatalogueCard(context, products[index]),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCatalogueCard(BuildContext context, HomeProduct product) {
+    final num price = product.price ?? 0;
+    final num oldPrice = product.oldprice ?? 0;
+    final bool hasDiscount = oldPrice > price && price > 0;
+    final String img = (product.image ?? '').trim();
+    final int pId = product.id ?? 0;
+    final String colorId = product.colorId ?? '0';
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DescriptionPageScreen(
+              productId: pId,
+              colorId: colorId,
+            ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFEFEFEF)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Thumbnail Image Area with Swatch & Wishlist
+            Expanded(
+              flex: 5,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                    child: Container(
+                      color: const Color(0xFFFAFAFA),
+                      child: (img.isNotEmpty && img != 'default.png')
+                          ? AppNetworkImage(
+                              imageUrl: AppAssetImage.buildStorageImageUrl(img),
+                              fit: BoxFit.cover,
+                              fallbackIcon: Icons.format_paint_outlined,
+                            )
+                          : const Center(
+                              child: Icon(
+                                Icons.format_paint_outlined,
+                                size: 28,
+                                color: Color(0xFF9CA3AF),
+                              ),
+                            ),
+                    ),
+                  ),
+                  // Shade Swatch Dot Top Left (if hex exists)
+                  if ((product.colorHex ?? '').trim().isNotEmpty)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _hexToColor(product.colorHex!),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.18),
+                              blurRadius: 3,
+                            ),
+                          ],
                         ),
-                        if (hasDiscount) ...[
-                          const SizedBox(width: 6),
+                      ),
+                    ),
+                  // Wishlist Heart Button Top Right
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Consumer<WishlistProvider>(
+                      builder: (context, wishProv, _) {
+                        final bool isWishlisted = wishProv.isWishlisted(product.id);
+                        return InkWell(
+                          onTap: () => toggleProductWishlist(
+                            context,
+                            productId: pId,
+                            colorId: colorId,
+                          ),
+                          customBorder: const CircleBorder(),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.90),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isWishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              size: 14,
+                              color: isWishlisted ? const Color(0xFFE11D48) : const Color(0xFF64748B),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Product Details Area - completely flex-safe without rigid Spacer
+            Expanded(
+              flex: 5,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if ((product.brandName ?? '').trim().isNotEmpty)
                           Text(
-                            '₹${oldPrice.toStringAsFixed(2)}',
+                            product.brandName!.trim().toUpperCase(),
                             style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              decoration: TextDecoration.lineThrough,
-                              color: const Color(0xFF9CA3AF),
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFEA580C),
+                              letterSpacing: 0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        Text(
+                          product.name ?? 'Catalogue Product',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF111827),
+                            height: 1.15,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if ((product.packSize ?? '').trim().isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: const Color(0xFFE5E7EB)),
+                            ),
+                            child: Text(
+                              product.packSize!.trim(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF4B5563),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Right image + wishlist + ADD button (Swiggy menu layout)
-              SizedBox(
-                width: 100,
-                child: Column(
-                  children: [
-                    Stack(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            width: 100,
-                            height: 92,
-                            color: const Color(0xFFF9FAFB),
-                            child: AppNetworkImage(
-                              imageUrl: AppAssetImage.buildStorageImageUrl(img),
-                              width: 100,
-                              height: 92,
-                              fit: BoxFit.cover,
-                              fallbackIcon: Icons.format_paint_outlined,
-                            ),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (hasDiscount)
+                                Text(
+                                  '₹${oldPrice.toStringAsFixed(2)}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 8.5,
+                                    decoration: TextDecoration.lineThrough,
+                                    color: const Color(0xFF9CA3AF),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              Text(
+                                price > 0 ? '₹${price.toStringAsFixed(2)}' : 'Rates',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF111827),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
-                        Positioned(
-                          top: 5,
-                          right: 5,
-                          child: Consumer<WishlistProvider>(
-                            builder: (context, wishProv, _) {
-                              final bool isWishlisted =
-                                  wishProv.isWishlisted(product.id);
-                              return InkWell(
-                                onTap: () => toggleProductWishlist(
-                                  context,
-                                  productId: product.id ?? 0,
-                                  colorId: product.colorId ?? '0',
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.35),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    isWishlisted
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    size: 14,
-                                    color: isWishlisted
-                                        ? const Color(0xFFEF4444)
-                                        : Colors.white,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                        const SizedBox(width: 4),
+                        ProductCartStepperButton(
+                          productId: pId,
+                          brandId: (product.brandId ?? widget.cid).toString(),
+                          attributeId: product.attributeId?.toString(),
+                          isCompact: true,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    _buildMenuAddButton(context, product),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuAddButton(BuildContext context, HomeProduct product) {
-    final int pId = product.id ?? 0;
-    return ProductCartStepperButton(
-      productId: pId,
-      brandId: (product.brandId ?? 0).toString(),
-      attributeId: product.attributeId?.toString(),
-    );
+  Color _hexToColor(String hex) {
+    try {
+      hex = hex.replaceFirst('#', '');
+      if (hex.length == 6) hex = 'FF$hex';
+      return Color(int.parse(hex, radix: 16));
+    } catch (_) {
+      return Colors.transparent;
+    }
   }
 
   Widget _buildBrowseAllBanner(BuildContext context, List<Brand> brands) {
