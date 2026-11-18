@@ -718,6 +718,7 @@ class _ProductCategoryPageScreenState extends State<ProductCategoryPageScreen> {
                         ProductCartStepperButton(
                           productId: pId,
                           brandId: widget.bid.toString(),
+                          attributeId: (prod.attributeId != null && prod.attributeId! > 0) ? prod.attributeId.toString() : null,
                           isCompact: true,
                         ),
                       ],

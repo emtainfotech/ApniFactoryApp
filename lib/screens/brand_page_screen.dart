@@ -42,6 +42,7 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
   late BrandScreenProvider _brandProvider;
   int _selectedBrandId = 0; // 0 = All Company Brands
   int _selectedCategoryId = 0; // 0 = All Company Categories
+  int _selectedViewTab = 0; // 0 = Factory Catalogue, 1 = Details Matrix
   final Set<String> _addedItemKeys = {};
 
   @override
@@ -164,14 +165,26 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
                               _buildBrandsStrip(context, companyName, brands, allProducts),
                               if (visibleCategories.isNotEmpty)
                                 _buildCategoriesStrip(visibleCategories),
-                              _buildFactoryCatalogueMatrixSection(
-                                context: context,
-                                companyName: companyName,
-                                products: filteredProducts,
-                                totalCount: allProducts.length,
-                                brandId: _selectedBrandId,
-                                categoryId: _selectedCategoryId,
-                              ),
+                              _buildViewSwitcher(),
+                              if (_selectedViewTab == 0)
+                                _buildFactoryCatalogueMatrixSection(
+                                  context: context,
+                                  companyName: companyName,
+                                  products: filteredProducts,
+                                  totalCount: allProducts.length,
+                                  brandId: _selectedBrandId,
+                                  categoryId: _selectedCategoryId,
+                                )
+                              else
+                                _buildDetailedMatrixViewSection(
+                                  context: context,
+                                  companyName: companyName,
+                                  products: filteredProducts,
+                                  totalCount: allProducts.length,
+                                  brandId: _selectedBrandId,
+                                  categoryId: _selectedCategoryId,
+                                  brands: brands,
+                                ),
                               _buildBrowseAllBanner(context, brands),
                             ],
                           ],
@@ -707,6 +720,116 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
     );
   }
 
+  Widget _buildViewSwitcher() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedViewTab = 0),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _selectedViewTab == 0 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(9),
+                  boxShadow: _selectedViewTab == 0
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.grid_view_rounded,
+                      size: 15,
+                      color: _selectedViewTab == 0
+                          ? const Color(0xFFEA580C)
+                          : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Factory Catalogue',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: _selectedViewTab == 0
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: _selectedViewTab == 0
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedViewTab = 1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _selectedViewTab == 1 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(9),
+                  boxShadow: _selectedViewTab == 1
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.view_agenda_rounded,
+                      size: 15,
+                      color: _selectedViewTab == 1
+                          ? const Color(0xFFEA580C)
+                          : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Details Matrix',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: _selectedViewTab == 1
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: _selectedViewTab == 1
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFactoryCatalogueMatrixSection({
     required BuildContext context,
     required String companyName,
@@ -1060,6 +1183,461 @@ class _BrandPageScreenState extends State<BrandPageScreen> {
     } catch (_) {
       return Colors.transparent;
     }
+  }
+
+  Widget _buildDetailedMatrixViewSection({
+    required BuildContext context,
+    required String companyName,
+    required List<HomeProduct> products,
+    required int totalCount,
+    required int brandId,
+    required int categoryId,
+    required List<Brand> brands,
+  }) {
+    final String activeLabel = brandId > 0
+        ? 'Filtered by Selected Brand'
+        : (categoryId > 0 ? 'Filtered by Selected Category' : 'All Factory SKUs');
+    final int fallbackCid = widget.cid > 0
+        ? widget.cid
+        : (brands.isNotEmpty ? (brands.first.categoryId ?? 0) : 0);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Matrix Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Details Matrix & Specifications',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF111827),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'MATRIX',
+                            style: GoogleFonts.poppins(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '$activeLabel • ${products.length} Products Available',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: const Color(0xFF6B7280),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProductCategoryPageScreen(
+                        bid: _selectedBrandId,
+                        cid: _selectedCategoryId > 0 ? _selectedCategoryId : fallbackCid,
+                        scid: widget.scid,
+                        cmpid: widget.cmpid,
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFFEDD5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Full Screen',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFEA580C),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(
+                        Icons.open_in_new_rounded,
+                        size: 12,
+                        color: Color(0xFFEA580C),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (products.isEmpty)
+            const StorefrontEmptyView(
+              icon: Icons.inventory_2_outlined,
+              title: 'No matrix products match this filter',
+              subtitle: 'Tap "All Brands" or "All" category above to view all matrix items.',
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: products.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, index) =>
+                  _buildDetailedMatrixCard(context, products[index]),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailedMatrixCard(BuildContext context, HomeProduct product) {
+    final num price = product.price ?? 0;
+    final num oldPrice = product.oldprice ?? 0;
+    final bool hasDiscount = oldPrice > price && price > 0;
+    final String img = (product.image ?? '').trim();
+    final int pId = product.id ?? 0;
+    final String colorId = product.colorId ?? '0';
+    final Color swatchColor = _hexToColor(product.colorHex ?? '');
+    final bool hasHex = (product.colorHex ?? '').trim().isNotEmpty;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFEFEFEF)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product Image
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DescriptionPageScreen(
+                          productId: pId,
+                          colorId: colorId,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 78,
+                    height: 78,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF3F4F6)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          (img.isNotEmpty && img != 'default.png')
+                              ? AppNetworkImage(
+                                  imageUrl: AppAssetImage.buildStorageImageUrl(img),
+                                  fit: BoxFit.cover,
+                                  fallbackIcon: Icons.format_paint_outlined,
+                                )
+                              : const Center(
+                                  child: Icon(
+                                    Icons.format_paint_outlined,
+                                    size: 26,
+                                    color: Color(0xFF9CA3AF),
+                                  ),
+                                ),
+                          if (hasHex)
+                            Positioned(
+                              top: 5,
+                              left: 5,
+                              child: Container(
+                                width: 14,
+                                height: 14,
+                                decoration: BoxDecoration(
+                                  color: swatchColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.25),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Product Information & Specifications
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if ((product.brandName ?? '').trim().isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF7ED),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                product.brandName!.trim().toUpperCase(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFEA580C),
+                                ),
+                              ),
+                            ),
+                          if ((product.categoryName ?? '').trim().isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                product.categoryName!.trim(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF4B5563),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DescriptionPageScreen(
+                                productId: pId,
+                                colorId: colorId,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          product.name ?? 'Catalogue Product',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF111827),
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // Pack size and shade badge
+                      Row(
+                        children: [
+                          if ((product.packSize ?? '').trim().isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Text(
+                                'Size: ${product.packSize!.trim()}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF334155),
+                                ),
+                              ),
+                            ),
+                          if (hasHex) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: swatchColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    product.colorHex!.toUpperCase(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF475569),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
+          // Pricing & Stepper Row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          price > 0 ? '₹${price.toStringAsFixed(2)}' : 'Rate on req.',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        if (hasDiscount) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '₹${oldPrice.toStringAsFixed(2)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              decoration: TextDecoration.lineThrough,
+                              color: const Color(0xFF9CA3AF),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Text(
+                      'Least Price Variant',
+                      style: GoogleFonts.poppins(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DescriptionPageScreen(
+                              productId: pId,
+                              colorId: colorId,
+                            ),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Details & Shades >',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    ProductCartStepperButton(
+                      productId: pId,
+                      brandId: (product.brandId ?? widget.cid).toString(),
+                      attributeId: product.attributeId?.toString(),
+                      isCompact: true,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildBrowseAllBanner(BuildContext context, List<Brand> brands) {

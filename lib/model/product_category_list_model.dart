@@ -87,6 +87,7 @@ class Product {
   String? hexcode;
   String? hexcodeImage;
   String? colorid;
+  int? attributeId;
 
   Product(
       {this.name,
@@ -98,7 +99,8 @@ class Product {
       this.color,
       this.hexcode,
       this.hexcodeImage,
-      this.colorid});
+      this.colorid,
+      this.attributeId});
 
   Product.fromJson(Map<String, dynamic> json) {
     name = json['name'];
@@ -111,6 +113,7 @@ class Product {
     hexcode = json['hexcode'];
     hexcodeImage = json['hexcode_image'];
     colorid = json['colorid'];
+    attributeId = int.tryParse('${json['attribute_id'] ?? json['attributeid'] ?? ''}');
   }
 
   Map<String, dynamic> toJson() {
@@ -121,6 +124,13 @@ class Product {
     data['cid'] = this.cid;
     data['categoryname'] = this.categoryname;
     data['pid'] = this.pid;
+    data['color'] = this.color;
+    data['hexcode'] = this.hexcode;
+    data['hexcode_image'] = this.hexcodeImage;
+    data['colorid'] = this.colorid;
+    data['attribute_id'] = this.attributeId;
+    return data;
+  }
     data['color'] = this.color;
     data['hexcode'] = this.hexcode;
     data['hexcode_image'] = this.hexcodeImage;

@@ -708,10 +708,23 @@ class CartScreenProvider extends ChangeNotifier {
         if (prodDetail != null &&
             prodDetail.data?.attributes != null &&
             prodDetail.data!.attributes!.isNotEmpty) {
-          final firstAttr = prodDetail.data!.attributes!.first;
-          attrs = [
-            {"id": firstAttr.attributeid.toString(), "qty": "1"}
-          ];
+          final validAttrs = prodDetail.data!.attributes!
+              .where((a) => a.attributeid != null)
+              .toList();
+          if (validAttrs.isNotEmpty) {
+            // Pick least product price variant (lowest positive price)
+            validAttrs.sort((a, b) {
+              final double pA = (a.price ?? 0).toDouble();
+              final double pB = (b.price ?? 0).toDouble();
+              if (pA <= 0 && pB > 0) return 1;
+              if (pB <= 0 && pA > 0) return -1;
+              return pA.compareTo(pB);
+            });
+            final leastAttr = validAttrs.first;
+            attrs = [
+              {"id": leastAttr.attributeid.toString(), "qty": "1"}
+            ];
+          }
         }
       }
 
