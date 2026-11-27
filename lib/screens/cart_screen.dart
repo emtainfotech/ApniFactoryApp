@@ -1997,7 +1997,7 @@ class _CartScreenState extends State<CartScreen> {
                   itemCount: provider.getAddressListModel?.data?.length ?? 0,
                   itemBuilder: (context, index) {
                     final address = provider.getAddressListModel!.data![index];
-                    if (address.type != "transport") return const SizedBox.shrink();
+                    if (address.type == "personal") return const SizedBox.shrink();
 
                     final isSelected =
                         (provider.selectedAddressId == address.id.toString());
@@ -2014,56 +2014,74 @@ class _CartScreenState extends State<CartScreen> {
                           width: isSelected ? 1.5 : 1,
                         ),
                       ),
-                      child: RadioListTile<String>(
-                        value: address.id.toString(),
-                        groupValue: provider.selectedAddressId,
-                        activeColor: const Color(0xFFEA580C),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        onChanged: (val) {
-                          if (val != null) {
-                            final String addrText =
-                                "${address.landmark1 ?? ""}, ${address.landmark2 ?? ""}, "
-                                "${address.city ?? ""}, ${address.state ?? ""}, "
-                                "${address.pincode ?? ""}";
-                            provider.selectAddress(
-                              val,
-                              context: context,
-                              height: height,
-                              addressId: val,
-                              addressText: addrText,
-                            );
-                            Navigator.pop(sheetContext);
-                          }
-                        },
-                        title: Text(
-                          address.identityname ?? "Site Location",
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.secondaryColor,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              value: address.id.toString(),
+                              groupValue: provider.selectedAddressId,
+                              activeColor: const Color(0xFFEA580C),
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  final String addrText =
+                                      "${address.landmark1 ?? ""}, ${address.landmark2 ?? ""}, "
+                                      "${address.city ?? ""}, ${address.state ?? ""}, "
+                                      "${address.pincode ?? ""}";
+                                  provider.selectAddress(
+                                    val,
+                                    context: context,
+                                    height: height,
+                                    addressId: val,
+                                    addressText: addrText,
+                                  );
+                                  Navigator.pop(sheetContext);
+                                }
+                              },
+                              title: Text(
+                                address.identityname ?? "Site Location",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.secondaryColor,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    address.name ?? "",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF4B5563),
+                                    ),
+                                  ),
+                                  Text(
+                                    "${address.landmark1 ?? ""} ${address.landmark2 ?? ""}, ${address.city ?? ""}, ${address.state ?? ""} - ${address.pincode ?? ""}",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      color: const Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              address.name ?? "",
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF4B5563),
-                              ),
-                            ),
-                            Text(
-                              "${address.landmark1 ?? ""} ${address.landmark2 ?? ""}, ${address.city ?? ""}, ${address.state ?? ""} - ${address.pincode ?? ""}",
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                color: const Color(0xFF6B7280),
-                              ),
-                            ),
-                          ],
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF6B7280)),
+                            tooltip: "Edit Address",
+                            onPressed: () {
+                              Navigator.pop(sheetContext);
+                              provider.getIdAddress(
+                                context: context,
+                                addressId: address.id.toString(),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                       ),
                     );
                   },

@@ -16,6 +16,21 @@ class AddAddressWidget extends StatefulWidget {
 
 class _AddAddressWidgetState extends State<AddAddressWidget> {
   @override
+  void initState() {
+    super.initState();
+    if (widget.provider.countryController.text.trim().isEmpty) {
+      widget.provider.countryController.text = "India";
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.provider.stateList.isEmpty ||
+          (widget.provider.stateList.length == 1 &&
+              widget.provider.stateList.first == "State*")) {
+        widget.provider.stateDropDown(context: context);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;

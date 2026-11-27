@@ -325,98 +325,81 @@ class HomeScreenProvider extends ChangeNotifier {
     String? identityname,
   }) async {
     try {
-      if (name != null &&
-          name.isNotEmpty &&
-          landmark1 != null &&
-          landmark1.isNotEmpty &&
-          landmark2 != null &&
-          landmark2.isNotEmpty &&
-          country != null &&
-          country.isNotEmpty &&
-          state != null &&
-          state.isNotEmpty &&
-          city != null &&
-          city.isNotEmpty &&
-          pincode != null &&
-          pincode.isNotEmpty &&
-          phoneno != null &&
-          phoneno.isNotEmpty &&
-          identityname != null &&
-          identityname.isNotEmpty) {
-        loadingAddAddress = true;
+      final finalCountry = (country != null && country.trim().isNotEmpty) ? country.trim() : "India";
+      final finalName = name?.trim() ?? "";
+      final finalLandmark1 = landmark1?.trim() ?? "";
+      final finalLandmark2 = (landmark2 != null && landmark2.trim().isNotEmpty)
+          ? landmark2.trim()
+          : (finalLandmark1.isNotEmpty ? finalLandmark1 : "Near");
+      final finalState = (state != null && state != "State*" && state.trim().isNotEmpty) ? state.trim() : "";
+      final finalCity = (city != null && city != "City*" && city.trim().isNotEmpty) ? city.trim() : "";
+      final finalPincode = (pincode != null && pincode != "Pincode*" && pincode.trim().isNotEmpty) ? pincode.trim() : "";
+      final finalPhone = phoneno?.trim() ?? "";
+      final finalIdentity = (identityname != null && identityname.trim().isNotEmpty)
+          ? identityname.trim()
+          : (finalName.isNotEmpty ? finalName : "Personal / Communication");
+
+      if (finalLandmark1.isEmpty || finalCity.isEmpty || finalPincode.isEmpty) {
+        Utils.commonSnackBar(context,
+            height: height, message: "Please enter address, city, and pincode");
+        return;
+      }
+
+      loadingAddAddress = true;
+      notifyListeners();
+
+      AddAddressModel? addAddressModel =
+          await CreatorApiServices.addAddressDetails(context,
+              name: finalName.isNotEmpty ? finalName : "Customer",
+              landmark1: finalLandmark1,
+              landmark2: finalLandmark2,
+              country: finalCountry,
+              state: finalState.isNotEmpty ? finalState : "India",
+              city: finalCity,
+              pincode: finalPincode,
+              phoneno: finalPhone,
+              identityname: finalIdentity,
+              type: "personal");
+
+      if (addAddressModel != null && addAddressModel.code == 100) {
+        await getAddressList(context: context);
+        selectedAddressId = addAddressModel.data?.id?.toString();
+        selectedAddressText = "${addAddressModel.data?.landmark1 ?? ""}, "
+            "${addAddressModel.data?.landmark2 ?? ""}, "
+            "${addAddressModel.data?.city ?? ""}, "
+            "${addAddressModel.data?.state ?? ""}, "
+            "${addAddressModel.data?.pincode ?? ""}";
+
+        nameController.clear();
+        addressController.clear();
+        landmark1Controller.clear();
+        countryController.clear();
+        stateDropDownValue = "State*";
+        cityDropDownValue = "City*";
+        pincodeDropDownValue = "Pincode*";
+        phonenoController.clear();
+        identitynameController.clear();
+        loadingAddAddress = false;
         notifyListeners();
 
-        AddAddressModel? addAddressModel =
-            await CreatorApiServices.addAddressDetails(context,
-                name: name,
-                landmark1: landmark1,
-                landmark2: landmark2,
-                country: country,
-                state: state,
-                city: city,
-                pincode: pincode,
-                phoneno: phoneno,
-                identityname: identityname,
-                type: "personal");
-
-        if (addAddressModel != null && addAddressModel.code == 100) {
-          // await checkAddressAvailability(
-          //     context: context,
-          //     addressid: addAddressModel.data?.id.toString() ?? "",
-          //     height: height);
-
-          // Clear the address list before getting new list
-          // addressList?.clear();
-
-          // Get updated address list
-          await getAddressList(context: context);
-          selectedAddressId = addAddressModel.data?.id?.toString();
-          selectedAddressText = "${addAddressModel.data?.landmark1 ?? ""}, "
-              "${addAddressModel.data?.landmark2 ?? ""}, "
-              "${addAddressModel.data?.city ?? ""}, "
-              "${addAddressModel.data?.state ?? ""}, "
-              "${addAddressModel.data?.pincode ?? ""}";
-          // Set the newly added address as selected
-          // String newAddress =
-          //     "${(addAddressModel.data?.landmark1 ?? "")}, ${(addAddressModel.data?.landmark2 ?? "")}, ${(addAddressModel.data?.city ?? "")}, ${(addAddressModel.data?.state ?? "")}, ${(addAddressModel.data?.pincode ?? "")}, ${(addAddressModel.data?.id.toString() ?? "")}";
-          // selectedAddress = newAddress;
-          // var addressParts = newAddress.split(" ");
-          // selectedId = addressParts.last;
-
-          // Clear form fields
-          nameController.clear();
-          addressController.clear();
-          landmark1Controller.clear();
-          countryController.clear();
-          stateDropDownValue = "State*";
-          cityDropDownValue = "City*";
-          pincodeDropDownValue = "Pincode*";
-
-          phonenoController.clear();
-
-          identitynameController.clear();
-          loadingAddAddress = false;
-          notifyListeners();
-
+        if (Navigator.canPop(context)) {
           Navigator.pop(context);
-          Navigator.pop(context);
-
-          Utils.commonSnackBar(context,
-              height: height, message: addAddressModel.msg.toString());
-        } else {
-          loadingAddAddress = false;
-          notifyListeners();
         }
-      } else {
-        Navigator.pop(context);
-        Navigator.pop(context);
+
         Utils.commonSnackBar(context,
-            height: height, message: "Enter all details");
+            height: height, message: addAddressModel.msg.toString());
+      } else {
+        loadingAddAddress = false;
+        notifyListeners();
+        Utils.commonSnackBar(context,
+            height: height, message: addAddressModel?.msg ?? "Failed to save address");
       }
     } catch (e) {
       log("add address error: ${e.toString()}");
       loadingAddAddress = false;
       notifyListeners();
+      Utils.commonSnackBar(context,
+          height: height, message: "Error adding address. Please try again.");
     }
   }
 
@@ -537,83 +520,93 @@ class HomeScreenProvider extends ChangeNotifier {
       String? identityname,
       required String addressId}) async {
     try {
-      if (name != null &&
-          name.isNotEmpty &&
-          landmark != null &&
-          landmark.isNotEmpty &&
-          address != null &&
-          address.isNotEmpty &&
-          country != null &&
-          country.isNotEmpty &&
-          state != null &&
-          state.isNotEmpty &&
-          city != null &&
-          city.isNotEmpty &&
-          pincode != null &&
-          pincode.isNotEmpty &&
-          phoneno != null &&
-          phoneno.isNotEmpty &&
-          identityname != null &&
-          identityname.isNotEmpty) {
-        loadingUpdateAddress = true;
-        UpdateAddressModel? updateAddressModel =
-            await CreatorApiServices.updateAddressDetails(context,
-                name: name,
-                landmark: landmark,
-                address: address,
-                country: country,
-                state: state,
-                city: city,
-                pincode: pincode,
-                phoneno: phoneno,
-                identityname: identityname,
-                addressId: addressId,
-                type: "personal");
-        notifyListeners();
-        if (updateAddressModel != null && updateAddressModel.code == 100) {
-          // await updateCartAddress(
-          //     context: context, height: height, addressId: addressId);
-          await getAddressList(context: context);
-          if (selectedAddressId == addressId) {
-            selectedAddressText = "${editAddressController.text}, "
-                "${editLandmarkController.text}, "
-                "${editCityController.text}, "
-                "${editStateController.text} "
-                "${editPincodeController.text} $addressId";
-            // selectedAddress = newAddress;
-            // selectedId = addressId;
-          }
-          Navigator.pop(context);
-          Navigator.pop(context);
-          loadingUpdateAddress = false;
-          Utils.commonSnackBar(context,
-              height: height, message: updateAddressModel.msg.toString());
+      final finalCountry = (country != null && country.trim().isNotEmpty) ? country.trim() : "India";
+      final finalName = (name != null && name.trim().isNotEmpty)
+          ? name.trim()
+          : (editNameController.text.trim().isNotEmpty ? editNameController.text.trim() : "Customer");
+      final finalAddress = (address != null && address.trim().isNotEmpty)
+          ? address.trim()
+          : editAddressController.text.trim();
+      final finalLandmark = (landmark != null && landmark.trim().isNotEmpty)
+          ? landmark.trim()
+          : (editLandmarkController.text.trim().isNotEmpty ? editLandmarkController.text.trim() : finalAddress);
+      final finalState = (state != null && state != "State*" && state.trim().isNotEmpty)
+          ? state.trim()
+          : editStateController.text.trim();
+      final finalCity = (city != null && city != "City*" && city.trim().isNotEmpty)
+          ? city.trim()
+          : editCityController.text.trim();
+      final finalPincode = (pincode != null && pincode != "Pincode*" && pincode.trim().isNotEmpty)
+          ? pincode.trim()
+          : editPincodeController.text.trim();
+      final finalPhone = (phoneno != null && phoneno.trim().isNotEmpty)
+          ? phoneno.trim()
+          : editPhonenoController.text.trim();
+      final finalIdentity = (identityname != null && identityname.trim().isNotEmpty)
+          ? identityname.trim()
+          : (editIdentitynameController.text.trim().isNotEmpty ? editIdentitynameController.text.trim() : finalName);
 
-          editNameController.clear();
-          editLandmarkController.clear();
-          editAddressController.clear();
-          editCountryController.clear();
-          editStateController.clear();
-          editCityController.clear();
-          editPincodeController.clear();
-          editPhonenoController.clear();
-          editIdentitynameController.clear();
-
-          notifyListeners();
-        } else {
-          loadingUpdateAddress = false;
-          notifyListeners();
-        }
-      } else {
-        Navigator.pop(context);
+      if (finalAddress.isEmpty || finalCity.isEmpty || finalPincode.isEmpty) {
         Utils.commonSnackBar(context,
-            height: height, message: "Enter all details");
+            height: height, message: "Please enter address, city, and pincode");
+        return;
+      }
+
+      loadingUpdateAddress = true;
+      notifyListeners();
+
+      UpdateAddressModel? updateAddressModel =
+          await CreatorApiServices.updateAddressDetails(context,
+              name: finalName,
+              landmark: finalLandmark,
+              address: finalAddress,
+              country: finalCountry,
+              state: finalState.isNotEmpty ? finalState : "India",
+              city: finalCity,
+              pincode: finalPincode,
+              phoneno: finalPhone,
+              identityname: finalIdentity,
+              addressId: addressId,
+              type: "personal");
+
+      if (updateAddressModel != null && updateAddressModel.code == 100) {
+        await getAddressList(context: context);
+        if (selectedAddressId == addressId) {
+          selectedAddressText = "$finalAddress, $finalLandmark, $finalCity, $finalState $finalPincode";
+        }
+
+        loadingUpdateAddress = false;
+        notifyListeners();
+
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+
+        Utils.commonSnackBar(context,
+            height: height, message: updateAddressModel.msg.toString());
+
+        editNameController.clear();
+        editLandmarkController.clear();
+        editAddressController.clear();
+        editCountryController.clear();
+        editStateController.clear();
+        editCityController.clear();
+        editPincodeController.clear();
+        editPhonenoController.clear();
+        editIdentitynameController.clear();
+      } else {
+        loadingUpdateAddress = false;
+        notifyListeners();
+        Utils.commonSnackBar(context,
+            height: height, message: updateAddressModel?.msg ?? "Failed to update address");
       }
     } catch (e) {
       loadingUpdateAddress = false;
       log("update address error: ${e.toString()}");
+      notifyListeners();
+      Utils.commonSnackBar(context,
+          height: height, message: "Error updating address. Please try again.");
     }
-    notifyListeners();
   }
 
   bool loadingDeleteAddress = false;
@@ -629,31 +622,35 @@ class HomeScreenProvider extends ChangeNotifier {
       DeleteAddressModel? deleteAddressModel =
           await CreatorApiServices.deleteAddressDetails(context,
               addressid: addressid);
-      notifyListeners();
 
       if (deleteAddressModel != null && deleteAddressModel.code == 100) {
         if (selectedAddressId == addressid) {
           selectedAddressId = null;
           selectedAddressText = null;
         }
-        Navigator.pop(dialogContext);
+        if (Navigator.canPop(dialogContext)) {
+          Navigator.pop(dialogContext);
+        }
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+
         await getAddressList(context: context);
         loadingDeleteAddress = false;
-        notifyListeners();
         Utils.commonSnackBar(context,
             height: height, message: deleteAddressModel.msg.toString());
-        Navigator.pop(context);
-        Navigator.pop(context);
-
         notifyListeners();
       } else {
         loadingDeleteAddress = false;
         notifyListeners();
+        Utils.commonSnackBar(context,
+            height: height, message: deleteAddressModel?.msg ?? "Failed to delete address");
       }
     } catch (e) {
+      loadingDeleteAddress = false;
       log("delete address error: ${e.toString()}");
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   bool loadingStateDropDown = true;
