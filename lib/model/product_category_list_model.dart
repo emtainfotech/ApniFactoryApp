@@ -131,12 +131,6 @@ class Product {
     data['attribute_id'] = this.attributeId;
     return data;
   }
-    data['color'] = this.color;
-    data['hexcode'] = this.hexcode;
-    data['hexcode_image'] = this.hexcodeImage;
-    data['colorid'] = this.colorid;
-    return data;
-  }
 }
 
 class Subcategory {
